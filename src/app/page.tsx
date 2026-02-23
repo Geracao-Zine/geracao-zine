@@ -1,65 +1,134 @@
-import Image from "next/image";
-
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="min-h-screen pt-[var(--navbar-height)] bg-[var(--background)] text-[var(--foreground)]">
+
+      {/* HERO */}
+      <section className="max-w-6xl mx-auto px-6 py-28 text-center">
+        
+        <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-8">
+          Publique suas ideias.<br />
+          <span className="text-[var(--purple-dark)]">
+            Crie seu próprio Zine.
+          </span>
+        </h1>
+
+        <p className="text-lg md:text-xl text-zinc-600 max-w-2xl mx-auto mb-12">
+          O Geração Zine é uma plataforma para criadores independentes 
+          transformarem pensamentos, arte e narrativas em publicações autorais.
+        </p>
+
+        <div className="flex flex-col sm:flex-row justify-center gap-6">
+          <a
+            href="/Create"
+            className="px-8 py-3 rounded-full bg-[var(--purple-dark)] text-white font-semibold hover:opacity-90 transition"
+          >
+            Criar meu Zine
+          </a>
+
+          <a
+            href="/Library"
+            className="px-8 py-3 rounded-full border border-zinc-300 hover:bg-white transition"
+          >
+            Explorar Biblioteca
+          </a>
+        </div>
+      </section>
+
+      {/* CONCEITO */}
+      <section className="bg-white py-24">
+        <div className="max-w-5xl mx-auto px-6 text-center">
+          
+          <h2 className="text-3xl text-zinc-600 md:text-4xl font-bold mb-8">
+            O que é um Zine?
+          </h2>
+
+          <p className="text-lg text-zinc-600 leading-relaxed max-w-3xl mx-auto">
+            Zines são publicações independentes, criadas fora dos meios tradicionais. 
+            São espaços de expressão livre — onde ideias, arte, cultura e opinião 
+            ganham forma sem filtros ou intermediários.
           </p>
+
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      {/* COMO FUNCIONA */}
+      <section className="py-24">
+        <div className="max-w-6xl mx-auto px-6">
+
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Simples. Direto. Autoral.
+            </h2>
+            <p className="text-zinc-600">
+              Em poucos passos você publica sua própria edição.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-12 text-center">
+
+            <div>
+              <div className="w-14 h-14 mx-auto mb-6 rounded-full bg-[var(--purple)] text-white flex items-center justify-center font-bold text-lg">
+                1
+              </div>
+              <h3 className="font-semibold text-lg mb-3">
+                Escolha um modelo
+              </h3>
+              <p className="text-zinc-600 text-sm">
+                Comece com um template e personalize o visual.
+              </p>
+            </div>
+
+            <div>
+              <div className="w-14 h-14 mx-auto mb-6 rounded-full bg-[var(--purple)] text-white flex items-center justify-center font-bold text-lg">
+                2
+              </div>
+              <h3 className="font-semibold text-lg mb-3">
+                Edite e crie
+              </h3>
+              <p className="text-zinc-600 text-sm">
+                Adicione textos. Dê vida às suas ideias.
+              </p>
+            </div>
+
+            <div>
+              <div className="w-14 h-14 mx-auto mb-6 rounded-full bg-[var(--purple)] text-white flex items-center justify-center font-bold text-lg">
+                3
+              </div>
+              <h3 className="font-semibold text-lg mb-3">
+                Publique e compartilhe
+              </h3>
+              <p className="text-zinc-600 text-sm">
+                Disponibilize sua edição para a comunidade.
+              </p>
+            </div>
+
+          </div>
+
         </div>
-      </main>
-    </div>
+      </section>
+
+      {/* CTA FINAL */}
+      <section className="bg-[var(--purple-dark)] py-24 text-white text-center">
+        <div className="max-w-4xl mx-auto px-6">
+
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            Sua voz merece ser publicada.
+          </h2>
+
+          <p className="text-lg mb-10 text-purple-100">
+            Comece agora e transforme sua ideia em uma edição independente.
+          </p>
+
+          <a
+            href="/Create"
+            className="px-10 py-4 rounded-full bg-white text-[var(--purple-dark)] font-semibold hover:opacity-90 transition"
+          >
+            Criar meu primeiro Zine
+          </a>
+
+        </div>
+      </section>
+
+    </main>
   );
 }
