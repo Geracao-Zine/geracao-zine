@@ -3,13 +3,14 @@
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import jsPDF from "jspdf";
+import { Suspense } from "react";
 
 type PageContent = {
 	title: string;
 	poetry: string;
 };
 
-export default function EditorPage() {
+function EditorPage() {
 	const searchParams = useSearchParams();
 
 	const initialPages = Number(searchParams.get("pages")) || 0;
@@ -84,7 +85,7 @@ export default function EditorPage() {
 		});
 
 		const pageWidth = 148; // metade do A4 paisagem
-		const pageHeight = 210;
+		// const pageHeight = 210;
 		const margin = 15;
 
 		// Organiza todas as páginas
@@ -288,4 +289,13 @@ export default function EditorPage() {
 
 		</main>
 	);
+}
+
+
+export default function EditorPageWrapper() {
+  return (
+    <Suspense fallback={<div>Carregando editor...</div>}>
+      <EditorPage />
+    </Suspense>
+  );
 }
