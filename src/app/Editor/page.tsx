@@ -1,7 +1,12 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+
+type PageContent = {
+	title: string;
+	poetry: string;
+};
 
 export default function EditorPage() {
 	const searchParams = useSearchParams();
@@ -20,6 +25,22 @@ export default function EditorPage() {
 
 	const pageArray = Array.from({ length: pages }, (_, i) => i + 1);
 
+	const [content, setContent] = useState<Record<number, PageContent>>({});
+
+	const handleChange = (
+		page: number,
+		field: "title" | "poetry",
+		value: string
+	) => {
+		setContent((prev) => ({
+			...prev,
+			[page]: {
+				...prev[page],
+				[field]: value,
+			},
+		}));
+	};
+
 	return (
 		<main className="min-h-screen bg-zinc-100 dark:bg-black text-zinc-900 dark:text-zinc-100 p-10">
 
@@ -27,7 +48,7 @@ export default function EditorPage() {
 
 				{pageArray.map((pageNumber) => {
 
-					// 🟣 CAPA (Página 1)
+					// CAPA
 					if (pageNumber === 1) {
 						return (
 							<div
@@ -63,7 +84,12 @@ export default function EditorPage() {
 						);
 					}
 
-					// ⚪ OUTRAS PÁGINAS
+					// PÁGINAS INTERNAS
+					const pageData = content[pageNumber] || {
+						title: "",
+						poetry: "",
+					};
+
 					return (
 						<div
 							key={pageNumber}
@@ -74,30 +100,49 @@ export default function EditorPage() {
 								aspect-[3/4]
 								border border-zinc-200 dark:border-zinc-800
 								flex flex-col
+								p-6
 								overflow-hidden
 							"
 						>
-							<div className="p-4 border-b border-zinc-200 dark:border-zinc-800 text-sm text-zinc-500">
-								Página {pageNumber}
-							</div>
+							{/* TÍTULO */}
+							<input
+								type="text"
+								placeholder="Título da página"
+								value={pageData.title}
+								onChange={(e) =>
+									handleChange(pageNumber, "title", e.target.value)
+								}
+								className="
+									text-xl font-semibold
+									bg-transparent
+									border-b border-zinc-300 dark:border-zinc-700
+									outline-none
+									mb-4
+									pb-2
+									focus:border-purple-600
+								"
+							/>
 
-							<div
-								contentEditable
-								suppressContentEditableWarning
+							{/* POESIA */}
+							<textarea
+								placeholder="Escreva sua poesia aqui..."
+								value={pageData.poetry}
+								onChange={(e) =>
+									handleChange(pageNumber, "poetry", e.target.value)
+								}
 								className="
 									flex-1
-									p-6
+									resize-none
+									bg-transparent
 									outline-none
-									focus:bg-zinc-50 dark:focus:bg-zinc-800
-									transition
+									text-sm
+									leading-relaxed
+									placeholder:text-zinc-400
 								"
-							>
-								<p className="text-zinc-400">
-									Clique aqui para editar...
-								</p>
-							</div>
+							/>
 
-							<div className="p-3 text-center text-xs text-zinc-400 border-t border-zinc-200 dark:border-zinc-800">
+							{/* NÚMERO DA PÁGINA */}
+							<div className="text-center text-xs text-zinc-400 mt-4">
 								{pageNumber}
 							</div>
 						</div>
