@@ -2,96 +2,142 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const templates = [
-  {
-    id: "minimal",
-    title: "Minimal",
-    description: "Layout limpo com foco no conteúdo.",
-    file: "/templates/minimal.html",
-  },
-  {
-    id: "editorial",
-    title: "Editorial",
-    description: "Estilo revista independente e tipografia forte.",
-    file: "/templates/editorial.html",
-  },
-  {
-    id: "experimental",
-    title: "Experimental",
-    description: "Layout ousado com composições criativas.",
-    file: "/templates/experimental.html",
-  },
-];
-
 export default function CreatePage() {
-  const [selected, setSelected] = useState<string | null>(null);
   const router = useRouter();
 
+  const fontes = [
+    { id: "font-sans", name: "Geist Sans" },
+    { id: "font-mono", name: "Geist Mono" },
+  ];
+
+  const paginas = [4, 8, 12, 16];
+
+  const [pages, setPages] = useState<number | null>(null);
+  const [coverTitle, setCoverTitle] = useState("");
+  const [titleFont, setTitleFont] = useState("");
+  const [authorName, setAuthorName] = useState("");
+  const [authorFont, setAuthorFont] = useState("");
+  const [dateType, setDateType] = useState<"year" | "full">("year");
+
   const handleContinue = () => {
-    if (!selected) return;
-    router.push(`/Editor?template=${selected}`);
+    if (!pages || !coverTitle || !authorName) return;
+
+    const params = new URLSearchParams({
+      pages: String(pages),
+      coverTitle,
+      titleFont,
+      authorName,
+      authorFont,
+      dateType,
+    });
+
+    router.push(`/editor?${params.toString()}`);
   };
+
+  const isValid =
+    pages && coverTitle && authorName && titleFont && authorFont;
 
   return (
     <main className="min-h-screen pt-[var(--navbar-height)] bg-[var(--background)] text-[var(--foreground)]">
-      <section className="max-w-6xl mx-auto px-6 py-20">
+      <section className="max-w-3xl mx-auto px-6 py-20 space-y-12">
 
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">
-            Escolha um <span className="text-[var(--purple-dark)]">modelo</span>
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-4">
+            Configure seu <span className="text-[var(--purple-dark)]">Zine</span>
           </h1>
-
-          <p className="text-lg text-zinc-600 max-w-2xl mx-auto">
-            Comece com um template e personalize do seu jeito.
+          <p className="text-zinc-600">
+            Defina a estrutura inicial da sua publicação.
           </p>
         </div>
 
-        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3 mb-16">
-
-          {templates.map((template) => {
-            const isActive = selected === template.id;
-
-            return (
-              <button
-                key={template.id}
-                onClick={() => setSelected(template.id)}
-                className={`
-                  text-left p-6 rounded-2xl border transition-all duration-300
-                  ${isActive 
-                    ? "border-[var(--purple-dark)] bg-white shadow-xl scale-[1.02]" 
-                    : "border-zinc-200 bg-white hover:shadow-lg"}
-                `}
-              >
-                <div className="h-40 rounded-lg overflow-hidden border mb-6">
-                  <iframe
-                    src={template.file}
-                    className="w-full h-full pointer-events-none scale-75 origin-top-left"
-                  />
-                </div>
-
-                <h3 className="text-xl font-semibold mb-2">
-                  {template.title}
-                </h3>
-
-                <p className="text-sm text-zinc-500">
-                  {template.description}
-                </p>
-              </button>
-            );
-          })}
-
+        {/* PÁGINAS */}
+        <div className="space-y-2">
+          <label className="font-semibold">Quantidade de páginas</label>
+          <select
+            className="w-full border rounded-lg p-3"
+            onChange={(e) => setPages(Number(e.target.value))}
+          >
+            <option value="">Selecione</option>
+            {paginas.map((p) => (
+              <option key={p} value={p}>
+                {p} páginas
+              </option>
+            ))}
+          </select>
         </div>
 
-        <div className="text-center">
+        {/* TÍTULO */}
+        <div className="space-y-2">
+          <label className="font-semibold">Título da capa</label>
+          <input
+            type="text"
+            className="w-full border rounded-lg p-3"
+            placeholder="Digite o título"
+            value={coverTitle}
+            onChange={(e) => setCoverTitle(e.target.value)}
+          />
+
+          <select
+            className="w-full border rounded-lg p-3"
+            onChange={(e) => setTitleFont(e.target.value)}
+          >
+            <option value="">Fonte do título</option>
+            {fontes.map((fonte) => (
+              <option key={fonte.id} value={fonte.id}>
+                {fonte.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* AUTOR */}
+        <div className="space-y-2">
+          <label className="font-semibold">Nome do autor(a)</label>
+          <input
+            type="text"
+            className="w-full border rounded-lg p-3"
+            placeholder="Digite o nome"
+            value={authorName}
+            onChange={(e) => setAuthorName(e.target.value)}
+          />
+
+          <select
+            className="w-full border rounded-lg p-3"
+            onChange={(e) => setAuthorFont(e.target.value)}
+          >
+            <option value="">Fonte do autor</option>
+            {fontes.map((fonte) => (
+              <option key={fonte.id} value={fonte.id}>
+                {fonte.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* DATA */}
+        <div className="space-y-2">
+          <label className="font-semibold">Data</label>
+          <select
+            className="w-full border rounded-lg p-3"
+            onChange={(e) =>
+              setDateType(e.target.value as "year" | "full")
+            }
+          >
+            <option value="year">Apenas o ano</option>
+            <option value="full">Data completa</option>
+          </select>
+        </div>
+
+        {/* BOTÃO */}
+        <div className="text-center pt-8">
           <button
             onClick={handleContinue}
-            disabled={!selected}
-            className={`
-              px-10 py-3 rounded-full font-semibold transition
-              ${selected
+            disabled={!isValid}
+            className={`px-10 py-3 rounded-full font-semibold transition ${
+              isValid
                 ? "bg-[var(--purple-dark)] text-white hover:opacity-90"
-                : "bg-zinc-300 text-zinc-500 cursor-not-allowed"}
-            `}
+                : "bg-zinc-300 text-zinc-500 cursor-not-allowed"
+            }`}
           >
             Continuar
           </button>
