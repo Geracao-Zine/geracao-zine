@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function CreatePage() {
@@ -18,7 +18,9 @@ export default function CreatePage() {
 	const [authorName, setAuthorName] = useState("");
 	const [authorFont, setAuthorFont] = useState("");
 	const [date, setDate] = useState(new Date());
-
+	useEffect(() => {
+		console.log("autor", authorName, "titulo", coverTitle, "páginas", pages, "data", date, "fonte título", titleFont, "fonte autor", authorFont);
+	}, [authorName, coverTitle, pages, date, titleFont, authorFont]);
 	const handleContinue = () => {
 		if (!pages || !coverTitle || !authorName) return;
 
@@ -31,7 +33,7 @@ export default function CreatePage() {
 			date: date.toISOString(),
 		});
 
-		router.push(`/editor?${params.toString()}`);
+		router.push(`/Editor?${params.toString()}`);
 	};
 
 	const isValid =
@@ -54,10 +56,24 @@ export default function CreatePage() {
 				<div className="space-y-2">
 					<label className="font-semibold">Quantidade de páginas</label>
 					<select
-						className="w-full border rounded-lg p-3"
+						value={pages ?? ""}
 						onChange={(e) => setPages(Number(e.target.value))}
+						className="
+							w-full 
+							bg-white dark:bg-zinc-900
+							text-zinc-900 dark:text-zinc-100
+							border border-zinc-300 dark:border-zinc-700
+							rounded-xl 
+							px-4 py-3
+							focus:outline-none 
+							focus:ring-2 
+							focus:ring-[var(--purple-dark)]
+							transition
+						"
 					>
-						<option value="">Selecione</option>
+						<option value="" className="text-zinc-400">
+							Selecione
+						</option>
 						{paginas.map((p) => (
 							<option key={p} value={p}>
 								{p} páginas
@@ -71,17 +87,42 @@ export default function CreatePage() {
 					<label className="font-semibold">Título da capa</label>
 					<input
 						type="text"
-						className="w-full border rounded-lg p-3"
+						className="
+							w-full
+							bg-white dark:bg-zinc-900
+							text-zinc-900 dark:text-zinc-100
+							border border-zinc-300 dark:border-zinc-700
+							rounded-xl
+							px-4 py-3
+							focus:outline-none
+							focus:ring-2
+							focus:ring-[var(--purple-dark)]
+							transition
+						"
 						placeholder="Digite o título"
 						value={coverTitle}
 						onChange={(e) => setCoverTitle(e.target.value)}
 					/>
 
 					<select
-						className="w-full border rounded-lg p-3"
+						value={titleFont}
 						onChange={(e) => setTitleFont(e.target.value)}
+						className="
+							w-full 
+							bg-white dark:bg-zinc-900
+							text-zinc-900 dark:text-zinc-100
+							border border-zinc-300 dark:border-zinc-700
+							rounded-xl 
+							px-4 py-3
+							focus:outline-none 
+							focus:ring-2 
+							focus:ring-[var(--purple-dark)]
+							transition
+						"
 					>
-						<option value="">Fonte do título</option>
+						<option value="" className="text-zinc-400">
+							Fonte do título
+						</option>
 						{fontes.map((fonte) => (
 							<option key={fonte.id} value={fonte.id}>
 								{fonte.name}
@@ -95,14 +136,36 @@ export default function CreatePage() {
 					<label className="font-semibold">Nome do autor(a)</label>
 					<input
 						type="text"
-						className="w-full border rounded-lg p-3"
+						className="
+							w-full
+							bg-white dark:bg-zinc-900
+							text-zinc-900 dark:text-zinc-100
+							border border-zinc-300 dark:border-zinc-700
+							rounded-xl
+							px-4 py-3
+							focus:outline-none
+							focus:ring-2
+							focus:ring-[var(--purple-dark)]
+							transition
+							"
 						placeholder="Digite o nome"
 						value={authorName}
 						onChange={(e) => setAuthorName(e.target.value)}
 					/>
 
 					<select
-						className="w-full border rounded-lg p-3"
+						className="
+							w-full
+							bg-white dark:bg-zinc-900
+							text-zinc-900 dark:text-zinc-100
+							border border-zinc-300 dark:border-zinc-700
+							rounded-xl
+							px-4 py-3
+							focus:outline-none
+							focus:ring-2
+							focus:ring-[var(--purple-dark)]
+							transition
+						"
 						onChange={(e) => setAuthorFont(e.target.value)}
 					>
 						<option value="">Fonte do autor</option>
@@ -119,7 +182,18 @@ export default function CreatePage() {
 					<label className="font-semibold">Data</label>
 					<input
 						type="date"
-						className="w-full border rounded-lg p-3"
+						className="
+							w-full
+							bg-white dark:bg-zinc-900
+							text-zinc-900 dark:text-zinc-100
+							border border-zinc-300 dark:border-zinc-700
+							rounded-xl
+							px-4 py-3
+							focus:outline-none
+							focus:ring-2
+							focus:ring-[var(--purple-dark)]
+							transition
+						"
 						onChange={(e) =>
 							setDate(new Date(e.target.value))
 						}
