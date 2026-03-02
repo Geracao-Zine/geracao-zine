@@ -1,26 +1,29 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import FontSelector from "@/components/FontSelector";
 
 export default function CreatePage() {
 	const router = useRouter();
 
 	const fontes = [
-		{ id: "font-sans", name: "Geist Sans" },
-		{ id: "font-mono", name: "Geist Mono" },
+		{ id: "geistSans", label: "Geist Sans", className: "font-sans" },
+		{ id: "geistMono", label: "Geist Mono", className: "font-mono" },
 	];
 
 	const paginas = [4, 8, 12, 16];
 
-	const [pages, setPages] = useState<number | null>(null);
+	const [pages, setPages] = useState<number>(8);
 	const [coverTitle, setCoverTitle] = useState("");
-	const [titleFont, setTitleFont] = useState("");
+	const [titleFont, setTitleFont] = useState("font-sans");
 	const [authorName, setAuthorName] = useState("");
-	const [authorFont, setAuthorFont] = useState("");
+	const [authorFont, setAuthorFont] = useState("font-mono");
 	const [date, setDate] = useState(new Date());
+
 	useEffect(() => {
 		console.log("autor", authorName, "titulo", coverTitle, "páginas", pages, "data", date, "fonte título", titleFont, "fonte autor", authorFont);
 	}, [authorName, coverTitle, pages, date, titleFont, authorFont]);
+
 	const handleContinue = () => {
 		if (!pages || !coverTitle || !authorName) return;
 
@@ -54,7 +57,7 @@ export default function CreatePage() {
 
 				{/* PÁGINAS */}
 				<div className="space-y-2">
-					<label className="font-semibold">Quantidade de páginas</label>
+					<label className="font-semibold">Quantidade de páginas (por folha A4)</label>
 					<select
 						value={pages ?? ""}
 						onChange={(e) => setPages(Number(e.target.value))}
@@ -104,31 +107,12 @@ export default function CreatePage() {
 						onChange={(e) => setCoverTitle(e.target.value)}
 					/>
 
-					<select
+					<FontSelector
+						label="Fonte do título"
 						value={titleFont}
-						onChange={(e) => setTitleFont(e.target.value)}
-						className="
-							w-full 
-							bg-white dark:bg-zinc-900
-							text-zinc-900 dark:text-zinc-100
-							border border-zinc-300 dark:border-zinc-700
-							rounded-xl 
-							px-4 py-3
-							focus:outline-none 
-							focus:ring-2 
-							focus:ring-[var(--purple-dark)]
-							transition
-						"
-					>
-						<option value="" className="text-zinc-400">
-							Fonte do título
-						</option>
-						{fontes.map((fonte) => (
-							<option key={fonte.id} value={fonte.id}>
-								{fonte.name}
-							</option>
-						))}
-					</select>
+						onChange={setTitleFont}
+						options={fontes}
+					/>
 				</div>
 
 				{/* AUTOR */}
@@ -153,28 +137,13 @@ export default function CreatePage() {
 						onChange={(e) => setAuthorName(e.target.value)}
 					/>
 
-					<select
-						className="
-							w-full
-							bg-white dark:bg-zinc-900
-							text-zinc-900 dark:text-zinc-100
-							border border-zinc-300 dark:border-zinc-700
-							rounded-xl
-							px-4 py-3
-							focus:outline-none
-							focus:ring-2
-							focus:ring-[var(--purple-dark)]
-							transition
-						"
-						onChange={(e) => setAuthorFont(e.target.value)}
-					>
-						<option value="">Fonte do autor</option>
-						{fontes.map((fonte) => (
-							<option key={fonte.id} value={fonte.id}>
-								{fonte.name}
-							</option>
-						))}
-					</select>
+					<FontSelector
+						label="Fonte do autor"
+						value={authorFont}
+						onChange={setAuthorFont}
+						options={fontes}
+					/>
+
 				</div>
 
 				{/* DATA */}
@@ -205,7 +174,7 @@ export default function CreatePage() {
 					<button
 						onClick={handleContinue}
 						disabled={!isValid}
-						className={`px-10 py-3 rounded-full font-semibold transition ${isValid
+						className={`px-10 py-3 cursor-pointer rounded-full font-semibold transition ${isValid
 							? "bg-[var(--purple-dark)] text-white hover:opacity-90"
 							: "bg-zinc-300 text-zinc-500 cursor-not-allowed"
 							}`}

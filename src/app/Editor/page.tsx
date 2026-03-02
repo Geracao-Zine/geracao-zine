@@ -4,6 +4,8 @@ import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import jsPDF from "jspdf";
 import { Suspense } from "react";
+import { concatTransformationMatrix, PDFDocument, popGraphicsState, pushGraphicsState, rgb, StandardFonts } from 'pdf-lib';
+import html2canvas from "html2canvas";
 
 type PageContent = {
 	title: string;
@@ -76,19 +78,142 @@ function EditorPage() {
 		});
 	};
 
+	const generatePdfSinglePage = async () => {
+		const pdfDoc = await PDFDocument.create();
 
-	const downloadZine = () => {
-		const doc = new jsPDF({
-			orientation: "landscape",
-			unit: "mm",
-			format: "a4",
+		const pageWidth = 842;   // A4 landscape
+		const pageHeight = 595;
+		const margin = 10;
+
+		const pdfPage = pdfDoc.addPage([pageWidth, pageHeight]);
+
+		const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+		// Todas as páginas internas (exceto capa)
+		const internalPages = pageList
+			.filter((n) => n !== 1)
+			.map((n) => content[n] || { title: "", poetry: "" });
+
+		// Garantir exatamente 8 páginas (preenchendo vazio se necessário)
+		while (internalPages.length < 8) internalPages.push({ title: "", poetry: "" });
+
+		const blockWidth = pageWidth / 4;
+		const blockHeight = pageHeight / 2;
+
+		internalPages.forEach((data, index) => {
+			const col = index % 4;
+			const row = Math.floor(index / 4);
+
+			const offsetX = col * blockWidth;
+			const offsetY = pageHeight - (row + 1) * blockHeight;
+
+			const innerX = offsetX + margin;
+			const innerY = offsetY + margin;
+			const innerWidth = blockWidth - margin * 2;
+			const innerHeight = blockHeight - margin * 2;
+
+			// Borda
+			pdfPage.drawRectangle({
+				x: innerX,
+				y: innerY,
+				width: innerWidth,
+				height: innerHeight,
+				borderColor: rgb(0.7, 0.7, 0.7),
+				borderWidth: 1,
+			});
+
+			const padding = 16;
+			const isTopRow = row === 0;
+
+			if (isTopRow) {
+				// 🔄 Linha de cima: invertida 180°
+				// Ponto de pivô: centro do bloco
+				const cx = offsetX + blockWidth / 2;
+				const cy = offsetY + blockHeight / 2;
+
+				pdfPage.pushOperators(
+					pushGraphicsState(),
+					// Translada para o centro, rotaciona 180°, volta
+					concatTransformationMatrix(-1, 0, 0, -1, cx * 2, cy * 2),
+				);
+
+				// Título (invertido)
+				pdfPage.drawText(data.title || "", {
+					x: innerX + padding,
+					y: innerY + innerHeight - padding - 14, // começa do topo do bloco
+					size: 14,
+					font,
+					maxWidth: innerWidth - padding * 2,
+					lineHeight: 16,
+				});
+
+				// Poesia (invertida)
+				pdfPage.drawText(data.poetry || "", {
+					x: innerX + padding,
+					y: innerY + innerHeight - padding - 14 - 25,
+					size: 10,
+					font,
+					maxWidth: innerWidth - padding * 2,
+					lineHeight: 12,
+				});
+
+				pdfPage.pushOperators(popGraphicsState());
+
+			} else {
+				// Linha de baixo: normal
+				let cursorY = innerY + innerHeight - padding - 14;
+
+				// Título com padding
+				pdfPage.drawText(data.title || "", {
+					x: innerX + padding,
+					y: cursorY,
+					size: 14,
+					font,
+					maxWidth: innerWidth - padding * 2,
+					lineHeight: 16,
+				});
+
+				cursorY -= 25;
+
+				// Poesia
+				pdfPage.drawText(data.poetry || "", {
+					x: innerX + padding,
+					y: cursorY,
+					size: 10,
+					font,
+					maxWidth: innerWidth - padding * 2,
+					lineHeight: 12,
+				});
+			}
 		});
 
-		const pageWidth = 148; // metade do A4 paisagem
-		// const pageHeight = 210;
-		const margin = 15;
+		const pdfBytes = await pdfDoc.save();
+		downloadBlob(pdfBytes, "zine-8paginas-uma-pagina.pdf");
+	};
 
-		// Organiza todas as páginas
+	const downloadBlob = (bytes: Uint8Array, filename: string) => {
+		const blob = new Blob([bytes], { type: "application/pdf" });
+		const url = URL.createObjectURL(blob);
+
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = filename;
+		a.click();
+
+		URL.revokeObjectURL(url);
+	};
+
+	const generatePdf = async () => {
+		const pdfDoc = await PDFDocument.create();
+
+		// A4 landscape em pontos (pdf-lib usa pontos)
+		const pageWidth = 842;   // A4 landscape width
+		const pageHeight = 595;  // A4 landscape height
+		const halfWidth = pageWidth / 2;
+
+		const margin = 40;
+
+		// Organizar páginas
 		let allPages: { title: string; poetry: string }[] = [];
 
 		// Capa
@@ -100,6 +225,7 @@ function EditorPage() {
 		// Internas
 		pageList.forEach((pageNumber) => {
 			if (pageNumber === 1) return;
+
 			const pageData = content[pageNumber];
 			allPages.push({
 				title: pageData?.title || "",
@@ -107,33 +233,45 @@ function EditorPage() {
 			});
 		});
 
-		// 🔹 Garante múltiplo de 4
+		// Garantir múltiplo de 4
 		while (allPages.length % 4 !== 0) {
 			allPages.push({ title: "", poetry: "" });
 		}
 
 		const total = allPages.length;
 
-		// 🔹 Função para desenhar uma página
-		const drawPage = (
+		// Fonte padrão (por enquanto)
+		const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+		const drawHalfPage = (
+			page: any,
 			data: { title: string; poetry: string },
 			offsetX: number
 		) => {
-			doc.setFontSize(16);
-			doc.text(data.title || "", offsetX + margin, 40);
+			let cursorY = pageHeight - margin;
 
-			doc.setFontSize(12);
-			const split = doc.splitTextToSize(
-				data.poetry || "",
-				pageWidth - margin * 2
-			);
+			page.drawText(data.title || "", {
+				x: offsetX + margin,
+				y: cursorY,
+				size: 18,
+				font,
+			});
 
-			doc.text(split, offsetX + margin, 55);
+			cursorY -= 30;
+
+			page.drawText(data.poetry || "", {
+				x: offsetX + margin,
+				y: cursorY,
+				size: 12,
+				font,
+				maxWidth: halfWidth - margin * 2,
+				lineHeight: 16,
+			});
 		};
 
-		// IMPOSIÇÃO DE PÁGINAS (ordem correta)
+		// IMPOSIÇÃO
 		for (let i = 0; i < total / 2; i++) {
-			if (i > 0) doc.addPage();
+			const page = pdfDoc.addPage([pageWidth, pageHeight]);
 
 			let leftIndex, rightIndex;
 
@@ -145,11 +283,12 @@ function EditorPage() {
 				rightIndex = total - 1 - i;
 			}
 
-			drawPage(allPages[leftIndex], 0);
-			drawPage(allPages[rightIndex], pageWidth);
+			drawHalfPage(page, allPages[leftIndex], 0);
+			drawHalfPage(page, allPages[rightIndex], halfWidth);
 		}
 
-		doc.save("zine-impressao.pdf");
+		const pdfBytes = await pdfDoc.save();
+		downloadBlob(pdfBytes, "zine-impressao.pdf");
 	};
 
 	return (
@@ -278,7 +417,7 @@ function EditorPage() {
 						➕ Adicionar Página
 					</button>
 					<button
-						onClick={downloadZine}
+						onClick={generatePdfSinglePage}
 						className="bg-green-600 text-white px-6 py-2 rounded-full hover:opacity-90 transition"
 					>
 						Baixar Zine (PDF)
@@ -293,9 +432,9 @@ function EditorPage() {
 
 
 export default function EditorPageWrapper() {
-  return (
-    <Suspense fallback={<div>Carregando editor...</div>}>
-      <EditorPage />
-    </Suspense>
-  );
+	return (
+		<Suspense fallback={<div>Carregando editor...</div>}>
+			<EditorPage />
+		</Suspense>
+	);
 }
