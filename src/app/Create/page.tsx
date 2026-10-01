@@ -13,34 +13,29 @@ export default function CreatePage() {
 
 	const paginas = [4, 8, 12, 16];
 
-	const [pages, setPages] = useState<number>(8);
 	const [coverTitle, setCoverTitle] = useState("");
 	const [titleFont, setTitleFont] = useState("font-sans");
 	const [authorName, setAuthorName] = useState("");
 	const [authorFont, setAuthorFont] = useState("font-mono");
-	const [date, setDate] = useState(new Date());
 
 	useEffect(() => {
-		console.log("autor", authorName, "titulo", coverTitle, "páginas", pages, "data", date, "fonte título", titleFont, "fonte autor", authorFont);
-	}, [authorName, coverTitle, pages, date, titleFont, authorFont]);
+		console.log("autor", authorName, "titulo", coverTitle, "páginas", "fonte título", titleFont, "fonte autor", authorFont);
+	}, [authorName, coverTitle, titleFont, authorFont]);
 
 	const handleContinue = () => {
-		if (!pages || !coverTitle || !authorName) return;
+		if (!coverTitle || !authorName) return;
 
 		const params = new URLSearchParams({
-			pages: String(pages),
 			coverTitle,
 			titleFont,
 			authorName,
-			authorFont,
-			date: date.toISOString(),
+			authorFont
 		});
 
 		router.push(`/Editor?${params.toString()}`);
 	};
 
-	const isValid =
-		pages && coverTitle && authorName && titleFont && authorFont;
+	const isValid = coverTitle && authorName && titleFont && authorFont;
 
 	return (
 		<main className="min-h-screen pt-[var(--navbar-height)] bg-[var(--background)] text-[var(--foreground)]">
@@ -55,7 +50,7 @@ export default function CreatePage() {
 					</p>
 				</div>
 
-				{/* PÁGINAS */}
+				{/* PÁGINAS
 				<div className="space-y-2">
 					<label className="font-semibold">Quantidade de páginas (por folha A4)</label>
 					<select
@@ -83,7 +78,7 @@ export default function CreatePage() {
 							</option>
 						))}
 					</select>
-				</div>
+				</div> */}
 
 				{/* TÍTULO */}
 				<div className="space-y-2">
@@ -144,29 +139,6 @@ export default function CreatePage() {
 						options={fontes}
 					/>
 
-				</div>
-
-				{/* DATA */}
-				<div className="space-y-2">
-					<label className="font-semibold">Data</label>
-					<input
-						type="date"
-						className="
-							w-full
-							bg-white dark:bg-zinc-900
-							text-zinc-900 dark:text-zinc-100
-							border border-zinc-300 dark:border-zinc-700
-							rounded-xl
-							px-4 py-3
-							focus:outline-none
-							focus:ring-2
-							focus:ring-[var(--purple-dark)]
-							transition
-						"
-						onChange={(e) =>
-							setDate(new Date(e.target.value))
-						}
-					/>
 				</div>
 
 				{/* BOTÃO */}

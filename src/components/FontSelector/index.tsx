@@ -33,13 +33,13 @@ export default function FontSelector({
 							type="button"
 							onClick={() => onChange(font.id)}
 							className={`
-                text-left px-4 py-3 rounded-xl border transition
-                ${font.className}
-                ${selected
+								text-left px-4 py-3 rounded-xl border transition
+								${font.className}
+								${selected
 									? "border-purple-600 bg-purple-50 dark:bg-zinc-800"
 									: "border-zinc-300 dark:border-zinc-700"
 								}
-              `}
+              				`}
 						>
 							<div className="text-lg">
 								{font.label}
