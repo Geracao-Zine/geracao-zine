@@ -54,7 +54,7 @@ Telas de Biblioteca (`/Library`) e Apoio (`/Support`) são placeholders.
 
 ## Requisitos
 
-- Node.js 24 LTS (recomendado) e npm 11 ou superior
+- Node.js 24 LTS e npm 11 ou superior. A versão está fixada em [`.nvmrc`](./.nvmrc); o `package.json` declara `engines.node` como `>=22`.
 - Git
 
 ## Como rodar
@@ -62,6 +62,7 @@ Telas de Biblioteca (`/Library`) e Apoio (`/Support`) são placeholders.
 ```bash
 git clone https://github.com/Geracao-Zine/geracao-zine.git
 cd geracao-zine
+nvm use   # opcional: seleciona a versão do .nvmrc
 npm install
 npm run dev
 ```
