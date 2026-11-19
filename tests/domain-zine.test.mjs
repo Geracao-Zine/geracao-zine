@@ -10,7 +10,7 @@ import {
 	setPoemField,
 	poemPages,
 	coverOf,
-} from "../src/lib/zine-pages.ts";
+} from "../src/domain/zine.ts";
 
 test("o documento comeca com uma capa tipada e uma pagina de poema", () => {
 	const doc = createDoc();
@@ -110,5 +110,5 @@ test("Editor page nao usa mais o modelo de numeros paralelos", () => {
 		assert.ok(!source.includes(legacy), `${legacy} deveria ter sido removido`);
 	}
 
-	assert.ok(source.includes("@/lib/zine-pages"), "o Editor deve consumir o modelo");
+	assert.ok(source.includes("@/domain"), "o Editor deve consumir o modelo");
 });

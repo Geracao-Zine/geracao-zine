@@ -84,3 +84,7 @@ export function coverOf(doc: ZineDoc): CoverPage | undefined {
 export function poemPages(doc: ZineDoc): PoemPage[] {
 	return doc.pages.filter((page): page is PoemPage => page.kind === "poem");
 }
+
+export function positionOf(doc: ZineDoc, id: string): number {
+	return poemPages(doc).findIndex((poem) => poem.id === id) + 1;
+}

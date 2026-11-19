@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import FontSelector from "@/components/FontSelector";
 import type { FontId } from "@/lib/fonts";
 import { DEFAULT_FONT_ID, FONTS } from "@/lib/fonts";
+import { isCoverComplete } from "@/domain";
 
 export default function CreatePage(): JSX.Element {
 	const router = useRouter();
@@ -33,7 +34,7 @@ export default function CreatePage(): JSX.Element {
 		router.push(`/Editor?${params.toString()}`);
 	};
 
-	const isValid = coverTitle && authorName && titleFont && authorFont;
+	const isValid = isCoverComplete({ title: coverTitle, author: authorName, titleFont, authorFont });
 
 	return (
 		<main className="min-h-screen pt-[var(--navbar-height)] bg-[var(--background)] text-[var(--foreground)]">

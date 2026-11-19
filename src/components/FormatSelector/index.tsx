@@ -1,38 +1,9 @@
 "use client";
 
-export type ZineFormat = "mini-zine" | "saddle-stitch" | "reading";
+import type { ZineFormat } from "@/domain";
+import { FORMAT_OPTIONS } from "@/domain";
 
-type FormatOption = {
-	id: ZineFormat;
-	label: string;
-	description: string;
-	badge: string;
-	available: boolean;
-};
-
-const options: FormatOption[] = [
-	{
-		id: "reading",
-		label: "Só pra ler",
-		description: "Uma página por poema, sem dobra. Ideal pra tela ou impressão simples.",
-		badge: "Disponível",
-		available: true,
-	},
-	{
-		id: "mini-zine",
-		label: "Minizine de 1 folha",
-		description: "Uma única folha A4, dobrada e cortada ao meio. Vira um livrinho de 8 páginas.",
-		badge: "Em breve",
-		available: false,
-	},
-	{
-		id: "saddle-stitch",
-		label: "Fanzine grampeado",
-		description: "Várias folhas dobradas e grampeadas na lombada, crescendo em múltiplos de 4.",
-		badge: "Em breve",
-		available: false,
-	},
-];
+export type { ZineFormat };
 
 function FormatDiagram({ format }: { format: ZineFormat }) {
 	if (format === "mini-zine") {
@@ -78,7 +49,7 @@ export function FormatSelector({
 }) {
 	return (
 		<div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-			{options.map((opt) => {
+			{FORMAT_OPTIONS.map((opt) => {
 				const selected = value === opt.id;
 				return (
 					<button
