@@ -37,7 +37,7 @@ export default function CreatePage(): JSX.Element {
 	const isValid = isCoverComplete({ title: coverTitle, author: authorName, titleFont, authorFont });
 
 	return (
-		<main className="min-h-screen pt-[var(--navbar-height)] bg-[var(--background)] text-[var(--foreground)]">
+		<main className="min-h-[calc(100vh-var(--navbar-height))] bg-[var(--background)] text-[var(--foreground)]">
 			<section className="max-w-3xl mx-auto px-6 py-20 space-y-12">
 
 				<div className="text-center">

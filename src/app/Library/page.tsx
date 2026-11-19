@@ -1,6 +1,6 @@
 export default function LibraryPage() {
   return (
-    <main className="min-h-screen pt-[var(--navbar-height)] bg-[var(--background)] text-[var(--foreground)]">
+    <main className="min-h-[calc(100vh-var(--navbar-height))] bg-[var(--background)] text-[var(--foreground)]">
       <section className="max-w-6xl mx-auto px-6 py-20">
 
         <div className="text-center mb-16">

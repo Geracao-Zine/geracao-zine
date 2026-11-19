@@ -3,10 +3,10 @@ import logo from "@/assets/GeraçãoZine.png";
 
 export default function HomePage() {
 	return (
-		<main className="min-h-screen pt-[var(--navbar-height)] bg-[var(--background)] text-[var(--foreground)]">
+		<main className="min-h-[calc(100vh-var(--navbar-height))] bg-[var(--background)] text-[var(--foreground)]">
 
 			{/* HERO */}
-			<section className="min-h-screen max-w-6xl mx-auto text-center">
+			<section className="min-h-[calc(100vh-var(--navbar-height))] max-w-6xl mx-auto text-center">
 
 				<div className="grid grid-cols-1 md:grid-cols-[1fr_auto] items-center mb-8">
 					{/* LOGO */}

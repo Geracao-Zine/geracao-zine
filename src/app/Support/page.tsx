@@ -1,6 +1,6 @@
 export default function SupportPage() {
   return (
-    <main className="min-h-screen pt-[var(--navbar-height)] bg-[var(--background)] text-[var(--foreground)]">
+    <main className="min-h-[calc(100vh-var(--navbar-height))] bg-[var(--background)] text-[var(--foreground)]">
       <section className="max-w-4xl mx-auto px-6 py-20 text-center">
 
         <h1 className="text-4xl md:text-5xl font-bold mb-6">

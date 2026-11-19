@@ -30,7 +30,7 @@ export default function RootLayout({
 			>
 				<main className="w-full flex flex-col">
 					<Navbar />
-					<div className=" mt-14">
+					<div className="pt-[var(--navbar-height)]">
 						{children}
 					</div>
 				</main>

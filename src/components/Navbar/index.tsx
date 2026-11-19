@@ -10,10 +10,26 @@ const Navbar: React.FC = () => {
 	const [isOpen, setIsOpen] = useState(false);
 
 	useEffect(() => {
-		if (!navRef.current) return;
-		const height = navRef.current.offsetHeight;
-		document.documentElement.style.setProperty("--navbar-height", `${height}px`);
-	}, []);
+		const el = navRef.current;
+		if (!el) return;
+
+		const aplicar = (): void => {
+			// com o menu aberto o header encolhe, mas o overlay cobre a tela:
+			// manter a altura do estado fechado evita o conteudo saltar
+			if (isOpen) return;
+			document.documentElement.style.setProperty(
+				"--navbar-height",
+				`${el.offsetHeight}px`,
+			);
+		};
+
+		aplicar();
+
+		// zoom, fonte base maior ou reflow mudam a altura depois do mount
+		const observador = new ResizeObserver(aplicar);
+		observador.observe(el);
+		return () => observador.disconnect();
+	}, [isOpen]);
 
 	return (
 		<header
