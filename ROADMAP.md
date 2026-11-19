@@ -103,7 +103,7 @@ Objetivo: zerar os defeitos conhecidos e evitar regressão.
 - [ ] 3.4 Reescrever o modelo de dados do editor para eliminar B9 e B10: uma lista única e estável de páginas com `id`, sendo a capa um item tipado, não um índice mágico.
 - [ ] 3.5 Corrigir B11: palavra maior que a largura máxima deve ser quebrada por caractere.
 - [ ] 3.6 Corrigir B12: transbordo de poema deve ser controlado (ver Fase 6, ajuste automático de fonte) e, quando ainda assim estourar, gerar continuação identificada.
-- [ ] 3.7 Corrigir B13 (altura da navbar via variável, sem `mt-14` fixo) e B14 (fonte do `body`).
+- [x] 3.7 Corrigir B13 (altura da navbar via variável, sem `mt-14` fixo) e B14 (fonte do `body`). Feito em #16.
 - [ ] 3.8 Corrigir B8: a fonte escolhida no cadastro deve valer no preview e no PDF (embutir a fonte no PDF).
 - [ ] 3.9 Corrigir B7: data opcional, editável e persistida.
 - [ ] 3.10 Revisar estados vazios: nenhuma página, título em branco, texto só com espaços, caractere especial e acentuação no PDF.
@@ -258,12 +258,12 @@ Para pedir uma segunda tentativa em uma issue já processada, remova e reaplique
 |---|---|---|
 | 1 — Node e dependências | #3, #4, #5, #6 | #3 e #4 entregues; #5 na fila; #6 bloqueada por #5 |
 | 2 — Docker e VPS | #7, #8, #9 | #7 na fila; #8 e #9 bloqueadas em cadeia |
-| 3 — Bugs | #10, #11, #12, #13, #14, #15, #16 | #10, #11, #12, #13 e #15 entregues; #14 e #16 na fila |
+| 3 — Bugs | #10, #11, #12, #13, #14, #15, #16 | #10, #11, #12, #13, #15 e #16 entregues; #14 na fila |
 | 4 — Otimização | #17, #18 | #17 entregue; #18 fechada (o problema não existia) |
 | 5 — Padronização | #19, #20, #21 | #20 entregue; #19 na fila; #21 destravada |
 | 6 — Fluxo e diagramação | #22 a #29 | #22 destravada; #23 a #29 seguem em cadeia |
 
-Fechadas: #3 (lint), #4 (versão do Node), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas).
+Fechadas: #3 (lint), #4 (versão do Node), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas), #16 (navbar e fonte do body).
 
 ### Fila de execução
 
@@ -271,14 +271,13 @@ As issues abaixo já têm todas as dependências fechadas e receberam `next-up`.
 
 | Ordem | Issue | Assunto | Arquivos |
 |---|---|---|---|
-| 1 | #16 | Altura da navbar e fonte do body | `src/app/layout.tsx`, `globals.css`, `Navbar/index.tsx` |
-| 2 | #14 | Data opcional e editável | `src/app/Create/page.tsx`, `src/hooks/useZineEditor.ts`, `src/domain/cover.ts` |
-| 3 | #7 | Dockerfile multi-stage | `next.config.ts`, `Dockerfile` |
-| 4 | #5 | Dependências e vulnerabilidades | `package.json`, `package-lock.json` |
-| 5 | #21 | Constantes de diagramação | `src/domain/`, `src/lib/pdf/` |
-| 6 | #19 | Regras de lint (`semi`, sem `any`) | `eslint.config.mjs` e todo o `src/` |
+| 1 | #14 | Data opcional e editável | `src/app/Create/page.tsx`, `src/hooks/useZineEditor.ts`, `src/domain/cover.ts` |
+| 2 | #7 | Dockerfile multi-stage | `next.config.ts`, `Dockerfile` |
+| 3 | #5 | Dependências e vulnerabilidades | `package.json`, `package-lock.json` |
+| 4 | #21 | Constantes de diagramação | `src/domain/`, `src/lib/pdf/` |
+| 5 | #19 | Regras de lint (`semi`, sem `any`) | `eslint.config.mjs` e todo o `src/` |
 
-A #16 vem primeiro porque só toca `layout.tsx`, `globals.css` e a navbar — não encosta em nada que a #20 acabou de mover.
+A #16 (feita) ficou antes de tudo porque só tocava `layout.tsx`, `globals.css` e a navbar — não encostava em nada que a #20 acabou de mover.
 
 A #14 agora mexe em três camadas em vez de duas: a data deixa de ser `useState` dentro do editor e passa a viver no domínio da capa, com o hook e a página consumindo. Como a #20 acabou de definir essa divisão, fazer a #14 logo depois evita reaprender o mapa dos arquivos.
 
@@ -297,11 +296,11 @@ FECHADAS
   #10 navbar ──> #16 navbar/body
   #17 pdf dinamico
   #20 camadas  (dependia de #17)
+  #16 navbar/body
 
 ABERTAS
   #5 ──> #6
   #7 ──> #8 ──> #9
-  #16
   #14
   #19 regras lint  (por ultimo: reformata todo o src)
   #20 ──> #21 constantes
@@ -322,7 +321,7 @@ A #18 saiu do grafo: a medição de texto nunca rodou a cada tecla, então não 
 
 ### Ordem prática de trabalho
 
-1. **Agora:** #16, #14, #7 — sem dependências entre si.
+1. **Agora:** #14, #7 — sem dependências entre si. (#16 feita.)
 2. **Depois de #7:** #8 → #9 (infraestrutura).
 3. **Depois de #5:** #6 (só remove o `jspdf`).
 4. **Depois de #20 (feita):** #21 constantes e #22 fluxo em etapas.
