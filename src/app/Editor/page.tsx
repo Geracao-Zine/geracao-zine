@@ -5,10 +5,10 @@ import { useMemo, useState } from "react";
 import type { JSX } from "react";
 import { Suspense } from "react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import type { PDFFont } from "pdf-lib";
 import { FormatSelector, ZineFormat } from "@/components/FormatSelector";
 import type { PoemField, ZineDoc } from "@/lib/zine-pages";
 import { addPage, createDoc, poemPages, removePage, setPoemField } from "@/lib/zine-pages";
+import { wrapText } from "@/lib/wrap-text";
 
 function EditorPage(): JSX.Element {
 	const searchParams = useSearchParams();
@@ -57,37 +57,6 @@ function EditorPage(): JSX.Element {
 
 		URL.revokeObjectURL(url);
 	};
-
-	// ✅ ÚNICO FORMATO ATIVO: geração simples, uma página por poema// Helper: quebra texto respeitando \n explícitos e o maxWidth
-	function wrapText(text: string, font: PDFFont, fontSize: number, maxWidth: number): string[] {
-		const paragraphs = text.split("\n");
-		const lines: string[] = [];
-
-		paragraphs.forEach((para) => {
-			if (para.trim() === "") {
-				lines.push("");
-				return;
-			}
-			const words = para.split(" ");
-			let currentLine = "";
-
-			words.forEach((word) => {
-				const testLine = currentLine ? `${currentLine} ${word}` : word;
-				const width = font.widthOfTextAtSize(testLine, fontSize);
-
-				if (width > maxWidth && currentLine) {
-					lines.push(currentLine);
-					currentLine = word;
-				} else {
-					currentLine = testLine;
-				}
-			});
-
-			if (currentLine) lines.push(currentLine);
-		});
-
-		return lines;
-	}
 
 	const generatePdfReading = async (): Promise<void> => {
 		const pdfDoc = await PDFDocument.create();
