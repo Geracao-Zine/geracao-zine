@@ -13,6 +13,7 @@ Plataforma web para criadores independentes transformarem poesias e textos autor
 - [Estrutura](#estrutura)
 - [Fluxo do produto](#fluxo-do-produto)
 - [Convenções de código](#convenções-de-código)
+- [Deploy em VPS com Nginx e TLS](#deploy-em-vps-com-nginx-e-tls)
 - [Roadmap](#roadmap)
 - [Contribuindo](#contribuindo)
 - [Licença](#licença)
@@ -153,6 +154,230 @@ Os templates com imposição implementada e os que estão em desenvolvimento sã
 - Uma responsabilidade por arquivo: regra de negócio não mora em componente de tela.
 - Constantes de diagramação (medidas A4, margens, corpos de fonte) centralizadas, sem números mágicos.
 - Nomes em português para o domínio do produto e em inglês para infraestrutura e APIs.
+
+## Deploy em VPS com Nginx e TLS
+
+O roteiro abaixo publica a aplicação em um domínio próprio, com HTTPS. Ele assume Ubuntu 22.04 ou 24.04 e acesso root por SSH.
+
+### Requisitos da VPS
+
+- 1 vCPU e 1 GB de RAM no mínimo. O build do Next consome cerca de 1 GB; em máquinas menores, adicione swap.
+- 10 GB de disco.
+- Um domínio com registro DNS do tipo `A` apontando para o IP da VPS. O certificado só é emitido depois que o DNS propaga.
+- Portas 80 e 443 liberadas no firewall.
+
+### 1. Instalar o Docker
+
+```bash
+apt update
+apt install -y ca-certificates curl git
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+chmod a+r /etc/apt/keyrings/docker.asc
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" \
+  > /etc/apt/sources.list.d/docker.list
+apt update
+apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+Confira com `docker compose version`. Os comandos seguintes não usam `sudo`; se o seu usuário não estiver no grupo `docker`, prefixe cada um com `sudo`.
+
+### 2. Clonar o repositório
+
+```bash
+git clone https://github.com/Geracao-Zine/geracao-zine.git /opt/geracao-zine
+cd /opt/geracao-zine
+```
+
+### 3. Configurar a porta
+
+```bash
+cp .env.example .env
+```
+
+O `.env.example` traz só `APP_PORT`, que é a porta publicada no host. O container sempre escuta na 3000. Para publicar direto na 80 e deixar o Nginx cuidando do TLS, use `APP_PORT=80`:
+
+```bash
+sed -i 's/^APP_PORT=.*/APP_PORT=80/' .env
+```
+
+O `.env` não vai para o repositório; o `.gitignore` cobre `.env*` e abre exceção apenas para o `.env.example`.
+
+### 4. Subir a aplicação
+
+```bash
+docker compose up -d --build
+docker compose ps
+```
+
+O `docker-compose.yml` já declara `restart: unless-stopped` e um healthcheck em `/`. Acompanhe até o estado virar `healthy`:
+
+```bash
+watch -n 2 'docker compose ps'
+```
+
+Teste localmente antes de envolver o Nginx:
+
+```bash
+curl -I http://127.0.0.1/
+```
+
+Um `200` aqui significa que a aplicação está no ar e o problema, se houver, é no proxy.
+
+### 5. Nginx como proxy reverso
+
+```bash
+apt install -y nginx
+```
+
+Crie `/etc/nginx/sites-available/geracao-zine`:
+
+```nginx
+server {
+    listen 80;
+    listen [::]:80;
+    server_name zine.exemplo.com;
+
+    # O Next ja envia Cache-Control imutavel para estes arquivos, que tem hash
+    # no nome. Nao repita o add_header aqui: ele duplicaria o cabecalho.
+    location /_next/static/ {
+        proxy_pass http://127.0.0.1:80;
+        proxy_cache_valid 200 365d;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:80;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 60s;
+    }
+}
+```
+
+Troque `zine.exemplo.com` pelo seu domínio. Se você não mudou o `APP_PORT`, use `proxy_pass http://127.0.0.1:3000;` nos dois `location`.
+
+Ative o site e recarregue:
+
+```bash
+ln -s /etc/nginx/sites-available/geracao-zine /etc/nginx/sites-enabled/
+rm -f /etc/nginx/sites-enabled/default
+nginx -t
+systemctl reload nginx
+```
+
+O `nginx -t` precisa dizer `syntax is ok` e `test is successful` antes do reload.
+
+### 6. Certificado com Let's Encrypt
+
+```bash
+apt install -y certbot python3-certbot-nginx
+certbot --nginx -d zine.exemplo.com --redirect --agree-tos -m voce@exemplo.com
+```
+
+O `--redirect` faz o certbot acrescentar o redirecionamento de 80 para 443. Ele reescreve o arquivo do site, então confira o resultado depois:
+
+```bash
+nginx -t && systemctl reload nginx
+curl -I https://zine.exemplo.com/
+```
+
+A renovação é automática: o pacote instala um timer do systemd. Verifique com:
+
+```bash
+systemctl list-timers | grep certbot
+certbot renew --dry-run
+```
+
+O `--dry-run` testa a renovação sem consumir cota do Let's Encrypt. Rode-o uma vez após a instalação.
+
+### 7. Headers de segurança
+
+Crie `/etc/nginx/snippets/security-headers.conf`:
+
+```nginx
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-Frame-Options "SAMEORIGIN" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+```
+
+Inclua o snippet dentro do bloco `server` que escuta na 443, antes dos `location`:
+
+```nginx
+include /etc/nginx/snippets/security-headers.conf;
+```
+
+Duas ressalvas que costumam morder:
+
+- `add_header` não é herdado por blocos `location` que declarem `add_header` próprio. Se um dia você adicionar um `add_header` dentro de um `location`, os headers do `server` deixam de valer ali e precisam ser repetidos.
+- Só habilite o `Strict-Transport-Security` quando o HTTPS estiver estável. Ele faz o navegador recusar HTTP por um ano.
+
+### 8. Atualizar
+
+```bash
+cd /opt/geracao-zine
+git pull
+docker compose up -d --build
+docker compose ps
+```
+
+O `up -d --build` reconstrói a imagem e recria o container. Como o healthcheck existe, `docker compose ps` mostra `healthy` quando a nova versão respondeu de fato.
+
+Para conferir que a versão no ar é a esperada:
+
+```bash
+git log -1 --format='%h %s'
+curl -sI https://zine.exemplo.com/ | head -1
+```
+
+### 9. Rollback
+
+O rollback volta o código para o commit anterior e reconstrói:
+
+```bash
+cd /opt/geracao-zine
+git log --oneline -5          # identifique o commit bom
+git checkout <commit>          # ex.: 216c092
+docker compose up -d --build
+docker compose ps
+```
+
+Depois de estabilizar, volte para a linha principal:
+
+```bash
+git checkout master
+```
+
+Se você preferir não depender do histórico do git, marque a imagem antes de cada atualização e volte para ela:
+
+```bash
+# antes de atualizar
+docker tag geracao-zine:latest geracao-zine:anterior
+
+# para voltar
+docker compose down
+docker tag geracao-zine:anterior geracao-zine:latest
+docker compose up -d
+```
+
+O segundo caminho não recompila nada e volta em segundos; ele depende de a tag ter sido criada antes da atualização.
+
+### Problemas comuns
+
+| Sintoma | Causa provável |
+|---|---|
+| `curl 127.0.0.1` recusa conexão | Container não subiu: veja `docker compose logs app`. |
+| Container reinicia em loop | Build falhou ou falta memória. Confira `docker compose logs` e adicione swap. |
+| Nginx devolve 502 | A porta do `proxy_pass` não bate com o `APP_PORT` do `.env`. |
+| Certbot falha na validação | O DNS ainda não aponta para a VPS, ou a porta 80 está bloqueada. |
+| HTTPS funciona, HTTP não redireciona | O `--redirect` não foi aplicado; rode o certbot de novo. |
+| Site abre sem estilo | `/_next/static/` não está sendo servido; confira o `location` do proxy. |
 
 ## Roadmap
 

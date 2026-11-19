@@ -258,17 +258,17 @@ Para pedir uma segunda tentativa em uma issue já processada, remova e reaplique
 | Fase | Issues | Situação |
 |---|---|---|
 | 1 — Node e dependências | #3, #4, #5, #6 | fase concluída: #3, #4, #5 e #6 entregues |
-| 2 — Docker e VPS | #7, #8, #9 | #7 e #8 entregues; #9 liberada |
+| 2 — Docker e VPS | #7, #8, #9 | fase concluída: #7, #8 e #9 entregues |
 | 3 — Bugs | #10, #11, #12, #13, #14, #15, #16 | #10, #11, #12, #13, #14, #15 e #16 entregues |
 | 4 — Otimização | #17, #18 | #17 entregue; #18 fechada (o problema não existia) |
 | 5 — Padronização | #19, #20, #21 | fase concluída: #19, #20 e #21 entregues |
 | 6 — Fluxo e diagramação | #22 a #29 | #22 destravada; #23 a #29 seguem em cadeia |
 
-Fechadas: #3 (lint), #4 (versão do Node), #5 (dependências e audit), #6 (`jspdf` removido), #21 (constantes de diagramação), #19 (regras de lint), #7 (Dockerfile multi-stage), #8 (docker-compose e `.env.example`), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas), #16 (navbar e fonte do body).
+Fechadas: #3 (lint), #4 (versão do Node), #5 (dependências e audit), #6 (`jspdf` removido), #21 (constantes de diagramação), #19 (regras de lint), #9 (deploy em VPS), #7 (Dockerfile multi-stage), #8 (docker-compose e `.env.example`), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas), #16 (navbar e fonte do body).
 
 ### Fila de execução
 
-**Vazia.** Todas as issues que chegaram a receber `next-up` foram fechadas, na ordem #8 → #6 → #21 → #19. A ordem foi escolhida para evitar conflito de merge, já que cada uma mexe em arquivos que a seguinte também altera.
+**Vazia.** Todas as issues que chegaram a receber `next-up` foram fechadas, na ordem #8 → #6 → #21 → #19 → #9. A ordem foi escolhida para evitar conflito de merge, já que cada uma mexe em arquivos que a seguinte também altera.
 
 A #16 (feita) ficou antes de tudo porque só tocava `layout.tsx`, `globals.css` e a navbar — não encostava em nada que a #20 acabou de mover.
 
@@ -294,7 +294,7 @@ FECHADAS
 
 ABERTAS
   #5 (feita) ──> #6 (feita)
-  #7 (feita) ──> #8 (feita) ──> #9
+  #7 (feita) ──> #8 (feita) ──> #9 (feita)
   #19 regras lint  (feita)
   #20 ──> #21 constantes (feita)
   #20 + #11 ──> #22 fluxo etapas
@@ -314,6 +314,6 @@ A #18 saiu do grafo: a medição de texto nunca rodou a cada tecla, então não 
 
 ### Ordem prática de trabalho
 
-1. **Fila vazia.** As issues que receberam `next-up` foram todas fechadas, na ordem #8 → #6 → #21 → #19.
-2. **Próximas, já destravadas:** #9 (documentação de deploy) e #22 (fluxo em etapas). A #9 é curta e fecha a Fase 2; a #22 é funcionalidade nova e maior.
+1. **Fila vazia.** As issues que receberam `next-up` foram todas fechadas, na ordem #8 → #6 → #21 → #19 → #9.
+2. **Próxima, já destravada:** #22 (fluxo em etapas), funcionalidade nova e maior.
 3. **Depois de #22:** #23 → #24 → #25 → (#26 → #27) e (#28 → #29).
