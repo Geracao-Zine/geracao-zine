@@ -296,7 +296,6 @@ FECHADAS
   #10 navbar ──> #16 navbar/body
   #17 pdf dinamico
   #20 camadas  (dependia de #17)
-  #16 navbar/body
 
 ABERTAS
   #5 ──> #6
