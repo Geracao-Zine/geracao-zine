@@ -20,11 +20,12 @@ const Navbar: React.FC = () => {
 			ref={navRef}
 			className="
 				w-full fixed top-0 left-0 z-50
-				bg-neutro-50 dark:bg-neutro-950
-				border-b border-neutro-100 dark:border-neutro-800
+				bg-[var(--background)]
+				border-b border-zinc-300 dark:border-zinc-700
+				text-[var(--foreground)]
 			"
 		>
-			<div className="mx-auto max-w-7xl px-4 py-3 text-escuro dark:text-neutro-100">
+			<div className="mx-auto max-w-7xl px-4 py-3">
 
 				{/* TOP ROW */}
 				<div className="flex items-center justify-between md:justify-between">
@@ -64,7 +65,7 @@ const Navbar: React.FC = () => {
 
 				{/* MOBILE NAV */}
 				{isOpen && (
-					<div className="fixed inset-0 z-40 bg-zinc dark:bg-zinc-950 flex flex-col items-center justify-center md:hidden">
+					<div className="fixed inset-0 z-40 bg-[var(--background)] flex flex-col items-center justify-center md:hidden">
 						<nav className="flex flex-col items-center gap-8 text-lg font-semibold">
 							{/* LOGO */}
 							<Link
@@ -100,7 +101,7 @@ const NavLinks: React.FC<NavProps> = ({ onClick }) => (
 		<Link
 			href="/Create"
 			onClick={onClick}
-			className="px-3 py-1.5 rounded-full hover:text-laranja transition-colors"
+			className="px-3 py-1.5 rounded-full hover:text-[var(--orange)] transition-colors"
 		>
 			Criar meu Zine
 		</Link>
@@ -108,7 +109,7 @@ const NavLinks: React.FC<NavProps> = ({ onClick }) => (
 		<Link
 			href="/Library"
 			onClick={onClick}
-			className="px-3 py-1.5 rounded-full hover:text-laranja transition-colors"
+			className="px-3 py-1.5 rounded-full hover:text-[var(--orange)] transition-colors"
 		>
 			Explorar biblioteca
 		</Link>
@@ -116,7 +117,7 @@ const NavLinks: React.FC<NavProps> = ({ onClick }) => (
 		<Link
 			href="/Support"
 			onClick={onClick}
-			className="px-3 py-1.5 rounded-full hover:text-laranja transition-colors"
+			className="px-3 py-1.5 rounded-full hover:text-[var(--orange)] transition-colors"
 		>
 			Apoie
 		</Link>

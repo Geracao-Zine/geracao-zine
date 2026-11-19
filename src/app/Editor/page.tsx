@@ -2,8 +2,10 @@
 
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
+import type { JSX } from "react";
 import { Suspense } from "react";
-import { PDFDocument, StandardFonts, concatTransformationMatrix, popGraphicsState, pushGraphicsState, rgb } from 'pdf-lib';
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import type { PDFFont } from "pdf-lib";
 import { FormatSelector, ZineFormat } from "@/components/FormatSelector";
 
 type PageContent = {
@@ -18,15 +20,13 @@ function EditorPage() {
 	const authorName = searchParams.get("authorName") || "";
 	const titleFont = searchParams.get("titleFont") || "font-sans";
 	const authorFont = searchParams.get("authorFont") || "font-sans";
-	const date = Date.now();
 
 	// 🔽 default agora é "reading", que é o único formato disponível
 	const [format, setFormat] = useState<ZineFormat>("reading");
 
-	const formattedDate = useMemo(() => {
-		if (!date) return "";
-		return new Date(date).toLocaleDateString("pt-BR");
-	}, [date]);
+	const [date] = useState<number>(() => Date.now());
+
+	const formattedDate = useMemo(() => new Date(date).toLocaleDateString("pt-BR"), [date]);
 
 	const [pageList, setPageList] = useState<number[]>(
 		Array.from({ length: 2 }, (_, i) => i + 1)
@@ -90,7 +90,7 @@ function EditorPage() {
 	};
 
 	// ✅ ÚNICO FORMATO ATIVO: geração simples, uma página por poema// Helper: quebra texto respeitando \n explícitos e o maxWidth
-	function wrapText(text: string, font: any, fontSize: number, maxWidth: number): string[] {
+	function wrapText(text: string, font: PDFFont, fontSize: number, maxWidth: number): string[] {
 		const paragraphs = text.split("\n");
 		const lines: string[] = [];
 
@@ -363,7 +363,7 @@ function EditorPage() {
 	);
 }
 
-export default function EditorPageWrapper() {
+export default function EditorPageWrapper(): JSX.Element {
 	return (
 		<Suspense fallback={<div>Carregando editor...</div>}>
 			<EditorPage />
