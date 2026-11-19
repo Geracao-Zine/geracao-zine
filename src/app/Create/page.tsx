@@ -11,8 +11,6 @@ export default function CreatePage() {
 		{ id: "geistMono", label: "Geist Mono", className: "font-mono" },
 	];
 
-	const paginas = [4, 8, 12, 16];
-
 	const [coverTitle, setCoverTitle] = useState("");
 	const [titleFont, setTitleFont] = useState("font-sans");
 	const [authorName, setAuthorName] = useState("");
