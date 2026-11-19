@@ -18,7 +18,9 @@ export default function CoverCard({ cover, formattedDate }: Props): JSX.Element 
 
 			<div className="space-y-2">
 				<p className={`text-lg ${authorClassOf(cover)}`}>{cover.author}</p>
-				<p className="text-sm opacity-80">{formattedDate}</p>
+				{formattedDate ? (
+					<p className="text-sm opacity-80">{formattedDate}</p>
+				) : null}
 			</div>
 		</div>
 	);

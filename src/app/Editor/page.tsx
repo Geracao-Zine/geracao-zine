@@ -17,7 +17,22 @@ function EditorPage(): JSX.Element {
 
 	return (
 		<main className="min-h-screen bg-zinc-100 dark:bg-black text-zinc-900 dark:text-zinc-100 p-10">
-			<FormatSelector value={editor.format} onChange={editor.setFormat} />
+			<div className="mb-8 flex flex-col md:flex-row md:items-end gap-4">
+				<FormatSelector value={editor.format} onChange={editor.setFormat} />
+
+				<div className="flex flex-col gap-1">
+					<label htmlFor="cover-date" className="text-sm font-semibold">
+						Data da capa <span className="font-normal text-zinc-500">(opcional)</span>
+					</label>
+					<input
+						id="cover-date"
+						type="date"
+						value={editor.date}
+						onChange={(e) => editor.setDate(e.target.value)}
+						className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-600"
+					/>
+				</div>
+			</div>
 
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 				{editor.doc.pages.map((page) => {

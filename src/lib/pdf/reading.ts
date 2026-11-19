@@ -45,8 +45,19 @@ export async function generateReadingPdf(
 
 	const titleLines = wrapText(input.coverTitle, titleFonts.bold, TITLE_SIZE, contentWidth);
 	const titleBlockHeight = titleLines.length * TITLE_LINE_HEIGHT;
-	const authorBlockHeight = AUTHOR_SIZE + GAP_AUTHOR_TO_DATE + DATE_SIZE;
-	const totalBlockHeight = titleBlockHeight + GAP_TITLE_TO_AUTHOR + authorBlockHeight;
+	const temAutor = Boolean(input.authorName);
+	const temData = Boolean(input.date);
+
+	// Blocos vazios nao entram na conta: sem isso a capa sem data ficaria
+	// deslocada para cima, com o espaco da data reservado no vazio.
+	const authorBlockHeight = temAutor
+		? AUTHOR_SIZE + (temData ? GAP_AUTHOR_TO_DATE + DATE_SIZE : 0)
+		: 0;
+	const totalBlockHeight =
+		titleBlockHeight +
+		GAP_TITLE_TO_AUTHOR +
+		authorBlockHeight +
+		(temData ? DATE_SIZE : 0);
 
 	let cursorY = height / 2 + totalBlockHeight / 2;
 
@@ -70,7 +81,7 @@ export async function generateReadingPdf(
 	});
 	cursorY -= GAP_TITLE_TO_AUTHOR / 2;
 
-	if (input.authorName) {
+	if (temAutor) {
 		const authorWidth = authorFonts.regular.widthOfTextAtSize(input.authorName, AUTHOR_SIZE);
 		coverPage.drawText(input.authorName, {
 			x: (width - authorWidth) / 2,
@@ -78,17 +89,19 @@ export async function generateReadingPdf(
 			size: AUTHOR_SIZE,
 			font: authorFonts.regular,
 		});
-		cursorY -= GAP_AUTHOR_TO_DATE + DATE_SIZE;
+		cursorY -= temData ? GAP_AUTHOR_TO_DATE + DATE_SIZE : 0;
 	}
 
-	const dateWidth = titleFonts.regular.widthOfTextAtSize(input.date, DATE_SIZE);
-	coverPage.drawText(input.date, {
-		x: (width - dateWidth) / 2,
-		y: cursorY,
-		size: DATE_SIZE,
-		font: titleFonts.regular,
-		color: rgb(0.5, 0.5, 0.5),
-	});
+	if (temData) {
+		const dateWidth = titleFonts.regular.widthOfTextAtSize(input.date, DATE_SIZE);
+		coverPage.drawText(input.date, {
+			x: (width - dateWidth) / 2,
+			y: cursorY,
+			size: DATE_SIZE,
+			font: titleFonts.regular,
+			color: rgb(0.5, 0.5, 0.5),
+		});
+	}
 
 	// ---------- PAGINAS DE POEMA ----------
 	const topStart = height - margin;

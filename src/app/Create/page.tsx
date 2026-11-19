@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import FontSelector from "@/components/FontSelector";
 import type { FontId } from "@/lib/fonts";
 import { DEFAULT_FONT_ID, FONTS } from "@/lib/fonts";
-import { isCoverComplete } from "@/domain";
+import { isCoverComplete, isIsoDate } from "@/domain";
 
 export default function CreatePage(): JSX.Element {
 	const router = useRouter();
@@ -20,6 +20,7 @@ export default function CreatePage(): JSX.Element {
 	const [titleFont, setTitleFont] = useState<FontId>(DEFAULT_FONT_ID);
 	const [authorName, setAuthorName] = useState("");
 	const [authorFont, setAuthorFont] = useState<FontId>("geistMono");
+	const [date, setDate] = useState("");
 
 	const handleContinue = (): void => {
 		if (!coverTitle || !authorName) return;
@@ -31,10 +32,14 @@ export default function CreatePage(): JSX.Element {
 			authorFont
 		});
 
+		if (isIsoDate(date)) {
+			params.set("date", date);
+		}
+
 		router.push(`/Editor?${params.toString()}`);
 	};
 
-	const isValid = isCoverComplete({ title: coverTitle, author: authorName, titleFont, authorFont });
+	const isValid = isCoverComplete({ title: coverTitle, author: authorName, titleFont, authorFont, date });
 
 	return (
 		<main className="min-h-[calc(100vh-var(--navbar-height))] bg-[var(--background)] text-[var(--foreground)]">
@@ -138,6 +143,34 @@ export default function CreatePage(): JSX.Element {
 						options={fontes}
 					/>
 
+				</div>
+
+				{/* DATA */}
+				<div className="space-y-2">
+					<label className="font-semibold" htmlFor="cover-date">
+						Data da capa <span className="font-normal text-zinc-500">(opcional)</span>
+					</label>
+					<input
+						id="cover-date"
+						type="date"
+						className="
+							w-full
+							bg-white dark:bg-zinc-900
+							text-zinc-900 dark:text-zinc-100
+							border border-zinc-300 dark:border-zinc-700
+							rounded-xl
+							px-4 py-3
+							focus:outline-none
+							focus:ring-2
+							focus:ring-[var(--purple-dark)]
+							transition
+						"
+						value={date}
+						onChange={(e) => setDate(e.target.value)}
+					/>
+					<p className="text-sm text-zinc-500">
+						Deixe em branco para publicar sem data na capa.
+					</p>
 				</div>
 
 				{/* BOTÃO */}

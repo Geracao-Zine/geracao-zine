@@ -6,6 +6,7 @@ import {
 	DEFAULT_FORMAT,
 	addPage,
 	createDoc,
+	formatIsoDate,
 	poemPages,
 	removePage,
 	setPoemField,
@@ -19,6 +20,10 @@ export type ZineEditor = {
 	setFormat: (format: ZineFormat) => void;
 	doc: ZineDoc;
 	poems: PoemPage[];
+	/** Data ISO (yyyy-mm-dd). Vazia remove a data da capa. */
+	date: string;
+	setDate: (date: string) => void;
+	/** Data em pt-BR, ou vazio quando a capa nao tem data. */
 	formattedDate: string;
 	changeField: (id: string, field: PoemField, value: string) => void;
 	addPoem: () => void;
@@ -33,10 +38,10 @@ const UNIMPLEMENTED: Record<Exclude<ZineFormat, "reading">, string> = {
 
 export function useZineEditor(cover: Cover): ZineEditor {
 	const [format, setFormat] = useState<ZineFormat>(DEFAULT_FORMAT);
-	const [date] = useState<number>(() => Date.now());
+	const [date, setDate] = useState<string>(cover.date);
 	const [doc, setDoc] = useState<ZineDoc>(createDoc);
 
-	const formattedDate = useMemo(() => new Date(date).toLocaleDateString("pt-BR"), [date]);
+	const formattedDate = useMemo(() => formatIsoDate(date), [date]);
 	const poems = useMemo(() => poemPages(doc), [doc]);
 
 	const changeField = (id: string, field: PoemField, value: string): void => {
@@ -75,6 +80,8 @@ export function useZineEditor(cover: Cover): ZineEditor {
 		setFormat,
 		doc,
 		poems,
+		date,
+		setDate,
 		formattedDate,
 		changeField,
 		addPoem,

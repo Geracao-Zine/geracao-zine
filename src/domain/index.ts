@@ -18,3 +18,4 @@ export {
 	isCoverComplete,
 	titleClassOf,
 } from "./cover.ts";
+export { formatIsoDate, isIsoDate } from "./date.ts";
