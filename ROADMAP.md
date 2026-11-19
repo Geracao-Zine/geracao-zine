@@ -257,13 +257,13 @@ Para pedir uma segunda tentativa em uma issue já processada, remova e reaplique
 | Fase | Issues | Situação |
 |---|---|---|
 | 1 — Node e dependências | #3, #4, #5, #6 | #3 e #4 entregues; #5 na fila; #6 bloqueada por #5 |
-| 2 — Docker e VPS | #7, #8, #9 | #7 na fila; #8 e #9 bloqueadas em cadeia |
-| 3 — Bugs | #10, #11, #12, #13, #14, #15, #16 | #10, #11, #12, #13, #15 e #16 entregues; #14 na fila |
+| 2 — Docker e VPS | #7, #8, #9 | #7 entregue; #8 liberada; #9 bloqueada por #8 |
+| 3 — Bugs | #10, #11, #12, #13, #14, #15, #16 | #10, #11, #12, #13, #14, #15 e #16 entregues |
 | 4 — Otimização | #17, #18 | #17 entregue; #18 fechada (o problema não existia) |
 | 5 — Padronização | #19, #20, #21 | #20 entregue; #19 na fila; #21 destravada |
 | 6 — Fluxo e diagramação | #22 a #29 | #22 destravada; #23 a #29 seguem em cadeia |
 
-Fechadas: #3 (lint), #4 (versão do Node), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas), #16 (navbar e fonte do body).
+Fechadas: #3 (lint), #4 (versão do Node), #7 (Dockerfile multi-stage), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas), #16 (navbar e fonte do body).
 
 ### Fila de execução
 
@@ -271,21 +271,20 @@ As issues abaixo já têm todas as dependências fechadas e receberam `next-up`.
 
 | Ordem | Issue | Assunto | Arquivos |
 |---|---|---|---|
-| 1 | #14 | Data opcional e editável | `src/app/Create/page.tsx`, `src/hooks/useZineEditor.ts`, `src/domain/cover.ts` |
-| 2 | #7 | Dockerfile multi-stage | `next.config.ts`, `Dockerfile` |
-| 3 | #5 | Dependências e vulnerabilidades | `package.json`, `package-lock.json` |
-| 4 | #21 | Constantes de diagramação | `src/domain/`, `src/lib/pdf/` |
-| 5 | #19 | Regras de lint (`semi`, sem `any`) | `eslint.config.mjs` e todo o `src/` |
+| 1 | #5 | Dependências e vulnerabilidades | `package.json`, `package-lock.json` |
+| 2 | #8 | docker-compose com healthcheck e `.env.example` | `docker-compose.yml`, `.env.example` |
+| 3 | #21 | Constantes de diagramação | `src/domain/`, `src/lib/pdf/` |
+| 4 | #19 | Regras de lint (`semi`, sem `any`) | `eslint.config.mjs` e todo o `src/` |
 
 A #16 (feita) ficou antes de tudo porque só tocava `layout.tsx`, `globals.css` e a navbar — não encostava em nada que a #20 acabou de mover.
 
-A #14 agora mexe em três camadas em vez de duas: a data deixa de ser `useState` dentro do editor e passa a viver no domínio da capa, com o hook e a página consumindo. Como a #20 acabou de definir essa divisão, fazer a #14 logo depois evita reaprender o mapa dos arquivos.
+A #14 foi feita logo depois da #20 porque mexia em três camadas em vez de duas: a data deixou de ser `useState` dentro do editor e passou a viver no domínio da capa, com o hook e a página consumindo. Fazer isso com a divisão da #20 recém-definida evitou reaprender o mapa dos arquivos.
 
 A #21 vem depois da #20 por dependência real: as constantes de diagramação precisam de um `src/domain` existente para morar.
 
 A #19 fica por último de propósito: ao exigir ponto e vírgula em todo o `src/`, ela reformata os arquivos que as anteriores escrevem. Executá-la antes gera conflito em cada PR seguinte.
 
-A #22 (fluxo em etapas) também está destravada, mas fica para depois da fila acima: é funcionalidade nova e grande, e convém que a #14 já tenha estabilizado o modelo de data e capa antes de o cadastro virar etapas.
+A #22 (fluxo em etapas) também está destravada, mas fica para depois da fila acima: é funcionalidade nova e grande, e convém que o modelo de data e capa já esteja estável (a #14 fechou isso) antes de o cadastro virar etapas.
 
 ### Grafo de dependências
 
@@ -296,11 +295,12 @@ FECHADAS
   #10 navbar ──> #16 navbar/body
   #17 pdf dinamico
   #20 camadas  (dependia de #17)
+  #7 dockerfile  (#8 e #9 destravam a partir dele)
+  #14 data da capa  (dependia de #20)
 
 ABERTAS
   #5 ──> #6
-  #7 ──> #8 ──> #9
-  #14
+  #7 (feita) ──> #8 ──> #9
   #19 regras lint  (por ultimo: reformata todo o src)
   #20 ──> #21 constantes
   #20 + #11 ──> #22 fluxo etapas
@@ -320,8 +320,8 @@ A #18 saiu do grafo: a medição de texto nunca rodou a cada tecla, então não 
 
 ### Ordem prática de trabalho
 
-1. **Agora:** #14, #7 — sem dependências entre si. (#16 feita.)
-2. **Depois de #7:** #8 → #9 (infraestrutura).
+1. **Agora:** #5, depois #8 — primeiras da fila. (#14 e #7 feitas.)
+2. **Depois de #8:** #9 (documentação de deploy).
 3. **Depois de #5:** #6 (só remove o `jspdf`).
 4. **Depois de #20 (feita):** #21 constantes e #22 fluxo em etapas.
 5. **Depois de #22:** #23 → #24 → #25 → (#26 → #27) e (#28 → #29).
