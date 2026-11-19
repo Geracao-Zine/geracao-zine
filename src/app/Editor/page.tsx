@@ -2,8 +2,9 @@
 
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
+import type { JSX } from "react";
 import { Suspense } from "react";
-import { PDFDocument, StandardFonts, concatTransformationMatrix, popGraphicsState, pushGraphicsState, rgb } from 'pdf-lib';
+import { PDFDocument, PDFFont, StandardFonts, rgb } from "pdf-lib";
 import { FormatSelector, ZineFormat } from "@/components/FormatSelector";
 
 type PageContent = {
@@ -90,7 +91,7 @@ function EditorPage() {
 	};
 
 	// ✅ ÚNICO FORMATO ATIVO: geração simples, uma página por poema// Helper: quebra texto respeitando \n explícitos e o maxWidth
-	function wrapText(text: string, font: any, fontSize: number, maxWidth: number): string[] {
+	function wrapText(text: string, font: PDFFont, fontSize: number, maxWidth: number): string[] {
 		const paragraphs = text.split("\n");
 		const lines: string[] = [];
 
@@ -363,7 +364,7 @@ function EditorPage() {
 	);
 }
 
-export default function EditorPageWrapper() {
+export default function EditorPageWrapper(): JSX.Element {
 	return (
 		<Suspense fallback={<div>Carregando editor...</div>}>
 			<EditorPage />

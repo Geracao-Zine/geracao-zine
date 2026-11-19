@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import type { JSX } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import FontSelector from "@/components/FontSelector";
 
-export default function CreatePage() {
+export default function CreatePage(): JSX.Element {
 	const router = useRouter();
 
 	const fontes = [
@@ -18,11 +19,7 @@ export default function CreatePage() {
 	const [authorName, setAuthorName] = useState("");
 	const [authorFont, setAuthorFont] = useState("font-mono");
 
-	useEffect(() => {
-		console.log("autor", authorName, "titulo", coverTitle, "páginas", "fonte título", titleFont, "fonte autor", authorFont);
-	}, [authorName, coverTitle, titleFont, authorFont]);
-
-	const handleContinue = () => {
+	const handleContinue = (): void => {
 		if (!coverTitle || !authorName) return;
 
 		const params = new URLSearchParams({
