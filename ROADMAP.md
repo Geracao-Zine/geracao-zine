@@ -51,16 +51,17 @@ Levantamento feito no commit `5683f1c`, branch `master`.
 
 | Pacote | Atual | Disponível |
 |---|---|---|
-| next | 16.1.6 | 16.4.6 |
-| react / react-dom | 19.2.3 | 19.3.1 |
-| tailwindcss / @tailwindcss/postcss | 4.2.1 | 4.3.5 |
-| eslint | 10.0.2 | 10.15.0 |
-| eslint-config-next | 0.2.4 (errado) | 16.4.6 |
-| @types/react / @types/react-dom | 19.2.14 / 19.2.3 | 19.3.0 |
-| @types/node | 20.19.33 | 26.6.6 |
-| react-icons | 5.5.0 | 5.7.0 |
+| next | 16.4.6 | 16.4.6 (em dia) |
+| react / react-dom | 19.3.1 | 19.3.1 (em dia) |
+| tailwindcss / @tailwindcss/postcss | 4.3.5 | 4.3.5 (em dia) |
+| eslint | 10.15.0 | 10.15.0 (em dia) |
+| eslint-config-next | 16.4.6 | 16.4.6 (em dia) |
+| @types/react / @types/react-dom | 19.3.0 | 19.3.0 (em dia) |
+| @types/node | 24.19.2 | 26.6.6 (salto maior) |
+| react-icons | 5.7.0 | 5.7.0 (em dia) |
+| jspdf | 4.2.1 | 4.2.1 (em dia) |
 | pdf-lib | 1.17.1 | 1.17.1 (em dia) |
-| typescript | 5.9.3 | 7.0.2 (salto maior, tratar à parte) |
+| typescript | 5.9.3 | 7.0.2 (bloqueado: `typescript-eslint` nao suporta TS 7) |
 
 ---
 
@@ -68,14 +69,14 @@ Levantamento feito no commit `5683f1c`, branch `master`.
 
 Objetivo: base reprodutível, lint funcionando e versões alinhadas.
 
-- [ ] 1.1 Fixar a versão do Node com `.nvmrc` (Node 24 LTS) e adicionar `"engines": { "node": ">=22" }` no `package.json`.
-- [ ] 1.2 Alinhar `@types/node` com a versão real do runtime (hoje `^20` com Node 24).
-- [ ] 1.3 Corrigir `eslint-config-next` de `0.2.4` para `^16.4.6` e validar `npm run lint` (resolve B1).
-- [ ] 1.4 Atualizar dependências de patch/minor: `next`, `react`, `react-dom`, `tailwindcss`, `@tailwindcss/postcss`, `eslint`, `@types/react`, `@types/react-dom`, `react-icons`, `jspdf`.
+- [x] 1.1 Fixar a versão do Node com `.nvmrc` (Node 24 LTS) e adicionar `"engines": { "node": ">=22" }` no `package.json`.
+- [x] 1.2 Alinhar `@types/node` com a versão real do runtime (hoje `^20` com Node 24).
+- [x] 1.3 Corrigir `eslint-config-next` de `0.2.4` para `^16.4.6` e validar `npm run lint` (resolve B1).
+- [x] 1.4 Atualizar dependências de patch/minor: `next`, `react`, `react-dom`, `tailwindcss`, `@tailwindcss/postcss`, `eslint`, `@types/react`, `@types/react-dom`, `react-icons`, `jspdf`.
 - [ ] 1.5 Remover `jspdf` se permanecer sem uso após a Fase 6, ou consolidar a geração de PDF em uma única biblioteca (resolve B3).
-- [ ] 1.6 Avaliar `typescript` 7 em tarefa isolada, com build e tipos verdes antes de manter.
-- [ ] 1.7 Regenerar `package-lock.json`, verificar `npm ci` do zero e confirmar `build` + `lint` + `tsc --noEmit`.
-- [ ] 1.8 Adicionar `npm run typecheck` (`tsc --noEmit`) como script.
+- [x] 1.6 Avaliar `typescript` 7 em tarefa isolada: `tsc` e `next build` passam, mas `npm run lint` quebra com `typescript-eslint does not support TS 7.0`. Mantido 5.9.3.
+- [x] 1.7 Regenerar `package-lock.json`, verificar `npm ci` do zero e confirmar `build` + `lint` + `tsc --noEmit`.
+- [x] 1.8 Adicionar `npm run typecheck` (`tsc --noEmit`) como script.
 
 **Conclusão:** clone limpo → `npm ci` → `npm run lint`, `npm run typecheck` e `npm run build` passam sem avisos.
 
