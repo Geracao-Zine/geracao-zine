@@ -257,14 +257,14 @@ Para pedir uma segunda tentativa em uma issue já processada, remova e reaplique
 
 | Fase | Issues | Situação |
 |---|---|---|
-| 1 — Node e dependências | #3, #4, #5, #6 | #3 e #4 entregues; #5 na fila; #6 bloqueada por #5 |
+| 1 — Node e dependências | #3, #4, #5, #6 | #3, #4 e #5 entregues; #6 destravada |
 | 2 — Docker e VPS | #7, #8, #9 | #7 entregue; #8 liberada; #9 bloqueada por #8 |
 | 3 — Bugs | #10, #11, #12, #13, #14, #15, #16 | #10, #11, #12, #13, #14, #15 e #16 entregues |
 | 4 — Otimização | #17, #18 | #17 entregue; #18 fechada (o problema não existia) |
 | 5 — Padronização | #19, #20, #21 | #20 entregue; #19 na fila; #21 destravada |
 | 6 — Fluxo e diagramação | #22 a #29 | #22 destravada; #23 a #29 seguem em cadeia |
 
-Fechadas: #3 (lint), #4 (versão do Node), #7 (Dockerfile multi-stage), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas), #16 (navbar e fonte do body).
+Fechadas: #3 (lint), #4 (versão do Node), #5 (dependências e audit), #7 (Dockerfile multi-stage), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas), #16 (navbar e fonte do body).
 
 ### Fila de execução
 
@@ -272,8 +272,8 @@ As issues abaixo já têm todas as dependências fechadas e receberam `next-up`.
 
 | Ordem | Issue | Assunto | Arquivos |
 |---|---|---|---|
-| 1 | #5 | Dependências e vulnerabilidades | `package.json`, `package-lock.json` |
-| 2 | #8 | docker-compose com healthcheck e `.env.example` | `docker-compose.yml`, `.env.example` |
+| 1 | #8 | docker-compose com healthcheck e `.env.example` | `docker-compose.yml`, `.env.example` |
+| 2 | #6 | Remover `jspdf` | `package.json`, `src/lib/pdf/` |
 | 3 | #21 | Constantes de diagramação | `src/domain/`, `src/lib/pdf/` |
 | 4 | #19 | Regras de lint (`semi`, sem `any`) | `eslint.config.mjs` e todo o `src/` |
 
@@ -300,7 +300,7 @@ FECHADAS
   #14 data da capa  (dependia de #20)
 
 ABERTAS
-  #5 ──> #6
+  #5 (feita) ──> #6
   #7 (feita) ──> #8 ──> #9
   #19 regras lint  (por ultimo: reformata todo o src)
   #20 ──> #21 constantes
@@ -321,9 +321,8 @@ A #18 saiu do grafo: a medição de texto nunca rodou a cada tecla, então não 
 
 ### Ordem prática de trabalho
 
-1. **Agora:** #5, depois #8 — primeiras da fila. (#14 e #7 feitas.)
+1. **Agora:** #8, depois #6 — primeiras da fila. (#14, #7 e #5 feitas.)
 2. **Depois de #8:** #9 (documentação de deploy).
-3. **Depois de #5:** #6 (só remove o `jspdf`).
 4. **Depois de #20 (feita):** #21 constantes e #22 fluxo em etapas.
 5. **Depois de #22:** #23 → #24 → #25 → (#26 → #27) e (#28 → #29).
 6. **Por último:** #19, porque reformata todo o `src`.
