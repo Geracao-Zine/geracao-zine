@@ -242,9 +242,11 @@ Cada tarefa abaixo existe como issue no repositório, agrupada por milestone de 
 
 ### Como funciona a automação
 
-O label `auto-implement` marca a issue para ser capturada e processada automaticamente: a automação detecta o label, cria uma branch, implementa, e abre o pull request.
+O label `openhands` marca a issue para ser capturada e processada automaticamente: ao ser aplicado, o OpenHands comenta na issue, cria uma branch, implementa e abre o pull request.
 
-O label `blocked` significa que a issue ainda não deve ser capturada, porque depende de outra ser mergeada primeiro. Quando a dependência entra na `master`, remova `blocked` e adicione `auto-implement`.
+Alternativa: um comentário começando com `@openhands` na issue ou no PR também dispara o trabalho, com o mesmo efeito. Serve para retomar uma issue depois de um PR malsucedido, sem mexer nos labels.
+
+O label `blocked` significa que a issue ainda não deve ser capturada, porque depende de outra ser mergeada primeiro. Quando a dependência entra na `master`, remova `blocked` e adicione `openhands`.
 
 Para pedir uma segunda tentativa em uma issue já processada, remova e reaplique o label: isso abre uma nova branch e um novo PR, sem sobrescrever o anterior.
 
