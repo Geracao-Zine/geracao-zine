@@ -248,20 +248,38 @@ Alternativa: um comentário começando com `@openhands` na issue ou no PR també
 
 O label `blocked` significa que a issue ainda não deve ser capturada, porque depende de outra ser mergeada primeiro. Quando a dependência entra na `master`, remova `blocked` e adicione `openhands`.
 
+O label `next-up` marca a issue que já está liberada por dependência, mas ainda não foi armada. Serve de fila: a issue está pronta para receber `openhands` na ordem indicada abaixo, sem que ninguém precise recalcular o grafo. Trocar `next-up` por `openhands` é o único passo necessário para iniciar o trabalho.
+
 Para pedir uma segunda tentativa em uma issue já processada, remova e reaplique o label: isso abre uma nova branch e um novo PR, sem sobrescrever o anterior.
 
 ### Estado das issues
 
-| Fase | Issues | Armadas agora |
+| Fase | Issues | Situação |
 |---|---|---|
-| 1 — Node e dependências | #3, #4, #5, #6 | #3 |
-| 2 — Docker e VPS | #7, #8, #9 | — |
-| 3 — Bugs | #10, #11, #12, #13, #14, #15, #16 | #10, #13 |
-| 4 — Otimização | #17, #18 | — |
-| 5 — Padronização | #19, #20, #21 | — |
-| 6 — Fluxo e diagramação | #22, #23, #24, #25, #26, #27, #28, #29 | — |
+| 1 — Node e dependências | #3, #4, #5, #6 | #3 e #4 entregues; #5 na fila; #6 bloqueada por #5 |
+| 2 — Docker e VPS | #7, #8, #9 | #7 na fila; #8 e #9 bloqueadas em cadeia |
+| 3 — Bugs | #10, #11, #12, #13, #14, #15, #16 | #10 e #13 entregues; #11 e #16 na fila; #12, #14 e #15 bloqueadas por #11 |
+| 4 — Otimização | #17, #18 | bloqueadas por #11 e #12 |
+| 5 — Padronização | #19, #20, #21 | #19 na fila; #20 e #21 bloqueadas por #17 |
+| 6 — Fluxo e diagramação | #22 a #29 | bloqueadas em cadeia por #11 e #20 |
 
-Armadas de imediato apenas as três que não dependem de nada: #3 (lint), #10 (navbar) e #13 (imports mortos). As demais estão em `blocked` para não gerarem PRs conflitantes sobre os mesmos arquivos.
+Fechadas: #3 (lint), #4 (versão do Node), #10 (navbar), #13 (imports mortos).
+
+### Fila de execução
+
+As cinco issues abaixo já têm todas as dependências fechadas e receberam `next-up`. A ordem evita conflito de merge, porque cada uma mexe em arquivos que a seguinte também altera.
+
+| Ordem | Issue | Assunto | Arquivos |
+|---|---|---|---|
+| 1 | #11 | Modelo de dados do editor | `src/app/Editor/page.tsx` |
+| 2 | #16 | Altura da navbar e fonte do body | `src/app/layout.tsx`, `globals.css`, `Navbar/index.tsx` |
+| 3 | #7 | Dockerfile multi-stage | `next.config.ts`, `Dockerfile` |
+| 4 | #5 | Dependências e vulnerabilidades | `package.json`, `package-lock.json` |
+| 5 | #19 | Regras de lint (`semi`, sem `any`) | `eslint.config.mjs` e todo o `src/` |
+
+A #19 fica por último de propósito: ao exigir ponto e vírgula em todo o `src/`, ela reformata os arquivos que as anteriores escrevem. Executá-la antes gera conflito em cada PR seguinte.
+
+A #11 vem primeiro por ser `p0-critical` e por ser base da Fase 3: #12, #14 e #15 só destravam depois dela.
 
 ### Grafo de dependências
 
