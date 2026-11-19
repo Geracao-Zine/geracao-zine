@@ -31,7 +31,7 @@ Levantamento feito no commit `5683f1c`, branch `master`.
 |---|---|---|
 | B1 | `eslint` não executa: `eslint-config-next` está na versão `0.2.4` (pacote errado), quebra o `import` do `core-web-vitals` | `package.json`, `eslint.config.mjs` |
 | B2 | Classes Tailwind inexistentes (`bg-neutro-50`, `text-escuro`, `bg-zinc`, `border-neutro-100`) — a navbar fica sem cor de fundo e sem borda | `src/components/Navbar/index.tsx` |
-| B3 | `jspdf` está instalado mas nunca é usado | `package.json` |
+| B3 | ~~`jspdf` está instalado mas nunca é usado~~ (resolvido: removido) | `package.json` |
 | B4 | `concatTransformationMatrix`, `pushGraphicsState` e `popGraphicsState` importados e não usados | `src/app/Editor/page.tsx` |
 | B5 | `wrapText` recebe `font: any`, violando a tipagem estrita | `src/app/Editor/page.tsx` |
 | B6 | `console.log` de depuração rodando em produção | `src/app/Create/page.tsx` |
@@ -59,7 +59,7 @@ Levantamento feito no commit `5683f1c`, branch `master`.
 | @types/react / @types/react-dom | 19.3.0 | 19.3.0 (em dia) |
 | @types/node | 24.19.2 | 26.6.6 (salto maior) |
 | react-icons | 5.7.0 | 5.7.0 (em dia) |
-| jspdf | 4.2.1 | 4.2.1 (em dia) |
+| ~~jspdf~~ | — | removido (nunca era usado) |
 | pdf-lib | 1.17.1 | 1.17.1 (em dia) |
 | typescript | 5.9.3 | 7.0.2 (bloqueado: `typescript-eslint` nao suporta TS 7) |
 
@@ -73,7 +73,7 @@ Objetivo: base reprodutível, lint funcionando e versões alinhadas.
 - [x] 1.2 Alinhar `@types/node` com a versão real do runtime (hoje `^20` com Node 24).
 - [x] 1.3 Corrigir `eslint-config-next` de `0.2.4` para `^16.4.6` e validar `npm run lint` (resolve B1).
 - [x] 1.4 Atualizar dependências de patch/minor: `next`, `react`, `react-dom`, `tailwindcss`, `@tailwindcss/postcss`, `eslint`, `@types/react`, `@types/react-dom`, `react-icons`, `jspdf`.
-- [ ] 1.5 Remover `jspdf` se permanecer sem uso após a Fase 6, ou consolidar a geração de PDF em uma única biblioteca (resolve B3).
+- [x] 1.5 Remover `jspdf` se permanecer sem uso após a Fase 6, ou consolidar a geração de PDF em uma única biblioteca (resolve B3). Removido: nunca era importado, o PDF é todo `pdf-lib`.
 - [x] 1.6 Avaliar `typescript` 7 em tarefa isolada: `tsc` e `next build` passam, mas `npm run lint` quebra com `typescript-eslint does not support TS 7.0`. Mantido 5.9.3.
 - [x] 1.7 Regenerar `package-lock.json`, verificar `npm ci` do zero e confirmar `build` + `lint` + `tsc --noEmit`.
 - [x] 1.8 Adicionar `npm run typecheck` (`tsc --noEmit`) como script.
@@ -257,14 +257,14 @@ Para pedir uma segunda tentativa em uma issue já processada, remova e reaplique
 
 | Fase | Issues | Situação |
 |---|---|---|
-| 1 — Node e dependências | #3, #4, #5, #6 | #3, #4 e #5 entregues; #6 destravada |
+| 1 — Node e dependências | #3, #4, #5, #6 | fase concluída: #3, #4, #5 e #6 entregues |
 | 2 — Docker e VPS | #7, #8, #9 | #7 e #8 entregues; #9 liberada |
 | 3 — Bugs | #10, #11, #12, #13, #14, #15, #16 | #10, #11, #12, #13, #14, #15 e #16 entregues |
 | 4 — Otimização | #17, #18 | #17 entregue; #18 fechada (o problema não existia) |
 | 5 — Padronização | #19, #20, #21 | #20 entregue; #19 na fila; #21 destravada |
 | 6 — Fluxo e diagramação | #22 a #29 | #22 destravada; #23 a #29 seguem em cadeia |
 
-Fechadas: #3 (lint), #4 (versão do Node), #5 (dependências e audit), #7 (Dockerfile multi-stage), #8 (docker-compose e `.env.example`), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas), #16 (navbar e fonte do body).
+Fechadas: #3 (lint), #4 (versão do Node), #5 (dependências e audit), #6 (`jspdf` removido), #7 (Dockerfile multi-stage), #8 (docker-compose e `.env.example`), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas), #16 (navbar e fonte do body).
 
 ### Fila de execução
 
@@ -272,9 +272,8 @@ As issues abaixo já têm todas as dependências fechadas e receberam `next-up`.
 
 | Ordem | Issue | Assunto | Arquivos |
 |---|---|---|---|
-| 1 | #6 | Remover `jspdf` | `package.json`, `src/lib/pdf/` |
-| 2 | #21 | Constantes de diagramação | `src/domain/`, `src/lib/pdf/` |
-| 3 | #19 | Regras de lint (`semi`, sem `any`) | `eslint.config.mjs` e todo o `src/` |
+| 1 | #21 | Constantes de diagramação | `src/domain/`, `src/lib/pdf/` |
+| 2 | #19 | Regras de lint (`semi`, sem `any`) | `eslint.config.mjs` e todo o `src/` |
 
 A #16 (feita) ficou antes de tudo porque só tocava `layout.tsx`, `globals.css` e a navbar — não encostava em nada que a #20 acabou de mover.
 
@@ -290,7 +289,7 @@ A #22 (fluxo em etapas) também está destravada, mas fica para depois da fila a
 
 ```
 FECHADAS
-  #3 lint ──> #4 node ──> #5 deps ──> #6 jspdf
+  #3 lint ──> #4 node ──> #5 deps ──> #6 jspdf  (todas fechadas)
   #3 ──> #11 modelo editor ──> #12 wrapText
   #10 navbar ──> #16 navbar/body
   #17 pdf dinamico
@@ -299,7 +298,7 @@ FECHADAS
   #14 data da capa  (dependia de #20)
 
 ABERTAS
-  #5 (feita) ──> #6
+  #5 (feita) ──> #6 (feita)
   #7 (feita) ──> #8 (feita) ──> #9
   #19 regras lint  (por ultimo: reformata todo o src)
   #20 ──> #21 constantes
@@ -320,7 +319,7 @@ A #18 saiu do grafo: a medição de texto nunca rodou a cada tecla, então não 
 
 ### Ordem prática de trabalho
 
-1. **Agora:** #6, depois #21 — primeiras da fila. (#14, #7, #5 e #8 feitas.)
+1. **Agora:** #21, depois #19 — primeiras da fila. (#14, #7, #5, #8 e #6 feitas.)
 2. **Agora também:** #9 (documentação de deploy), destravada pela #8.
 4. **Depois de #20 (feita):** #21 constantes e #22 fluxo em etapas.
 5. **Depois de #22:** #23 → #24 → #25 → (#26 → #27) e (#28 → #29).
