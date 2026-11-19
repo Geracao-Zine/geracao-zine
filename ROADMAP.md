@@ -84,10 +84,10 @@ Objetivo: base reprodutível, lint funcionando e versões alinhadas.
 
 Objetivo: deploy reprodutível em VPS com imagem enxuta.
 
-- [ ] 2.1 `Dockerfile` multi-stage usando `output: "standalone"` no `next.config.ts`: estágio `deps` → `builder` → `runner` (`node:24-alpine`), usuário não-root.
-- [ ] 2.2 `.dockerignore` cobrindo `node_modules`, `.next`, `.git`, `*.md`.
-- [ ] 2.3 `docker-compose.yml` com serviço da aplicação, porta configurável, `restart: unless-stopped` e healthcheck em `/`.
-- [ ] 2.4 Variáveis de ambiente por `.env.example` documentado (sem segredos no repositório).
+- [x] 2.1 `Dockerfile` multi-stage usando `output: "standalone"` no `next.config.ts`: estágio `deps` → `builder` → `runner` (`node:24-alpine`), usuário não-root.
+- [x] 2.2 `.dockerignore` cobrindo `node_modules`, `.next`, `.git`, `*.md`.
+- [x] 2.3 `docker-compose.yml` com serviço da aplicação, porta configurável, `restart: unless-stopped` e healthcheck em `/`.
+- [x] 2.4 Variáveis de ambiente por `.env.example` documentado (sem segredos no repositório).
 - [ ] 2.5 Roteiro de deploy na VPS: Nginx como proxy reverso, certificado TLS (Let's Encrypt) e headers de segurança básicos.
 - [ ] 2.6 Publicação de imagem (GHCR) e instrução de atualização (`pull` + `up -d`).
 - [ ] 2.7 Documentar no README: requisitos, comandos de build/execução e rollback.
@@ -258,13 +258,13 @@ Para pedir uma segunda tentativa em uma issue já processada, remova e reaplique
 | Fase | Issues | Situação |
 |---|---|---|
 | 1 — Node e dependências | #3, #4, #5, #6 | #3, #4 e #5 entregues; #6 destravada |
-| 2 — Docker e VPS | #7, #8, #9 | #7 entregue; #8 liberada; #9 bloqueada por #8 |
+| 2 — Docker e VPS | #7, #8, #9 | #7 e #8 entregues; #9 liberada |
 | 3 — Bugs | #10, #11, #12, #13, #14, #15, #16 | #10, #11, #12, #13, #14, #15 e #16 entregues |
 | 4 — Otimização | #17, #18 | #17 entregue; #18 fechada (o problema não existia) |
 | 5 — Padronização | #19, #20, #21 | #20 entregue; #19 na fila; #21 destravada |
 | 6 — Fluxo e diagramação | #22 a #29 | #22 destravada; #23 a #29 seguem em cadeia |
 
-Fechadas: #3 (lint), #4 (versão do Node), #5 (dependências e audit), #7 (Dockerfile multi-stage), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas), #16 (navbar e fonte do body).
+Fechadas: #3 (lint), #4 (versão do Node), #5 (dependências e audit), #7 (Dockerfile multi-stage), #8 (docker-compose e `.env.example`), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas), #16 (navbar e fonte do body).
 
 ### Fila de execução
 
@@ -272,10 +272,9 @@ As issues abaixo já têm todas as dependências fechadas e receberam `next-up`.
 
 | Ordem | Issue | Assunto | Arquivos |
 |---|---|---|---|
-| 1 | #8 | docker-compose com healthcheck e `.env.example` | `docker-compose.yml`, `.env.example` |
-| 2 | #6 | Remover `jspdf` | `package.json`, `src/lib/pdf/` |
-| 3 | #21 | Constantes de diagramação | `src/domain/`, `src/lib/pdf/` |
-| 4 | #19 | Regras de lint (`semi`, sem `any`) | `eslint.config.mjs` e todo o `src/` |
+| 1 | #6 | Remover `jspdf` | `package.json`, `src/lib/pdf/` |
+| 2 | #21 | Constantes de diagramação | `src/domain/`, `src/lib/pdf/` |
+| 3 | #19 | Regras de lint (`semi`, sem `any`) | `eslint.config.mjs` e todo o `src/` |
 
 A #16 (feita) ficou antes de tudo porque só tocava `layout.tsx`, `globals.css` e a navbar — não encostava em nada que a #20 acabou de mover.
 
@@ -301,7 +300,7 @@ FECHADAS
 
 ABERTAS
   #5 (feita) ──> #6
-  #7 (feita) ──> #8 ──> #9
+  #7 (feita) ──> #8 (feita) ──> #9
   #19 regras lint  (por ultimo: reformata todo o src)
   #20 ──> #21 constantes
   #20 + #11 ──> #22 fluxo etapas
@@ -321,8 +320,8 @@ A #18 saiu do grafo: a medição de texto nunca rodou a cada tecla, então não 
 
 ### Ordem prática de trabalho
 
-1. **Agora:** #8, depois #6 — primeiras da fila. (#14, #7 e #5 feitas.)
-2. **Depois de #8:** #9 (documentação de deploy).
+1. **Agora:** #6, depois #21 — primeiras da fila. (#14, #7, #5 e #8 feitas.)
+2. **Agora também:** #9 (documentação de deploy), destravada pela #8.
 4. **Depois de #20 (feita):** #21 constantes e #22 fluxo em etapas.
 5. **Depois de #22:** #23 → #24 → #25 → (#26 → #27) e (#28 → #29).
 6. **Por último:** #19, porque reformata todo o `src`.
