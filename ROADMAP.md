@@ -134,7 +134,7 @@ Objetivo: um único estilo, tipagem explícita e responsabilidades separadas.
 - [x] 5.3 Separar responsabilidades em camadas: `src/domain` (tipos e regras do zine), `src/lib` (quebra de texto, medição, PDF), `src/components` (apresentação), `src/app` (rotas e orquestração). Nenhum componente de tela gera PDF diretamente.
 - [x] 5.4 Extrair o estado do editor para um hook (`useZineEditor`). Feito em #20. O cadastro por etapas segue na #22.
 - [ ] 5.5 Padronizar nomes: componentes em PascalCase, hooks com prefixo `use`, tipos sem prefixo `I`, constantes em `SCREAMING_SNAKE_CASE`.
-- [ ] 5.6 Substituir strings mágicas (medidas A4, margens, tamanhos de fonte) por constantes nomeadas em um único arquivo de configuração de diagramação.
+- [x] 5.6 Substituir strings mágicas (medidas A4, margens, tamanhos de fonte) por constantes nomeadas em um único arquivo de configuração de diagramação (`src/lib/pdf/layout.ts`).
 - [ ] 5.7 Centralizar o design system: remover classes arbitrárias repetidas, usar os tokens já definidos em `globals.css`.
 - [ ] 5.8 Revisar acessibilidade básica: `label` associado a `input`, `aria-*` nos seletores, contraste.
 - [ ] 5.9 Documentar as convenções no README e garantir que o lint as imponha.
@@ -261,10 +261,10 @@ Para pedir uma segunda tentativa em uma issue já processada, remova e reaplique
 | 2 — Docker e VPS | #7, #8, #9 | #7 e #8 entregues; #9 liberada |
 | 3 — Bugs | #10, #11, #12, #13, #14, #15, #16 | #10, #11, #12, #13, #14, #15 e #16 entregues |
 | 4 — Otimização | #17, #18 | #17 entregue; #18 fechada (o problema não existia) |
-| 5 — Padronização | #19, #20, #21 | #20 entregue; #19 na fila; #21 destravada |
+| 5 — Padronização | #19, #20, #21 | #20 e #21 entregues; #19 na fila |
 | 6 — Fluxo e diagramação | #22 a #29 | #22 destravada; #23 a #29 seguem em cadeia |
 
-Fechadas: #3 (lint), #4 (versão do Node), #5 (dependências e audit), #6 (`jspdf` removido), #7 (Dockerfile multi-stage), #8 (docker-compose e `.env.example`), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas), #16 (navbar e fonte do body).
+Fechadas: #3 (lint), #4 (versão do Node), #5 (dependências e audit), #6 (`jspdf` removido), #21 (constantes de diagramação), #7 (Dockerfile multi-stage), #8 (docker-compose e `.env.example`), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas), #16 (navbar e fonte do body).
 
 ### Fila de execução
 
@@ -272,14 +272,13 @@ As issues abaixo já têm todas as dependências fechadas e receberam `next-up`.
 
 | Ordem | Issue | Assunto | Arquivos |
 |---|---|---|---|
-| 1 | #21 | Constantes de diagramação | `src/domain/`, `src/lib/pdf/` |
-| 2 | #19 | Regras de lint (`semi`, sem `any`) | `eslint.config.mjs` e todo o `src/` |
+| 1 | #19 | Regras de lint (`semi`, sem `any`) | `eslint.config.mjs` e todo o `src/` |
 
 A #16 (feita) ficou antes de tudo porque só tocava `layout.tsx`, `globals.css` e a navbar — não encostava em nada que a #20 acabou de mover.
 
 A #14 foi feita logo depois da #20 porque mexia em três camadas em vez de duas: a data deixou de ser `useState` dentro do editor e passou a viver no domínio da capa, com o hook e a página consumindo. Fazer isso com a divisão da #20 recém-definida evitou reaprender o mapa dos arquivos.
 
-A #21 vem depois da #20 por dependência real: as constantes de diagramação precisam de um `src/domain` existente para morar.
+A #21 veio depois da #20 por depender do `src/domain` já separado. As constantes ficaram em `src/lib/pdf/layout.ts`, e não em `src/domain`: `src/domain` já importa de `src/lib`, então mover as medidas para lá criaria a dependência inversa `lib → domain → lib`.
 
 A #19 fica por último de propósito: ao exigir ponto e vírgula em todo o `src/`, ela reformata os arquivos que as anteriores escrevem. Executá-la antes gera conflito em cada PR seguinte.
 
@@ -301,7 +300,7 @@ ABERTAS
   #5 (feita) ──> #6 (feita)
   #7 (feita) ──> #8 (feita) ──> #9
   #19 regras lint  (por ultimo: reformata todo o src)
-  #20 ──> #21 constantes
+  #20 ──> #21 constantes (feita)
   #20 + #11 ──> #22 fluxo etapas
                    │
                    v
@@ -319,8 +318,8 @@ A #18 saiu do grafo: a medição de texto nunca rodou a cada tecla, então não 
 
 ### Ordem prática de trabalho
 
-1. **Agora:** #21, depois #19 — primeiras da fila. (#14, #7, #5, #8 e #6 feitas.)
+1. **Agora:** #19 — última da fila. (#14, #7, #5, #8, #6 e #21 feitas.)
 2. **Agora também:** #9 (documentação de deploy), destravada pela #8.
-4. **Depois de #20 (feita):** #21 constantes e #22 fluxo em etapas.
+4. **Depois de #20 (feita):** #21 (feita) e #22 fluxo em etapas.
 5. **Depois de #22:** #23 → #24 → #25 → (#26 → #27) e (#28 → #29).
 6. **Por último:** #19, porque reformata todo o `src`.

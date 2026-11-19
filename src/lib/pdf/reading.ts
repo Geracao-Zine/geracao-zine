@@ -1,20 +1,31 @@
 import { fontById } from "../fonts.ts";
 import { wrapText } from "../wrap-text.ts";
 import { embedZineFonts } from "./fonts.ts";
-import { A4, A4_CONTENT_WIDTH } from "./types.ts";
+import {
+	A4,
+	A4_CONTENT_WIDTH,
+	COVER_AUTHOR_SIZE,
+	COVER_DATE_COLOR,
+	COVER_DATE_SIZE,
+	COVER_DIVIDER_COLOR,
+	COVER_DIVIDER_THICKNESS,
+	COVER_DIVIDER_WIDTH,
+	COVER_GAP_AUTHOR_TO_DATE,
+	COVER_GAP_TITLE_TO_AUTHOR,
+	COVER_TITLE_LINE_HEIGHT,
+	COVER_TITLE_SIZE,
+	POEM_BLANK_LINE_HEIGHT,
+	POEM_BODY_COLOR,
+	POEM_BODY_SIZE,
+	POEM_DIVIDER_COLOR,
+	POEM_DIVIDER_THICKNESS,
+	POEM_GAP_AFTER_DIVIDER,
+	POEM_GAP_AFTER_TITLE,
+	POEM_LINE_HEIGHT,
+	POEM_TITLE_LINE_HEIGHT,
+	POEM_TITLE_SIZE,
+} from "./layout.ts";
 import type { ReadingPdfInput } from "./types.ts";
-
-const TITLE_SIZE = 30;
-const TITLE_LINE_HEIGHT = 38;
-const AUTHOR_SIZE = 14;
-const DATE_SIZE = 10;
-const GAP_TITLE_TO_AUTHOR = 40;
-const GAP_AUTHOR_TO_DATE = 10;
-const DIVIDER_WIDTH = 60;
-
-const POEM_TITLE_SIZE = 20;
-const POEM_BODY_SIZE = 13;
-const POEM_LINE_HEIGHT = 22;
 
 export async function generateReadingPdf(
 	input: ReadingPdfInput
@@ -43,63 +54,63 @@ export async function generateReadingPdf(
 	// ---------- CAPA ----------
 	const coverPage = pdfDoc.addPage([width, height]);
 
-	const titleLines = wrapText(input.coverTitle, titleFonts.bold, TITLE_SIZE, contentWidth);
-	const titleBlockHeight = titleLines.length * TITLE_LINE_HEIGHT;
+	const titleLines = wrapText(input.coverTitle, titleFonts.bold, COVER_TITLE_SIZE, contentWidth);
+	const titleBlockHeight = titleLines.length * COVER_TITLE_LINE_HEIGHT;
 	const temAutor = Boolean(input.authorName);
 	const temData = Boolean(input.date);
 
 	// Blocos vazios nao entram na conta: sem isso a capa sem data ficaria
 	// deslocada para cima, com o espaco da data reservado no vazio.
 	const authorBlockHeight = temAutor
-		? AUTHOR_SIZE + (temData ? GAP_AUTHOR_TO_DATE + DATE_SIZE : 0)
+		? COVER_AUTHOR_SIZE + (temData ? COVER_GAP_AUTHOR_TO_DATE + COVER_DATE_SIZE : 0)
 		: 0;
 	const totalBlockHeight =
 		titleBlockHeight +
-		GAP_TITLE_TO_AUTHOR +
+		COVER_GAP_TITLE_TO_AUTHOR +
 		authorBlockHeight +
-		(temData ? DATE_SIZE : 0);
+		(temData ? COVER_DATE_SIZE : 0);
 
 	let cursorY = height / 2 + totalBlockHeight / 2;
 
 	for (const line of titleLines) {
-		const lineWidth = titleFonts.bold.widthOfTextAtSize(line, TITLE_SIZE);
+		const lineWidth = titleFonts.bold.widthOfTextAtSize(line, COVER_TITLE_SIZE);
 		coverPage.drawText(line, {
 			x: (width - lineWidth) / 2,
 			y: cursorY,
-			size: TITLE_SIZE,
+			size: COVER_TITLE_SIZE,
 			font: titleFonts.bold,
 		});
-		cursorY -= TITLE_LINE_HEIGHT;
+		cursorY -= COVER_TITLE_LINE_HEIGHT;
 	}
 
-	cursorY -= GAP_TITLE_TO_AUTHOR / 2;
+	cursorY -= COVER_GAP_TITLE_TO_AUTHOR / 2;
 	coverPage.drawLine({
-		start: { x: (width - DIVIDER_WIDTH) / 2, y: cursorY },
-		end: { x: (width + DIVIDER_WIDTH) / 2, y: cursorY },
-		thickness: 1,
-		color: rgb(0.6, 0.6, 0.6),
+		start: { x: (width - COVER_DIVIDER_WIDTH) / 2, y: cursorY },
+		end: { x: (width + COVER_DIVIDER_WIDTH) / 2, y: cursorY },
+		thickness: COVER_DIVIDER_THICKNESS,
+		color: rgb(COVER_DIVIDER_COLOR, COVER_DIVIDER_COLOR, COVER_DIVIDER_COLOR),
 	});
-	cursorY -= GAP_TITLE_TO_AUTHOR / 2;
+	cursorY -= COVER_GAP_TITLE_TO_AUTHOR / 2;
 
 	if (temAutor) {
-		const authorWidth = authorFonts.regular.widthOfTextAtSize(input.authorName, AUTHOR_SIZE);
+		const authorWidth = authorFonts.regular.widthOfTextAtSize(input.authorName, COVER_AUTHOR_SIZE);
 		coverPage.drawText(input.authorName, {
 			x: (width - authorWidth) / 2,
 			y: cursorY,
-			size: AUTHOR_SIZE,
+			size: COVER_AUTHOR_SIZE,
 			font: authorFonts.regular,
 		});
-		cursorY -= temData ? GAP_AUTHOR_TO_DATE + DATE_SIZE : 0;
+		cursorY -= temData ? COVER_GAP_AUTHOR_TO_DATE + COVER_DATE_SIZE : 0;
 	}
 
 	if (temData) {
-		const dateWidth = titleFonts.regular.widthOfTextAtSize(input.date, DATE_SIZE);
+		const dateWidth = titleFonts.regular.widthOfTextAtSize(input.date, COVER_DATE_SIZE);
 		coverPage.drawText(input.date, {
 			x: (width - dateWidth) / 2,
 			y: cursorY,
-			size: DATE_SIZE,
+			size: COVER_DATE_SIZE,
 			font: titleFonts.regular,
-			color: rgb(0.5, 0.5, 0.5),
+			color: rgb(COVER_DATE_COLOR, COVER_DATE_COLOR, COVER_DATE_COLOR),
 		});
 	}
 
@@ -119,17 +130,17 @@ export async function generateReadingPdf(
 				size: POEM_TITLE_SIZE,
 				font: titleFonts.bold,
 			});
-			y -= POEM_TITLE_SIZE + 6;
+			y -= POEM_TITLE_LINE_HEIGHT;
 		}
 
-		y -= 6;
+		y -= POEM_GAP_AFTER_TITLE;
 		page.drawLine({
 			start: { x: margin, y },
 			end: { x: width - margin, y },
-			thickness: 0.5,
-			color: rgb(0.75, 0.75, 0.75),
+			thickness: POEM_DIVIDER_THICKNESS,
+			color: rgb(POEM_DIVIDER_COLOR, POEM_DIVIDER_COLOR, POEM_DIVIDER_COLOR),
 		});
-		y -= 30;
+		y -= POEM_GAP_AFTER_DIVIDER;
 
 		const bodyLines = wrapText(poem.poetry, titleFonts.italic, POEM_BODY_SIZE, contentWidth);
 
@@ -140,7 +151,7 @@ export async function generateReadingPdf(
 			}
 
 			if (line === "") {
-				y -= POEM_LINE_HEIGHT / 2;
+				y -= POEM_BLANK_LINE_HEIGHT;
 				continue;
 			}
 
@@ -149,7 +160,7 @@ export async function generateReadingPdf(
 				y,
 				size: POEM_BODY_SIZE,
 				font: titleFonts.italic,
-				color: rgb(0.15, 0.15, 0.15),
+				color: rgb(POEM_BODY_COLOR, POEM_BODY_COLOR, POEM_BODY_COLOR),
 			});
 			y -= POEM_LINE_HEIGHT;
 		}

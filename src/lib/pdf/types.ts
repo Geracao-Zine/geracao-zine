@@ -14,10 +14,4 @@ export type ReadingPdfInput = {
 	poems: PdfPoem[];
 };
 
-export const A4 = {
-	width: 595,
-	height: 842,
-	margin: 70,
-} as const;
-
-export const A4_CONTENT_WIDTH = A4.width - A4.margin * 2;
+export { A4, A4_CONTENT_WIDTH } from "./layout.ts";
