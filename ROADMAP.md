@@ -235,3 +235,64 @@ Uma tarefa só é considerada concluída quando:
 3. Não introduz `any`, `console.log` ou número mágico novo.
 4. Quando afeta diagramação, foi validada com impressão física.
 5. Este roadmap foi atualizado.
+
+## Issues no GitHub
+
+Cada tarefa abaixo existe como issue no repositório, agrupada por milestone de fase. As issues são a fonte de verdade do andamento; este documento explica o **porquê** de cada fase e da ordem.
+
+### Como funciona a automação
+
+O label `auto-implement` marca a issue para ser capturada e processada automaticamente: a automação detecta o label, cria uma branch, implementa, e abre o pull request.
+
+O label `blocked` significa que a issue ainda não deve ser capturada, porque depende de outra ser mergeada primeiro. Quando a dependência entra na `master`, remova `blocked` e adicione `auto-implement`.
+
+Para pedir uma segunda tentativa em uma issue já processada, remova e reaplique o label: isso abre uma nova branch e um novo PR, sem sobrescrever o anterior.
+
+### Estado das issues
+
+| Fase | Issues | Armadas agora |
+|---|---|---|
+| 1 — Node e dependências | #3, #4, #5, #6 | #3 |
+| 2 — Docker e VPS | #7, #8, #9 | — |
+| 3 — Bugs | #10, #11, #12, #13, #14, #15, #16 | #10, #13 |
+| 4 — Otimização | #17, #18 | — |
+| 5 — Padronização | #19, #20, #21 | — |
+| 6 — Fluxo e diagramação | #22, #23, #24, #25, #26, #27, #28, #29 | — |
+
+Armadas de imediato apenas as três que não dependem de nada: #3 (lint), #10 (navbar) e #13 (imports mortos). As demais estão em `blocked` para não gerarem PRs conflitantes sobre os mesmos arquivos.
+
+### Grafo de dependências
+
+```
+#3 lint ──┬─> #4 node ──> #5 deps ──> #6 jspdf
+          ├─> #7 dockerfile ──> #8 compose ──> #9 deploy vps
+          ├─> #11 modelo editor ──┬─> #12 wrapText ──┐
+          │                       ├─> #14 data        │
+          │                       └─> #15 fonte       │
+          └─> #19 regras lint                        │
+                                                     v
+#10 navbar ──> #16 navbar/body        #17 pdf dinamico ──> #18 memo
+                                            │
+                                            v
+                                      #20 camadas ──> #21 constantes
+                                            │
+#11 ────────────────────────────────────────┴─> #22 fluxo etapas
+                                                     │
+                                                     v
+                                                #23 pagina zine
+                                                     │
+                                                     v
+                                                #24 auto-fonte
+                                                     │
+                                                     v
+                                    #25 T1-T4 ──┬─> #26 T5,T11 ──> #27 T6-T10,T12
+                                                └─> #28 frente/verso ──> #29 marcas
+```
+
+### Ordem prática de trabalho
+
+1. **Agora:** #3, #10, #13 — sem dependências, em paralelo.
+2. **Depois de #3:** #4 → #5 → #6 (todas no `package.json`, em série para evitar conflito).
+3. **Depois de #5:** #7 → #8 → #9 (infraestrutura).
+4. **Depois de #3:** #11, que destrava a maior parte da Fase 3.
+5. **Só então:** Fases 4, 5 e 6, na ordem do grafo.
