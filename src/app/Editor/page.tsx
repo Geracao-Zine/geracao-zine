@@ -7,13 +7,10 @@ import { Suspense } from "react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import type { PDFFont } from "pdf-lib";
 import { FormatSelector, ZineFormat } from "@/components/FormatSelector";
+import type { PoemField, ZineDoc } from "@/lib/zine-pages";
+import { addPage, createDoc, poemPages, removePage, setPoemField } from "@/lib/zine-pages";
 
-type PageContent = {
-	title: string;
-	poetry: string;
-};
-
-function EditorPage() {
+function EditorPage(): JSX.Element {
 	const searchParams = useSearchParams();
 
 	const coverTitle = searchParams.get("coverTitle") || "";
@@ -28,56 +25,28 @@ function EditorPage() {
 
 	const formattedDate = useMemo(() => new Date(date).toLocaleDateString("pt-BR"), [date]);
 
-	const [pageList, setPageList] = useState<number[]>(
-		Array.from({ length: 2 }, (_, i) => i + 1)
-	);
+	const [doc, setDoc] = useState<ZineDoc>(createDoc);
 
-	const [content, setContent] = useState<Record<number, PageContent>>({});
+	const pages = doc.pages;
+	const poems = useMemo(() => poemPages(doc), [doc]);
 
 	const handleChange = (
-		page: number,
-		field: "title" | "poetry",
+		id: string,
+		field: PoemField,
 		value: string
-	) => {
-		setContent((prev) => ({
-			...prev,
-			[page]: {
-				...prev[page],
-				[field]: value,
-			},
-		}));
+	): void => {
+		setDoc((prev) => setPoemField(prev, id, field, value));
 	};
 
-	const addPage = () => {
-		setPageList((prev) => [...prev, prev.length + 1]);
+	const handleAddPage = (): void => {
+		setDoc((prev) => addPage(prev));
 	};
 
-	const removePage = (pageNumber: number) => {
-		if (pageNumber === 1) return;
-
-		setPageList((prev) => {
-			const updated = prev.filter((p) => p !== pageNumber);
-			return updated.map((_, index) => index + 1);
-		});
-
-		setContent((prev) => {
-			const newContent: Record<number, PageContent> = {};
-			const updatedPages = pageList
-				.filter((p) => p !== pageNumber)
-				.map((_, index) => index + 1);
-
-			updatedPages.forEach((newNumber, index) => {
-				const oldNumber = pageList.filter((p) => p !== pageNumber)[index];
-				if (prev[oldNumber]) {
-					newContent[newNumber] = prev[oldNumber];
-				}
-			});
-
-			return newContent;
-		});
+	const handleRemovePage = (id: string): void => {
+		setDoc((prev) => removePage(prev, id));
 	};
 
-	const downloadBlob = (bytes: Uint8Array, filename: string) => {
+	const downloadBlob = (bytes: Uint8Array, filename: string): void => {
 		const blob = new Blob([bytes as unknown as BlobPart], { type: "application/pdf" });
 		const url = URL.createObjectURL(blob);
 
@@ -120,7 +89,7 @@ function EditorPage() {
 		return lines;
 	}
 
-	const generatePdfReading = async () => {
+	const generatePdfReading = async (): Promise<void> => {
 		const pdfDoc = await PDFDocument.create();
 		const pageWidth = 595;   // A4 retrato
 		const pageHeight = 842;
@@ -199,72 +168,68 @@ function EditorPage() {
 		const topStart = pageHeight - margin;
 		const bottomLimit = margin;
 
-		pageList
-			.filter((n) => n !== 1)
-			.forEach((n) => {
-				const data = content[n] || { title: "", poetry: "" };
+		poems.forEach((poem) => {
+			let page = pdfDoc.addPage([pageWidth, pageHeight]);
+			let y = topStart;
 
-				let page = pdfDoc.addPage([pageWidth, pageHeight]);
-				let y = topStart;
-
-				// Título do poema
-				const titleLinesPoem = wrapText(data.title || "", boldFont, poemTitleSize, contentWidth);
-				titleLinesPoem.forEach((line) => {
-					page.drawText(line, {
-						x: margin,
-						y,
-						size: poemTitleSize,
-						font: boldFont,
-					});
-					y -= poemTitleSize + 6;
+			// Título do poema
+			const titleLinesPoem = wrapText(poem.title || "", boldFont, poemTitleSize, contentWidth);
+			titleLinesPoem.forEach((line) => {
+				page.drawText(line, {
+					x: margin,
+					y,
+					size: poemTitleSize,
+					font: boldFont,
 				});
-
-				// Linha divisória sob o título
-				y -= 6;
-				page.drawLine({
-					start: { x: margin, y },
-					end: { x: pageWidth - margin, y },
-					thickness: 0.5,
-					color: rgb(0.75, 0.75, 0.75),
-				});
-				y -= 30;
-
-				// Corpo do poema, com quebra automática de página se necessário
-				const bodyLines = wrapText(data.poetry || "", italicFont, poemBodySize, contentWidth);
-
-				bodyLines.forEach((line) => {
-					if (y < bottomLimit) {
-						// Não cabe mais: cria nova página e continua
-						page = pdfDoc.addPage([pageWidth, pageHeight]);
-						y = topStart;
-					}
-
-					if (line === "") {
-						y -= poemLineHeight / 2; // linha em branco entre estrofes
-						return;
-					}
-
-					page.drawText(line, {
-						x: margin,
-						y,
-						size: poemBodySize,
-						font: italicFont,
-						color: rgb(0.15, 0.15, 0.15),
-					});
-					y -= poemLineHeight;
-				});
+				y -= poemTitleSize + 6;
 			});
+
+			// Linha divisória sob o título
+			y -= 6;
+			page.drawLine({
+				start: { x: margin, y },
+				end: { x: pageWidth - margin, y },
+				thickness: 0.5,
+				color: rgb(0.75, 0.75, 0.75),
+			});
+			y -= 30;
+
+			// Corpo do poema, com quebra automática de página se necessário
+			const bodyLines = wrapText(poem.poetry || "", italicFont, poemBodySize, contentWidth);
+
+			bodyLines.forEach((line) => {
+				if (y < bottomLimit) {
+					// Não cabe mais: cria nova página e continua
+					page = pdfDoc.addPage([pageWidth, pageHeight]);
+					y = topStart;
+				}
+
+				if (line === "") {
+					y -= poemLineHeight / 2; // linha em branco entre estrofes
+					return;
+				}
+
+				page.drawText(line, {
+					x: margin,
+					y,
+					size: poemBodySize,
+					font: italicFont,
+					color: rgb(0.15, 0.15, 0.15),
+				});
+				y -= poemLineHeight;
+			});
+		});
 
 		const pdfBytes = await pdfDoc.save();
 		downloadBlob(pdfBytes, "zine-leitura.pdf");
 	};
 	
 	// 🚧 Placeholders para os formatos ainda não implementados
-	const generatePdfMiniZine = async () => {
+	const generatePdfMiniZine = async (): Promise<void> => {
 		alert("O formato Minizine de 1 folha ainda está em desenvolvimento. Em breve!");
 	};
 
-	const generatePdfSaddleStitch = async () => {
+	const generatePdfSaddleStitch = async (): Promise<void> => {
 		alert("O formato Fanzine grampeado ainda está em desenvolvimento. Em breve!");
 	};
 
@@ -275,7 +240,7 @@ function EditorPage() {
 		"saddle-stitch": generatePdfSaddleStitch,
 	};
 
-	const handleGeneratePdf = async () => {
+	const handleGeneratePdf = async (): Promise<void> => {
 		const generator = generators[format];
 		await generator();
 	};
@@ -286,12 +251,12 @@ function EditorPage() {
 
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 
-				{pageList.map((pageNumber) => {
+				{pages.map((page) => {
 
-					if (pageNumber === 1) {
+					if (page.kind === "cover") {
 						return (
 							<div
-								key={pageNumber}
+								key={page.id}
 								className="bg-gradient-to-br from-purple-600 to-purple-900 text-white shadow-2xl rounded-2xl aspect-[3/4] flex flex-col justify-between p-8"
 							>
 								<div className="flex-1 flex items-center justify-center text-center">
@@ -308,15 +273,15 @@ function EditorPage() {
 						);
 					}
 
-					const pageData = content[pageNumber] || { title: "", poetry: "" };
+					const position = poems.findIndex((poem) => poem.id === page.id) + 1;
 
 					return (
 						<div
-							key={pageNumber}
+							key={page.id}
 							className="bg-white dark:bg-zinc-900 shadow-xl rounded-2xl aspect-[3/4] border border-zinc-200 dark:border-zinc-800 flex flex-col p-6 relative"
 						>
 							<button
-								onClick={() => removePage(pageNumber)}
+								onClick={() => handleRemovePage(page.id)}
 								className="absolute top-3 right-3 text-zinc-400 hover:text-red-500 transition text-[1rem] cursor-pointer"
 							>
 								❌
@@ -325,20 +290,20 @@ function EditorPage() {
 							<input
 								type="text"
 								placeholder="Título da página"
-								value={pageData.title}
-								onChange={(e) => handleChange(pageNumber, "title", e.target.value)}
+								value={page.title}
+								onChange={(e) => handleChange(page.id, "title", e.target.value)}
 								className="text-xl font-semibold bg-transparent border-b border-zinc-300 dark:border-zinc-700 outline-none mb-4 pb-2 focus:border-purple-600"
 							/>
 
 							<textarea
 								placeholder="Escreva sua poesia aqui..."
-								value={pageData.poetry}
-								onChange={(e) => handleChange(pageNumber, "poetry", e.target.value)}
+								value={page.poetry}
+								onChange={(e) => handleChange(page.id, "poetry", e.target.value)}
 								className="flex-1 resize-none bg-transparent outline-none text-sm leading-relaxed"
 							/>
 
 							<div className="text-center text-xs text-zinc-400 mt-4">
-								{pageNumber}
+								{position}
 							</div>
 						</div>
 					);
@@ -346,7 +311,7 @@ function EditorPage() {
 
 				<nav className="mb-8 flex flex-col md:flex-row gap-2 justify-between lg:col-span-3">
 					<button
-						onClick={addPage}
+						onClick={handleAddPage}
 						className="bg-purple-600 text-white px-6 py-2 rounded-full hover:opacity-90 transition"
 					>
 						➕ Adicionar Página
