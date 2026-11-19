@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, StandardFonts } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 
 import { FONTS, resolveFontId, fontById, DEFAULT_FONT_ID } from "../src/lib/fonts.ts";
@@ -109,14 +109,20 @@ test("a fonte embutida aceita caracteres fora do Latin-1", async () => {
 	}
 });
 
+const PADRAO = {
+        regular: StandardFonts.Helvetica,
+        bold: StandardFonts.HelveticaBold,
+        italic: StandardFonts.HelveticaOblique,
+};
+
 test("embedZineFonts embute a fonte quando o arquivo existe", async () => {
 	comFetchDeDisco(false);
 
-	const { embedZineFonts } = await import("../src/lib/pdf-fonts.ts");
+	const { embedZineFonts } = await import("../src/lib/pdf/fonts.ts");
 	const pdfDoc = await PDFDocument.create();
 	pdfDoc.registerFontkit(fontkit);
 
-	const result = await embedZineFonts(pdfDoc, fontById("geistSans"));
+	const result = await embedZineFonts(pdfDoc, fontById("geistSans"), PADRAO);
 
 	assert.equal(result.embedded, true);
 	assert.ok(result.regular.widthOfTextAtSize("coração", 12) > 0);
@@ -125,11 +131,11 @@ test("embedZineFonts embute a fonte quando o arquivo existe", async () => {
 test("embedZineFonts cai na fonte padrao quando o download falha", async () => {
 	comFetchDeDisco(true);
 
-	const { embedZineFonts } = await import("../src/lib/pdf-fonts.ts");
+	const { embedZineFonts } = await import("../src/lib/pdf/fonts.ts");
 	const pdfDoc = await PDFDocument.create();
 	pdfDoc.registerFontkit(fontkit);
 
-	const result = await embedZineFonts(pdfDoc, fontById("geistMono"));
+	const result = await embedZineFonts(pdfDoc, fontById("geistMono"), PADRAO);
 
 	assert.equal(result.embedded, false);
 

@@ -1,12 +1,17 @@
 import type { PDFDocument, PDFFont } from "pdf-lib";
-import { StandardFonts } from "pdf-lib";
-import type { FontFace } from "./fonts";
+import type { FontFace } from "../fonts.ts";
 
 export type EmbedResult = {
 	regular: PDFFont;
 	bold: PDFFont;
 	italic: PDFFont;
 	embedded: boolean;
+};
+
+export type StandardFontNames = {
+	regular: string;
+	bold: string;
+	italic: string;
 };
 
 const cache = new Map<string, ArrayBuffer>();
@@ -30,23 +35,27 @@ async function fetchFont(path: string): Promise<ArrayBuffer> {
 // As fontes padrao do PDF cobrem Latin-1, o que inclui toda a acentuacao
 // portuguesa, mas nao cirilico, grego ou emoji. O fallback existe para o caso
 // de a fonte do cadastro nao poder ser carregada, nao para corrigir acentos.
-async function embedStandard(pdfDoc: PDFDocument): Promise<EmbedResult> {
+async function embedStandard(
+	pdfDoc: PDFDocument,
+	standard: StandardFontNames
+): Promise<EmbedResult> {
 	return {
-		regular: await pdfDoc.embedFont(StandardFonts.Helvetica),
-		bold: await pdfDoc.embedFont(StandardFonts.HelveticaBold),
-		italic: await pdfDoc.embedFont(StandardFonts.HelveticaOblique),
+		regular: await pdfDoc.embedFont(standard.regular),
+		bold: await pdfDoc.embedFont(standard.bold),
+		italic: await pdfDoc.embedFont(standard.italic),
 		embedded: false,
 	};
 }
 
 export async function embedZineFonts(
-pdfDoc: PDFDocument,
-face: FontFace
+	pdfDoc: PDFDocument,
+	face: FontFace,
+	standard: StandardFontNames
 ): Promise<EmbedResult> {
 	try {
 		const [regular, bold] = await Promise.all([
-		fetchFont(face.regular),
-		fetchFont(face.bold),
+			fetchFont(face.regular),
+			fetchFont(face.bold),
 		]);
 
 		return {
@@ -56,6 +65,6 @@ face: FontFace
 			embedded: true,
 		};
 	} catch {
-		return embedStandard(pdfDoc);
+		return embedStandard(pdfDoc, standard);
 	}
 }

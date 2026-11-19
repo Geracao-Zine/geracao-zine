@@ -4,15 +4,13 @@ import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { JSX } from "react";
 import { Suspense } from "react";
-import { PDFDocument, rgb } from "pdf-lib";
-import fontkit from "@pdf-lib/fontkit";
 import { FormatSelector, ZineFormat } from "@/components/FormatSelector";
 import type { PoemField, ZineDoc } from "@/lib/zine-pages";
 import { addPage, createDoc, poemPages, removePage, setPoemField } from "@/lib/zine-pages";
-import { wrapText } from "@/lib/wrap-text";
 import type { FontId } from "@/lib/fonts";
 import { fontById, resolveFontId } from "@/lib/fonts";
-import { embedZineFonts } from "@/lib/pdf-fonts";
+import { generateReadingPdf } from "@/lib/pdf";
+import type { ReadingPdfInput } from "@/lib/pdf";
 
 function EditorPage(): JSX.Element {
 	const searchParams = useSearchParams();
@@ -66,145 +64,19 @@ function EditorPage(): JSX.Element {
 	};
 
 	const generatePdfReading = async (): Promise<void> => {
-		const pdfDoc = await PDFDocument.create();
-		const pageWidth = 595;   // A4 retrato
-		const pageHeight = 842;
-		const margin = 70;
-		const contentWidth = pageWidth - margin * 2;
+		const input: ReadingPdfInput = {
+			coverTitle,
+			authorName,
+			titleFont: titleFontId,
+			authorFont: authorFontId,
+			date: formattedDate,
+			poems: poems.map((poem) => ({ title: poem.title, poetry: poem.poetry })),
+		};
 
-		pdfDoc.registerFontkit(fontkit);
-
-		const titleFonts = await embedZineFonts(pdfDoc, fontById(titleFontId));
-		const authorFonts = await embedZineFonts(pdfDoc, fontById(authorFontId));
-
-		const font = titleFonts.regular;
-		const boldFont = titleFonts.bold;
-		const italicFont = titleFonts.italic;
-
-		// ---------- CAPA ----------
-		const coverPage = pdfDoc.addPage([pageWidth, pageHeight]);
-
-		const titleFontSize = 30;
-		const titleLineHeight = 38;
-		const titleLines = wrapText(coverTitle || "", boldFont, titleFontSize, contentWidth);
-
-		const authorFontSize = 14;
-		const dateFontSize = 10;
-		const gapTitleToAuthor = 40;
-		const gapAuthorToDate = 10;
-
-		const titleBlockHeight = titleLines.length * titleLineHeight;
-		const authorBlockHeight = authorFontSize + gapAuthorToDate + dateFontSize;
-		const totalBlockHeight = titleBlockHeight + gapTitleToAuthor + authorBlockHeight;
-
-		// Centraliza o bloco inteiro verticalmente na página
-		let cursorY = pageHeight / 2 + totalBlockHeight / 2;
-
-		titleLines.forEach((line) => {
-			const lineWidth = boldFont.widthOfTextAtSize(line, titleFontSize);
-			coverPage.drawText(line, {
-				x: (pageWidth - lineWidth) / 2,
-				y: cursorY,
-				size: titleFontSize,
-				font: boldFont,
-			});
-			cursorY -= titleLineHeight;
-		});
-
-		// Linha decorativa
-		cursorY -= gapTitleToAuthor / 2;
-		const dividerWidth = 60;
-		coverPage.drawLine({
-			start: { x: (pageWidth - dividerWidth) / 2, y: cursorY },
-			end: { x: (pageWidth + dividerWidth) / 2, y: cursorY },
-			thickness: 1,
-			color: rgb(0.6, 0.6, 0.6),
-		});
-		cursorY -= gapTitleToAuthor / 2;
-
-		if (authorName) {
-			const authorWidth = authorFonts.regular.widthOfTextAtSize(authorName, authorFontSize);
-			coverPage.drawText(authorName, {
-				x: (pageWidth - authorWidth) / 2,
-				y: cursorY,
-				size: authorFontSize,
-				font: authorFonts.regular,
-			});
-			cursorY -= gapAuthorToDate + dateFontSize;
-		}
-
-		const dateWidth = font.widthOfTextAtSize(formattedDate, dateFontSize);
-		coverPage.drawText(formattedDate, {
-			x: (pageWidth - dateWidth) / 2,
-			y: cursorY,
-			size: dateFontSize,
-			font,
-			color: rgb(0.5, 0.5, 0.5),
-		});
-
-		// ---------- PÁGINAS DE POEMA ----------
-		const poemTitleSize = 20;
-		const poemBodySize = 13;
-		const poemLineHeight = 22;
-		const topStart = pageHeight - margin;
-		const bottomLimit = margin;
-
-		poems.forEach((poem) => {
-			let page = pdfDoc.addPage([pageWidth, pageHeight]);
-			let y = topStart;
-
-			// Título do poema
-			const titleLinesPoem = wrapText(poem.title || "", boldFont, poemTitleSize, contentWidth);
-			titleLinesPoem.forEach((line) => {
-				page.drawText(line, {
-					x: margin,
-					y,
-					size: poemTitleSize,
-					font: boldFont,
-				});
-				y -= poemTitleSize + 6;
-			});
-
-			// Linha divisória sob o título
-			y -= 6;
-			page.drawLine({
-				start: { x: margin, y },
-				end: { x: pageWidth - margin, y },
-				thickness: 0.5,
-				color: rgb(0.75, 0.75, 0.75),
-			});
-			y -= 30;
-
-			// Corpo do poema, com quebra automática de página se necessário
-			const bodyLines = wrapText(poem.poetry || "", italicFont, poemBodySize, contentWidth);
-
-			bodyLines.forEach((line) => {
-				if (y < bottomLimit) {
-					// Não cabe mais: cria nova página e continua
-					page = pdfDoc.addPage([pageWidth, pageHeight]);
-					y = topStart;
-				}
-
-				if (line === "") {
-					y -= poemLineHeight / 2; // linha em branco entre estrofes
-					return;
-				}
-
-				page.drawText(line, {
-					x: margin,
-					y,
-					size: poemBodySize,
-					font: italicFont,
-					color: rgb(0.15, 0.15, 0.15),
-				});
-				y -= poemLineHeight;
-			});
-		});
-
-		const pdfBytes = await pdfDoc.save();
-		downloadBlob(pdfBytes, "zine-leitura.pdf");
+		const bytes = await generateReadingPdf(input);
+		downloadBlob(bytes, "zine-leitura.pdf");
 	};
-	
+
 	// 🚧 Placeholders para os formatos ainda não implementados
 	const generatePdfMiniZine = async (): Promise<void> => {
 		alert("O formato Minizine de 1 folha ainda está em desenvolvimento. Em breve!");
