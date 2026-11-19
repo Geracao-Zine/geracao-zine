@@ -130,8 +130,8 @@ Objetivo: um único estilo, tipagem explícita e responsabilidades separadas.
 
 - [ ] 5.1 Tipagem explícita: proibir `any`, tipar retornos de função e props; `strict` já está ativo, reforçar com `@typescript-eslint/no-explicit-any` como erro.
 - [ ] 5.2 Ponto e vírgula obrigatório ao final das linhas de comando, garantido por regra de lint (`semi`) e aplicado em todo o `src`.
-- [ ] 5.3 Separar responsabilidades em camadas: `src/domain` (tipos e regras do zine), `src/lib` (quebra de texto, medição, PDF), `src/components` (apresentação), `src/app` (rotas e orquestração). Nenhum componente de tela gera PDF diretamente.
-- [ ] 5.4 Extrair o estado do editor para um hook (`useZineEditor`) e o cadastro para um formulário com validação por etapa.
+- [x] 5.3 Separar responsabilidades em camadas: `src/domain` (tipos e regras do zine), `src/lib` (quebra de texto, medição, PDF), `src/components` (apresentação), `src/app` (rotas e orquestração). Nenhum componente de tela gera PDF diretamente.
+- [x] 5.4 Extrair o estado do editor para um hook (`useZineEditor`). Feito em #20. O cadastro por etapas segue na #22.
 - [ ] 5.5 Padronizar nomes: componentes em PascalCase, hooks com prefixo `use`, tipos sem prefixo `I`, constantes em `SCREAMING_SNAKE_CASE`.
 - [ ] 5.6 Substituir strings mágicas (medidas A4, margens, tamanhos de fonte) por constantes nomeadas em um único arquivo de configuração de diagramação.
 - [ ] 5.7 Centralizar o design system: remover classes arbitrárias repetidas, usar os tokens já definidos em `globals.css`.
@@ -259,11 +259,11 @@ Para pedir uma segunda tentativa em uma issue já processada, remova e reaplique
 | 1 — Node e dependências | #3, #4, #5, #6 | #3 e #4 entregues; #5 na fila; #6 bloqueada por #5 |
 | 2 — Docker e VPS | #7, #8, #9 | #7 na fila; #8 e #9 bloqueadas em cadeia |
 | 3 — Bugs | #10, #11, #12, #13, #14, #15, #16 | #10, #11, #12, #13 e #15 entregues; #14 e #16 na fila |
-| 4 — Otimização | #17, #18 | #17 na fila; #18 bloqueada por #17 |
-| 5 — Padronização | #19, #20, #21 | #19 na fila; #20 e #21 bloqueadas por #17 |
-| 6 — Fluxo e diagramação | #22 a #29 | bloqueadas em cadeia por #20 |
+| 4 — Otimização | #17, #18 | #17 entregue; #18 fechada (o problema não existia) |
+| 5 — Padronização | #19, #20, #21 | #20 entregue; #19 na fila; #21 destravada |
+| 6 — Fluxo e diagramação | #22 a #29 | #22 destravada; #23 a #29 seguem em cadeia |
 
-Fechadas: #3 (lint), #4 (versão do Node), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #15 (fonte do PDF).
+Fechadas: #3 (lint), #4 (versão do Node), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas).
 
 ### Fila de execução
 
@@ -271,51 +271,60 @@ As issues abaixo já têm todas as dependências fechadas e receberam `next-up`.
 
 | Ordem | Issue | Assunto | Arquivos |
 |---|---|---|---|
-| 1 | #17 | `pdf-lib` por import dinâmico | `src/app/Editor/page.tsx`, `src/lib/pdf/` |
-| 2 | #16 | Altura da navbar e fonte do body | `src/app/layout.tsx`, `globals.css`, `Navbar/index.tsx` |
-| 3 | #14 | Data opcional e editável | `src/app/Create/page.tsx`, `Editor/page.tsx` |
-| 4 | #7 | Dockerfile multi-stage | `next.config.ts`, `Dockerfile` |
-| 5 | #5 | Dependências e vulnerabilidades | `package.json`, `package-lock.json` |
+| 1 | #16 | Altura da navbar e fonte do body | `src/app/layout.tsx`, `globals.css`, `Navbar/index.tsx` |
+| 2 | #14 | Data opcional e editável | `src/app/Create/page.tsx`, `src/hooks/useZineEditor.ts`, `src/domain/cover.ts` |
+| 3 | #7 | Dockerfile multi-stage | `next.config.ts`, `Dockerfile` |
+| 4 | #5 | Dependências e vulnerabilidades | `package.json`, `package-lock.json` |
+| 5 | #21 | Constantes de diagramação | `src/domain/`, `src/lib/pdf/` |
 | 6 | #19 | Regras de lint (`semi`, sem `any`) | `eslint.config.mjs` e todo o `src/` |
 
-A #17 vem antes da #16 e da #14 de propósito: ela tira o `pdf-lib` do topo do `Editor/page.tsx` e move a geração para um módulo próprio. As duas seguintes também mexem nesse arquivo, então fazer a #17 primeiro evita reescrever a mesma região três vezes.
+A #16 vem primeiro porque só toca `layout.tsx`, `globals.css` e a navbar — não encosta em nada que a #20 acabou de mover.
 
-A #18 (memoização) destrava junto com a #17, porque a medição de texto sai do componente no mesmo movimento.
+A #14 agora mexe em três camadas em vez de duas: a data deixa de ser `useState` dentro do editor e passa a viver no domínio da capa, com o hook e a página consumindo. Como a #20 acabou de definir essa divisão, fazer a #14 logo depois evita reaprender o mapa dos arquivos.
+
+A #21 vem depois da #20 por dependência real: as constantes de diagramação precisam de um `src/domain` existente para morar.
 
 A #19 fica por último de propósito: ao exigir ponto e vírgula em todo o `src/`, ela reformata os arquivos que as anteriores escrevem. Executá-la antes gera conflito em cada PR seguinte.
+
+A #22 (fluxo em etapas) também está destravada, mas fica para depois da fila acima: é funcionalidade nova e grande, e convém que a #14 já tenha estabilizado o modelo de data e capa antes de o cadastro virar etapas.
 
 ### Grafo de dependências
 
 ```
-#3 lint ──┬─> #4 node ──> #5 deps ──> #6 jspdf
-          ├─> #7 dockerfile ──> #8 compose ──> #9 deploy vps
-          ├─> #11 modelo editor ──┬─> #12 wrapText ──┐
-          │                       ├─> #14 data        │
-          │                       └─> #15 fonte       │
-          └─> #19 regras lint                        │
-                                                     v
-#10 navbar ──> #16 navbar/body        #17 pdf dinamico ──> #18 memo
-                                            │
-                                            v
-                                      #20 camadas ──> #21 constantes
-                                            │
-#11 ────────────────────────────────────────┴─> #22 fluxo etapas
-                                                     │
-                                                     v
-                                                #23 pagina zine
-                                                     │
-                                                     v
-                                                #24 auto-fonte
-                                                     │
-                                                     v
-                                    #25 T1-T4 ──┬─> #26 T5,T11 ──> #27 T6-T10,T12
-                                                └─> #28 frente/verso ──> #29 marcas
+FECHADAS
+  #3 lint ──> #4 node ──> #5 deps ──> #6 jspdf
+  #3 ──> #11 modelo editor ──> #12 wrapText
+  #10 navbar ──> #16 navbar/body
+  #17 pdf dinamico
+  #20 camadas  (dependia de #17)
+
+ABERTAS
+  #5 ──> #6
+  #7 ──> #8 ──> #9
+  #16
+  #14
+  #19 regras lint  (por ultimo: reformata todo o src)
+  #20 ──> #21 constantes
+  #20 + #11 ──> #22 fluxo etapas
+                   │
+                   v
+              #23 pagina zine
+                   │
+                   v
+              #24 auto-fonte
+                   │
+                   v
+  #25 T1-T4 ──┬─> #26 T5,T11 ──> #27 T6-T10,T12
+              └─> #28 frente/verso ──> #29 marcas
 ```
+
+A #18 saiu do grafo: a medição de texto nunca rodou a cada tecla, então não havia o que memoizar.
 
 ### Ordem prática de trabalho
 
-1. **Agora:** #3, #10, #13 — sem dependências, em paralelo.
-2. **Depois de #3:** #4 → #5 → #6 (todas no `package.json`, em série para evitar conflito).
-3. **Depois de #5:** #7 → #8 → #9 (infraestrutura).
-4. **Depois de #3:** #11, que destrava a maior parte da Fase 3.
-5. **Só então:** Fases 4, 5 e 6, na ordem do grafo.
+1. **Agora:** #16, #14, #7 — sem dependências entre si.
+2. **Depois de #7:** #8 → #9 (infraestrutura).
+3. **Depois de #5:** #6 (só remove o `jspdf`).
+4. **Depois de #20 (feita):** #21 constantes e #22 fluxo em etapas.
+5. **Depois de #22:** #23 → #24 → #25 → (#26 → #27) e (#28 → #29).
+6. **Por último:** #19, porque reformata todo o `src`.
