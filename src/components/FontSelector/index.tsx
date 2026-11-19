@@ -1,24 +1,24 @@
 "use client";
 
-type FontOption = {
-	id: string;
+type FontOption<T extends string> = {
+	id: T;
 	label: string;
 	className: string;
 };
 
-type Props = {
-	value: string;
-	onChange: (id: string) => void;
-	options: FontOption[];
+type Props<T extends string> = {
+	value: T;
+	onChange: (id: T) => void;
+	options: FontOption<T>[];
 	label?: string;
 };
 
-export default function FontSelector({
+export default function FontSelector<T extends string>({
 	value,
 	onChange,
 	options,
 	label,
-}: Props) {
+}: Props<T>) {
 	return (
 		<div className="space-y-3">
 			{label && <p className="font-semibold">{label}</p>}

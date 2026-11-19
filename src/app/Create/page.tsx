@@ -3,19 +3,22 @@ import type { JSX } from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import FontSelector from "@/components/FontSelector";
+import type { FontId } from "@/lib/fonts";
+import { DEFAULT_FONT_ID, FONTS } from "@/lib/fonts";
 
 export default function CreatePage(): JSX.Element {
 	const router = useRouter();
 
-	const fontes = [
-		{ id: "geistSans", label: "Geist Sans", className: "font-sans" },
-		{ id: "geistMono", label: "Geist Mono", className: "font-mono" },
-	];
+	const fontes = FONTS.map((font) => ({
+		id: font.id,
+		label: font.label,
+		className: font.className,
+	}));
 
 	const [coverTitle, setCoverTitle] = useState("");
-	const [titleFont, setTitleFont] = useState("font-sans");
+	const [titleFont, setTitleFont] = useState<FontId>(DEFAULT_FONT_ID);
 	const [authorName, setAuthorName] = useState("");
-	const [authorFont, setAuthorFont] = useState("font-mono");
+	const [authorFont, setAuthorFont] = useState<FontId>("geistMono");
 
 	const handleContinue = (): void => {
 		if (!coverTitle || !authorName) return;

@@ -4,19 +4,26 @@ import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { JSX } from "react";
 import { Suspense } from "react";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, rgb } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
 import { FormatSelector, ZineFormat } from "@/components/FormatSelector";
 import type { PoemField, ZineDoc } from "@/lib/zine-pages";
 import { addPage, createDoc, poemPages, removePage, setPoemField } from "@/lib/zine-pages";
 import { wrapText } from "@/lib/wrap-text";
+import type { FontId } from "@/lib/fonts";
+import { fontById, resolveFontId } from "@/lib/fonts";
+import { embedZineFonts } from "@/lib/pdf-fonts";
 
 function EditorPage(): JSX.Element {
 	const searchParams = useSearchParams();
 
 	const coverTitle = searchParams.get("coverTitle") || "";
 	const authorName = searchParams.get("authorName") || "";
-	const titleFont = searchParams.get("titleFont") || "font-sans";
-	const authorFont = searchParams.get("authorFont") || "font-sans";
+	const titleFontId: FontId = resolveFontId(searchParams.get("titleFont"));
+	const authorFontId: FontId = resolveFontId(searchParams.get("authorFont"));
+
+	const titleFontClass = fontById(titleFontId).className;
+	const authorFontClass = fontById(authorFontId).className;
 
 	// 🔽 default agora é "reading", que é o único formato disponível
 	const [format, setFormat] = useState<ZineFormat>("reading");
@@ -65,9 +72,14 @@ function EditorPage(): JSX.Element {
 		const margin = 70;
 		const contentWidth = pageWidth - margin * 2;
 
-		const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-		const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-		const italicFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+		pdfDoc.registerFontkit(fontkit);
+
+		const titleFonts = await embedZineFonts(pdfDoc, fontById(titleFontId));
+		const authorFonts = await embedZineFonts(pdfDoc, fontById(authorFontId));
+
+		const font = titleFonts.regular;
+		const boldFont = titleFonts.bold;
+		const italicFont = titleFonts.italic;
 
 		// ---------- CAPA ----------
 		const coverPage = pdfDoc.addPage([pageWidth, pageHeight]);
@@ -111,12 +123,12 @@ function EditorPage(): JSX.Element {
 		cursorY -= gapTitleToAuthor / 2;
 
 		if (authorName) {
-			const authorWidth = font.widthOfTextAtSize(authorName, authorFontSize);
+			const authorWidth = authorFonts.regular.widthOfTextAtSize(authorName, authorFontSize);
 			coverPage.drawText(authorName, {
 				x: (pageWidth - authorWidth) / 2,
 				y: cursorY,
 				size: authorFontSize,
-				font,
+				font: authorFonts.regular,
 			});
 			cursorY -= gapAuthorToDate + dateFontSize;
 		}
@@ -229,13 +241,13 @@ function EditorPage(): JSX.Element {
 								className="bg-gradient-to-br from-purple-600 to-purple-900 text-white shadow-2xl rounded-2xl aspect-[3/4] flex flex-col justify-between p-8"
 							>
 								<div className="flex-1 flex items-center justify-center text-center">
-									<h1 className={`text-4xl font-bold leading-tight ${titleFont}`}>
+									<h1 className={`text-4xl font-bold leading-tight ${titleFontClass}`}>
 										{coverTitle}
 									</h1>
 								</div>
 
 								<div className="space-y-2">
-									<p className={`text-lg ${authorFont}`}>{authorName}</p>
+									<p className={`text-lg ${authorFontClass}`}>{authorName}</p>
 									<p className="text-sm opacity-80">{formattedDate}</p>
 								</div>
 							</div>
