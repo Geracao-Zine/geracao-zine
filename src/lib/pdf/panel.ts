@@ -1,12 +1,15 @@
 import type { PDFFont } from "pdf-lib";
 import type { PageFields } from "../../domain/page.ts";
 import { wrapText } from "../wrap-text.ts";
+import { fitBody } from "./fit-body.ts";
+import type { BodyMetrics } from "./fit-body.ts";
 import {
 	A4_CONTENT_WIDTH,
 	PANEL_HEIGHT,
-	POEM_BLANK_LINE_HEIGHT,
+	POEM_BLANK_LINE_RATIO,
 	POEM_BODY_COLOR,
-	POEM_BODY_SIZE,
+	POEM_BODY_MAX_SIZE,
+	POEM_BODY_MIN_SIZE,
 	POEM_CONTINUATION_LABEL,
 	POEM_DATE_COLOR,
 	POEM_DATE_LINE_HEIGHT,
@@ -15,7 +18,7 @@ import {
 	POEM_GAP_AFTER_HEADER,
 	POEM_GAP_AFTER_SUBTITLE,
 	POEM_GAP_AFTER_TITLE,
-	POEM_LINE_HEIGHT,
+	POEM_LINE_HEIGHT_RATIO,
 	POEM_SUBTITLE_LINE_HEIGHT,
 	POEM_SUBTITLE_SIZE,
 	POEM_TITLE_LINE_HEIGHT,
@@ -52,6 +55,13 @@ export type PanelPageLayout = {
 	box: PanelBox;
 	/** Falso na pagina sem cabecalho: nada separa a caixa do topo. */
 	header: boolean;
+	/**
+	 * Distancia do topo do painel ate a divisoria do cabecalho, ou null
+	 * quando nao ha cabecalho. Preview e PDF desenham na mesma altura.
+	 */
+	divider: number | null;
+	/** Corpo escolhido para o texto principal, igual em todas as paginas. */
+	bodySize: number;
 };
 
 type Block = {
@@ -67,8 +77,10 @@ type Block = {
  * Diagrama uma pagina do zine numa area fixa.
  *
  * Titulo, subtitulo e data so entram quando tem conteudo: um campo vazio nao
- * reserva altura e a caixa do texto comeca mais acima. O texto principal nunca
- * ultrapassa a caixa; o que nao couber vira pagina de continuacao identificada.
+ * reserva altura e a caixa do texto comeca mais acima. O texto principal usa o
+ * maior corpo que cabe na caixa (bissecao entre o minimo legivel e o maximo),
+ * com entrelinha proporcional; se nem o minimo couber, segue em pagina de
+ * continuacao identificada, sem perder linha.
  */
 export function layoutPanel(
 	page: PageFields,
@@ -77,26 +89,49 @@ export function layoutPanel(
 	width: number = A4_CONTENT_WIDTH
 ): PanelPageLayout[] {
 	const header = headerBlocks(page, fonts, width);
-	const bodyLines = wrapText(page.body, fonts.body, POEM_BODY_SIZE, width);
+	const placed = placeHeader(header);
+	const metrics = bodyMetrics(page.body, fonts.body, width, panelHeight - placed.cursor);
 	const pages: PanelPageLayout[] = [];
-	let remaining = bodyLines;
+	let remaining = metrics.lines;
 	let blocks = header;
 
 	do {
-		const placed = placeHeader(blocks);
-		const fit = fitBody(remaining, placed.cursor, panelHeight);
+		const pageHeader = placeHeader(blocks);
+		const body = fitBodyLines(remaining, pageHeader.cursor, panelHeight, metrics);
 
 		pages.push({
-			runs: [...placed.runs, ...fit.runs],
-			box: { top: placed.cursor, height: panelHeight - placed.cursor },
-			header: placed.runs.length > 0,
+			runs: [...pageHeader.runs, ...body.runs],
+			box: { top: pageHeader.cursor, height: panelHeight - pageHeader.cursor },
+			header: pageHeader.runs.length > 0,
+			divider: pageHeader.runs.length > 0
+				? pageHeader.cursor - POEM_GAP_AFTER_HEADER / 2
+				: null,
+			bodySize: metrics.size,
 		});
 
-		remaining = fit.overflow;
+		remaining = body.overflow;
 		blocks = continuationBlocks();
 	} while (remaining.length > 0);
 
 	return pages;
+}
+
+function bodyMetrics(
+	text: string,
+	font: PDFFont,
+	width: number,
+	height: number
+): BodyMetrics {
+	return fitBody({
+		text,
+		font,
+		width,
+		height,
+		minSize: POEM_BODY_MIN_SIZE,
+		maxSize: POEM_BODY_MAX_SIZE,
+		lineHeightRatio: POEM_LINE_HEIGHT_RATIO,
+		blankLineRatio: POEM_BLANK_LINE_RATIO,
+	});
 }
 
 function headerBlocks(page: PageFields, fonts: PanelFonts, width: number): Block[] {
@@ -177,17 +212,18 @@ function placeHeader(blocks: Block[]): { runs: PanelRun[]; cursor: number } {
 	return { runs, cursor };
 }
 
-function fitBody(
+function fitBodyLines(
 	lines: string[],
 	cursor: number,
-	panelHeight: number
+	panelHeight: number,
+	metrics: BodyMetrics
 ): { runs: PanelRun[]; overflow: string[] } {
 	const runs: PanelRun[] = [];
 	let y = cursor;
 
 	for (let index = 0; index < lines.length; index += 1) {
 		const line = lines[index];
-		const advance = line === "" ? POEM_BLANK_LINE_HEIGHT : POEM_LINE_HEIGHT;
+		const advance = line === "" ? metrics.blankLineHeight : metrics.lineHeight;
 
 		if (y + advance > panelHeight) {
 			// Area menor que uma linha: sem consumir ao menos uma
@@ -198,8 +234,8 @@ function fitBody(
 					runs.push({
 						role: "body",
 						text: line,
-						size: POEM_BODY_SIZE,
-						baseline: y + POEM_BODY_SIZE,
+						size: metrics.size,
+						baseline: y + metrics.size,
 						color: POEM_BODY_COLOR,
 					});
 				}
@@ -214,8 +250,8 @@ function fitBody(
 			runs.push({
 				role: "body",
 				text: line,
-				size: POEM_BODY_SIZE,
-				baseline: y + POEM_BODY_SIZE,
+				size: metrics.size,
+				baseline: y + metrics.size,
 				color: POEM_BODY_COLOR,
 			});
 		}
