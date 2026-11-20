@@ -35,17 +35,17 @@ test("remover uma pagina do meio preserva o conteudo das demais", () => {
 	const poems = poemPages(doc);
 	const [first, middle, last] = poems;
 
-	doc = setPoemField(doc, first.id, "poetry", "primeiro");
-	doc = setPoemField(doc, middle.id, "poetry", "meio");
-	doc = setPoemField(doc, last.id, "poetry", "ultimo");
+	doc = setPoemField(doc, first.id, "body", "primeiro");
+	doc = setPoemField(doc, middle.id, "body", "meio");
+	doc = setPoemField(doc, last.id, "body", "ultimo");
 
 	doc = removePage(doc, middle.id);
 
 	const remaining = poemPages(doc);
 
 	assert.equal(remaining.length, 2);
-	assert.equal(remaining[0].poetry, "primeiro");
-	assert.equal(remaining[1].poetry, "ultimo");
+	assert.equal(remaining[0].body, "primeiro");
+	assert.equal(remaining[1].body, "ultimo");
 });
 
 test("adicionar depois de remover nao gera id duplicado", () => {

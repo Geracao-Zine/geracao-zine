@@ -14,22 +14,24 @@ test("layout declara A4 retrato e paisagem com a origem documentada", async () =
   assert.match(ts, /210 x 297 mm/);
 });
 
-test("reading.ts nao tem numero magico de diagramacao", async () => {
-  const ts = await ler("src/lib/pdf/reading.ts");
-  const corpo = ts
-    .split("\n")
-    .filter((l) => !l.trim().startsWith("//"))
-    .join("\n")
-    .replace(/from "\.\/layout\.ts"[\s\S]*?\} from "\.\/layout\.ts";/, "");
-  const proibidos = [
-    /\b595\b/, /\b842\b/, /\b70\b/,
-    /\b(10|13|14|20|22|30|38|40|60)\b/,
-    /\b0\.(15|5|6|75)\b/,
-  ];
-  for (const p of proibidos) {
-    assert.doesNotMatch(corpo, p, `numero magico ${p} sobrou em reading.ts`);
-  }
-});
+for (const arquivo of ["reading.ts", "panel.ts"]) {
+  test(`${arquivo} nao tem numero magico de diagramacao`, async () => {
+    const ts = await ler(`src/lib/pdf/${arquivo}`);
+    const corpo = ts
+      .split("\n")
+      .filter((l) => !l.trim().startsWith("//"))
+      .join("\n")
+      .replace(/from "\.\/layout\.ts"[\s\S]*?\} from "\.\/layout\.ts";/, "");
+    const proibidos = [
+      /\b595\b/, /\b842\b/, /\b70\b/,
+      /\b(10|11|13|14|16|20|22|24|26|30|38|40|60)\b/,
+      /\b0\.(15|5|6|75)\b/,
+    ];
+    for (const p of proibidos) {
+      assert.doesNotMatch(corpo, p, `numero magico ${p} sobrou em ${arquivo}`);
+    }
+  });
+}
 
 test("constantes de capa e poema ficam no modulo de layout", async () => {
   const ts = await ler("src/lib/pdf/layout.ts");
@@ -42,8 +44,11 @@ test("constantes de capa e poema ficam no modulo de layout", async () => {
     "COVER_GAP_AUTHOR_TO_DATE",
     "COVER_DIVIDER_WIDTH",
     "POEM_TITLE_SIZE",
+    "POEM_SUBTITLE_SIZE",
+    "POEM_DATE_SIZE",
     "POEM_BODY_SIZE",
     "POEM_LINE_HEIGHT",
+    "PANEL_HEIGHT",
     "PAGE_MARGIN",
   ]) {
     assert.match(ts, new RegExp(`export const ${nome} =`), `falta ${nome}`);

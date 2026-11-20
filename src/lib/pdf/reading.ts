@@ -14,17 +14,13 @@ import {
 	COVER_GAP_TITLE_TO_AUTHOR,
 	COVER_TITLE_LINE_HEIGHT,
 	COVER_TITLE_SIZE,
-	POEM_BLANK_LINE_HEIGHT,
-	POEM_BODY_COLOR,
-	POEM_BODY_SIZE,
+	PANEL_HEIGHT,
 	POEM_DIVIDER_COLOR,
 	POEM_DIVIDER_THICKNESS,
-	POEM_GAP_AFTER_DIVIDER,
-	POEM_GAP_AFTER_TITLE,
-	POEM_LINE_HEIGHT,
-	POEM_TITLE_LINE_HEIGHT,
-	POEM_TITLE_SIZE,
+	POEM_GAP_AFTER_HEADER,
 } from "./layout.ts";
+import type { PanelFonts, PanelRun } from "./panel.ts";
+import { layoutPanel } from "./panel.ts";
 import type { ReadingPdfInput } from "./types.ts";
 
 export async function generateReadingPdf(
@@ -114,57 +110,60 @@ export async function generateReadingPdf(
 		});
 	}
 
-	// ---------- PAGINAS DE POEMA ----------
-	const topStart = height - margin;
-	const bottomLimit = margin;
+	// ---------- PAGINAS DO ZINE ----------
+	const fonts: PanelFonts = {
+		title: titleFonts.bold,
+		subtitle: titleFonts.regular,
+		date: titleFonts.regular,
+		body: titleFonts.italic,
+	};
 
 	for (const poem of input.poems) {
-		let page = pdfDoc.addPage([width, height]);
-		let y = topStart;
+		const layouts = layoutPanel(poem, fonts, PANEL_HEIGHT, contentWidth);
 
-		const poemTitleLines = wrapText(poem.title, titleFonts.bold, POEM_TITLE_SIZE, contentWidth);
-		for (const line of poemTitleLines) {
-			page.drawText(line, {
-				x: margin,
-				y,
-				size: POEM_TITLE_SIZE,
-				font: titleFonts.bold,
-			});
-			y -= POEM_TITLE_LINE_HEIGHT;
-		}
+		for (const layout of layouts) {
+			const page = pdfDoc.addPage([width, height]);
+			const top = height - margin;
 
-		y -= POEM_GAP_AFTER_TITLE;
-		page.drawLine({
-			start: { x: margin, y },
-			end: { x: width - margin, y },
-			thickness: POEM_DIVIDER_THICKNESS,
-			color: rgb(POEM_DIVIDER_COLOR, POEM_DIVIDER_COLOR, POEM_DIVIDER_COLOR),
-		});
-		y -= POEM_GAP_AFTER_DIVIDER;
-
-		const bodyLines = wrapText(poem.poetry, titleFonts.italic, POEM_BODY_SIZE, contentWidth);
-
-		for (const line of bodyLines) {
-			if (y < bottomLimit) {
-				page = pdfDoc.addPage([width, height]);
-				y = topStart;
+			for (const run of layout.runs) {
+				page.drawText(run.text, {
+					x: margin,
+					y: top - run.baseline,
+					size: run.size,
+					font: fontOf(run, fonts),
+					color: rgb(run.color, run.color, run.color),
+				});
 			}
 
-			if (line === "") {
-				y -= POEM_BLANK_LINE_HEIGHT;
-				continue;
+			// Divisoria entre o cabecalho e a caixa do texto. Sem
+			// cabecalho nao ha o que separar.
+			if (layout.header) {
+				const dividerY = top - (layout.box.top - POEM_GAP_AFTER_HEADER / 2);
+				page.drawLine({
+					start: { x: margin, y: dividerY },
+					end: { x: width - margin, y: dividerY },
+					thickness: POEM_DIVIDER_THICKNESS,
+					color: rgb(
+						POEM_DIVIDER_COLOR,
+						POEM_DIVIDER_COLOR,
+						POEM_DIVIDER_COLOR
+					),
+				});
 			}
-
-			page.drawText(line, {
-				x: margin,
-				y,
-				size: POEM_BODY_SIZE,
-				font: titleFonts.italic,
-				color: rgb(POEM_BODY_COLOR, POEM_BODY_COLOR, POEM_BODY_COLOR),
-			});
-			y -= POEM_LINE_HEIGHT;
 		}
 	}
 
 	return pdfDoc.save();
+}
+
+function fontOf(run: PanelRun, fonts: PanelFonts): PanelFonts["body"] {
+	if (run.role === "title") {
+		return fonts.title;
+	}
+
+	if (run.role === "body") {
+		return fonts.body;
+	}
+
+	return run.role === "date" || run.role === "label" ? fonts.date : fonts.subtitle;
 }

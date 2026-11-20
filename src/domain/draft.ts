@@ -2,6 +2,8 @@ import type { Cover } from "./cover.ts";
 import { isCoverComplete } from "./cover.ts";
 import type { ZineFormat } from "./format.ts";
 import { DEFAULT_FORMAT, FORMAT_OPTIONS } from "./format.ts";
+import type { PageFields } from "./page.ts";
+import { pageFieldsFrom } from "./page.ts";
 import type { PoemPage, ZineDoc } from "./zine.ts";
 import { COVER_PAGE_ID, createDoc, poemPages } from "./zine.ts";
 import { resolveFontId } from "../lib/fonts.ts";
@@ -166,12 +168,9 @@ function parseDoc(source: Record<string, unknown>, fallback: ZineDoc): ZineDoc {
 			continue;
 		}
 
-		poems.push({
-			id,
-			kind: "poem",
-			title: text(page.title),
-			poetry: text(page.poetry),
-		});
+		const fields: PageFields = pageFieldsFrom(page);
+
+		poems.push({ id, kind: "poem", ...fields });
 
 		const numero = Number(id.replace(/^page-/, ""));
 		if (Number.isFinite(numero) && numero > highest) {
@@ -192,7 +191,7 @@ export function serializeDraft(draft: ZineDraft): string {
 }
 
 export function hasPoemContent(draft: ZineDraft): boolean {
-	return poemPages(draft.doc).some((poem) => poem.poetry.trim().length > 0);
+	return poemPages(draft.doc).some((poem) => poem.body.trim().length > 0);
 }
 
 export function draftIssues(draft: ZineDraft): DraftIssue[] {
@@ -240,7 +239,7 @@ export function draftIssues(draft: ZineDraft): DraftIssue[] {
 		});
 	}
 
-	const empty = poems.filter((poem) => !poem.poetry.trim()).length;
+	const empty = poems.filter((poem) => !poem.body.trim()).length;
 
 	if (empty > 0) {
 		issues.push({

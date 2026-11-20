@@ -7,7 +7,7 @@ import PoemGrid from "./PoemGrid";
 import type {
 	Cover,
 	DraftIssue,
-	PoemField,
+	PageField,
 	PoemPage,
 	ZineDoc,
 	ZineStep,
@@ -20,7 +20,7 @@ type Props = {
 	poems: PoemPage[];
 	issues: DraftIssue[];
 	diagrammable: boolean;
-	onChange: (id: string, field: PoemField, value: string) => void;
+	onChange: (id: string, field: PageField, value: string) => void;
 	onAdd: () => void;
 	onMove: (id: string, direction: -1 | 1) => void;
 	onRemove: (id: string) => void;

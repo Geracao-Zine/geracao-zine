@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
 	Cover,
 	DraftIssue,
-	PoemField,
+	PageField,
 	PoemPage,
 	StepStatus,
 	ZineDoc,
@@ -58,7 +58,7 @@ export type ZineEditor = {
 	formattedDate: string;
 	format: ZineFormat;
 	setFormat: (format: ZineFormat) => void;
-	changeField: (id: string, field: PoemField, value: string) => void;
+	changeField: (id: string, field: PageField, value: string) => void;
 	addPoem: () => void;
 	removePoem: (id: string) => void;
 	movePoem: (id: string, direction: -1 | 1) => void;
@@ -173,7 +173,7 @@ export function useZineEditor(
 		});
 	};
 
-	const changeField = (id: string, field: PoemField, value: string): void => {
+	const changeField = (id: string, field: PageField, value: string): void => {
 		update((current) => ({
 			...current,
 			doc: setPoemField(current.doc, id, field, value),
@@ -219,7 +219,9 @@ export function useZineEditor(
 			date: formattedDate,
 			poems: poems.map((poem) => ({
 				title: poem.title,
-				poetry: poem.poetry,
+				subtitle: poem.subtitle,
+				date: formatIsoDate(poem.date),
+				body: poem.body,
 			})),
 		};
 

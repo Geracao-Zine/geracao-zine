@@ -22,7 +22,7 @@ function draftCom(cover = {}, poems = []) {
 	let doc = base.doc;
 
 	poemPages(doc).forEach((poem) => {
-		doc = setPoemField(doc, poem.id, "poetry", "");
+		doc = setPoemField(doc, poem.id, "body", "");
 	});
 
 	poems.forEach((poem, index) => {
@@ -31,7 +31,9 @@ function draftCom(cover = {}, poems = []) {
 		}
 		const target = poemPages(doc)[index];
 		if (poem.title !== undefined) doc = setPoemField(doc, target.id, "title", poem.title);
-		if (poem.poetry !== undefined) doc = setPoemField(doc, target.id, "poetry", poem.poetry);
+                if (poem.subtitle !== undefined) doc = setPoemField(doc, target.id, "subtitle", poem.subtitle);
+                if (poem.date !== undefined) doc = setPoemField(doc, target.id, "date", poem.date);
+		if (poem.body !== undefined) doc = setPoemField(doc, target.id, "body", poem.body);
 	});
 
 	return {
@@ -53,7 +55,7 @@ test("o fluxo tem as quatro etapas na ordem do produto", () => {
 });
 
 test("o rascunho sobrevive a serializacao e leitura", () => {
-	const original = draftCom(capa, [{ title: "Primeiro", poetry: "texto\ncom quebra" }]);
+	const original = draftCom(capa, [{ title: "Primeiro", body: "texto\ncom quebra" }]);
 	original.step = "review";
 	original.format = "reading";
 
@@ -68,7 +70,7 @@ test("o rascunho sobrevive a serializacao e leitura", () => {
 
 	const poem = poemPages(restored.doc)[0];
 	assert.equal(poem.title, "Primeiro");
-	assert.equal(poem.poetry, "texto\ncom quebra");
+	assert.equal(poem.body, "texto\ncom quebra");
 });
 
 test("parseDraft descarta entrada invalida sem quebrar", () => {
@@ -103,8 +105,8 @@ test("parseDraft sempre repoe a capa e remove ids duplicados", () => {
 		JSON.stringify({
 			doc: {
 				pages: [
-					{ id: "page-1", kind: "poem", title: "A", poetry: "um" },
-					{ id: "page-1", kind: "poem", title: "B", poetry: "dois" },
+					{ id: "page-1", kind: "poem", title: "A", body: "um" },
+					{ id: "page-1", kind: "poem", title: "B", body: "dois" },
 				],
 			},
 		})
@@ -119,7 +121,7 @@ test("parseDraft sempre repoe a capa e remove ids duplicados", () => {
 test("parseDraft nao reaproveita ids ao adicionar depois de restaurar", () => {
 	const draft = parseDraft(
 		JSON.stringify({
-			doc: { pages: [{ id: "page-7", kind: "poem", title: "", poetry: "x" }] },
+			doc: { pages: [{ id: "page-7", kind: "poem", title: "", body: "x" }] },
 		})
 	);
 
@@ -134,8 +136,8 @@ test("parseDraft nao reaproveita ids ao adicionar depois de restaurar", () => {
 
 test("pendencias listam poesias sem titulo e paginas vazias", () => {
 	const draft = draftCom(capa, [
-		{ title: "", poetry: "texto" },
-		{ title: "", poetry: "" },
+		{ title: "", body: "texto" },
+		{ title: "", body: "" },
 	]);
 
 	const mensagens = draftIssues(draft).map((issue) => issue.message);
@@ -145,7 +147,7 @@ test("pendencias listam poesias sem titulo e paginas vazias", () => {
 });
 
 test("as pendencias usam singular quando ha apenas um caso", () => {
-	const draft = draftCom(capa, [{ title: "", poetry: "texto" }]);
+	const draft = draftCom(capa, [{ title: "", body: "texto" }]);
 	const mensagens = draftIssues(draft).map((issue) => issue.message);
 
 	assert.ok(mensagens.includes("1 poesia sem título"), mensagens.join(" | "));
@@ -153,7 +155,7 @@ test("as pendencias usam singular quando ha apenas um caso", () => {
 });
 
 test("capa incompleta aparece como pendencia de erro", () => {
-	const draft = draftCom({}, [{ title: "T", poetry: "texto" }]);
+	const draft = draftCom({}, [{ title: "T", body: "texto" }]);
 	const issues = draftIssues(draft);
 
 	const titulo = issues.find((issue) => issue.id === "cover-title");
@@ -164,13 +166,13 @@ test("capa incompleta aparece como pendencia de erro", () => {
 });
 
 test("o rascunho sem texto nenhum nao esta pronto para diagramar", () => {
-	const vazio = draftCom(capa, [{ title: "T", poetry: "   " }]);
+	const vazio = draftCom(capa, [{ title: "T", body: "   " }]);
 	assert.equal(isDraftDiagrammable(vazio), false);
 	assert.equal(canEnterStep(vazio, "print"), false);
 });
 
 test("capa completa e uma poesia com texto liberam a dobra", () => {
-	const pronto = draftCom(capa, [{ title: "", poetry: "um verso" }]);
+	const pronto = draftCom(capa, [{ title: "", body: "um verso" }]);
 
 	assert.equal(isDraftDiagrammable(pronto), true);
 	assert.equal(canEnterStep(pronto, "print"), true);
@@ -178,12 +180,12 @@ test("capa completa e uma poesia com texto liberam a dobra", () => {
 });
 
 test("a etapa de dobra fica bloqueada ate o conteudo minimo", () => {
-	const incompleto = draftCom({ title: "Zine" }, [{ title: "T", poetry: "x" }]);
+	const incompleto = draftCom({ title: "Zine" }, [{ title: "T", body: "x" }]);
 
 	assert.equal(stepStatus(incompleto, "print"), "blocked");
 	assert.equal(stepStatus(incompleto, "cover"), "blocked");
-	assert.equal(stepStatus(draftCom(capa, [{ title: "", poetry: "x" }]), "poems"), "pending");
-	assert.equal(stepStatus(draftCom(capa, [{ title: "T", poetry: "x" }]), "poems"), "done");
+	assert.equal(stepStatus(draftCom(capa, [{ title: "", body: "x" }]), "poems"), "pending");
+	assert.equal(stepStatus(draftCom(capa, [{ title: "T", body: "x" }]), "poems"), "done");
 });
 
 test("reordenar troca poemas de lugar sem tocar na capa", () => {
@@ -191,12 +193,12 @@ test("reordenar troca poemas de lugar sem tocar na capa", () => {
 	doc = addPage(addPage(doc));
 
 	const poems = poemPages(doc);
-	doc = setPoemField(doc, poems[0].id, "poetry", "primeiro");
-	doc = setPoemField(doc, poems[1].id, "poetry", "segundo");
-	doc = setPoemField(doc, poems[2].id, "poetry", "terceiro");
+	doc = setPoemField(doc, poems[0].id, "body", "primeiro");
+	doc = setPoemField(doc, poems[1].id, "body", "segundo");
+	doc = setPoemField(doc, poems[2].id, "body", "terceiro");
 
 	const movido = movePage(doc, poems[2].id, -1);
-	const ordem = poemPages(movido).map((poem) => poem.poetry);
+	const ordem = poemPages(movido).map((poem) => poem.body);
 
 	assert.deepEqual(ordem, ["primeiro", "terceiro", "segundo"]);
 	assert.equal(movido.pages[0].kind, "cover");

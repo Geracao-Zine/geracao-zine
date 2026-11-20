@@ -128,9 +128,9 @@ Cada página do zine (o painel diagramado, não a folha A4 inteira) é composta 
 | Título | Não | Ausente não reserva espaço |
 | Subtítulo | Não | Ausente não reserva espaço |
 | Data | Não | Formato pt-BR, editável |
-| Texto principal | Sim | Área limitada; a fonte diminui automaticamente para caber |
+| Texto principal | Sim | Ocupa a caixa de área fixa que sobra do cabeçalho |
 
-O texto nunca transborda a caixa do painel: o sistema reduz o corpo da fonte até o mínimo legível e, se ainda não couber, gera continuação identificada.
+A hierarquia tipográfica é fixa: título > subtítulo > data > corpo. Um campo opcional vazio não deixa faixa em branco — a caixa do texto começa mais acima e cresce. O texto nunca transborda a caixa: o que não couber segue em página de continuação identificada, sem perder linha. O ajuste automático de corpo de fonte é a próxima etapa do roadmap.
 
 ### Modelos de dobra
 

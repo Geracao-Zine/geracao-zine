@@ -1,4 +1,6 @@
-export type { CoverPage, PoemPage, ZinePage, PoemField, ZineDoc } from "./zine.ts";
+export type { PageField, PageFields } from "./page.ts";
+export { EMPTY_PAGE_FIELDS, pageFieldsFrom } from "./page.ts";
+export type { CoverPage, PoemPage, ZinePage, ZineDoc } from "./zine.ts";
 export {
 	COVER_PAGE_ID,
 	addPage,

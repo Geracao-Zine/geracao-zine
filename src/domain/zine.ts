@@ -1,18 +1,21 @@
+import type { PageFields } from "./page.ts";
+import { EMPTY_PAGE_FIELDS } from "./page.ts";
+
 export type CoverPage = {
 	id: string;
 	kind: "cover";
 };
 
-export type PoemPage = {
+/**
+ * Uma pagina do zine (o painel diagramado) com os quatro campos do modelo.
+ * Titulo, subtitulo e data sao opcionais; o texto principal e obrigatorio.
+ */
+export type PoemPage = PageFields & {
 	id: string;
 	kind: "poem";
-	title: string;
-	poetry: string;
 };
 
 export type ZinePage = CoverPage | PoemPage;
-
-export type PoemField = "title" | "poetry";
 
 export type ZineDoc = {
 	pages: ZinePage[];
@@ -21,12 +24,13 @@ export type ZineDoc = {
 
 export const COVER_PAGE_ID = "cover";
 
+function emptyPoemPage(id: string): PoemPage {
+	return { id, kind: "poem", ...EMPTY_PAGE_FIELDS };
+}
+
 export function createDoc(): ZineDoc {
 	return {
-		pages: [
-			{ id: COVER_PAGE_ID, kind: "cover" },
-			{ id: "page-1", kind: "poem", title: "", poetry: "" },
-		],
+		pages: [{ id: COVER_PAGE_ID, kind: "cover" }, emptyPoemPage("page-1")],
 		sequence: 1,
 	};
 }
@@ -68,15 +72,9 @@ export function movePage(
 
 export function addPage(doc: ZineDoc): ZineDoc {
 	const sequence = doc.sequence + 1;
-	const page: PoemPage = {
-		id: `page-${sequence}`,
-		kind: "poem",
-		title: "",
-		poetry: "",
-	};
 
 	return {
-		pages: [...doc.pages, page],
+		pages: [...doc.pages, emptyPoemPage(`page-${sequence}`)],
 		sequence,
 	};
 }
@@ -97,7 +95,7 @@ export function removePage(doc: ZineDoc, id: string): ZineDoc {
 export function setPoemField(
 	doc: ZineDoc,
 	id: string,
-	field: PoemField,
+	field: keyof PageFields,
 	value: string
 ): ZineDoc {
 	return {

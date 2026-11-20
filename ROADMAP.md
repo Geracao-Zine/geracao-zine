@@ -164,10 +164,10 @@ Cada página do zine (não a folha A4, e sim o painel diagramado) tem esta compo
 
 Regras de diagramação:
 
-- [ ] 6.2.1 O texto principal ocupa uma caixa de área fixa definida pela dobra; ele nunca ultrapassa essa caixa.
+- [x] 6.2.1 O texto principal ocupa uma caixa de área fixa definida pela dobra; ele nunca ultrapassa essa caixa. Feito em #23.
 - [ ] 6.2.2 Ajuste automático de fonte: buscar por bisseção o maior corpo de fonte entre um mínimo e um máximo que faça o texto caber na caixa, respeitando entrelinha proporcional. Se o mínimo ainda não couber, dividir o texto em continuação com indicativo, nunca cortar em silêncio.
-- [ ] 6.2.3 Campos opcionais vazios não reservam espaço: a caixa do texto se expande quando título, subtítulo ou data estão ausentes.
-- [ ] 6.2.4 Hierarquia tipográfica fixa por painel: título > subtítulo > data > corpo, com proporções definidas em constantes.
+- [x] 6.2.3 Campos opcionais vazios não reservam espaço: a caixa do texto se expande quando título, subtítulo ou data estão ausentes. Feito em #23.
+- [x] 6.2.4 Hierarquia tipográfica fixa por painel: título > subtítulo > data > corpo, com proporções definidas em constantes. Feito em #23.
 - [ ] 6.2.5 Respeitar quebras de linha do autor (estrofe e verso) e hifenizar apenas quando necessário.
 - [ ] 6.2.6 Pré-visualização fiel: o mesmo motor de medição alimenta preview e PDF.
 
@@ -262,7 +262,7 @@ Para pedir uma segunda tentativa em uma issue já processada, remova e reaplique
 | 3 — Bugs | #10, #11, #12, #13, #14, #15, #16 | #10, #11, #12, #13, #14, #15 e #16 entregues |
 | 4 — Otimização | #17, #18 | #17 entregue; #18 fechada (o problema não existia) |
 | 5 — Padronização | #19, #20, #21 | fase concluída: #19, #20 e #21 entregues |
-| 6 — Fluxo e diagramação | #22 a #29 | #22 entregue; #23 armada (`openhands`); #24 a #29 bloqueadas |
+| 6 — Fluxo e diagramação | #22 a #29 | #22 e #23 entregues; #24 a #29 bloqueadas pela cadeia |
 
 Fechadas: #3 (lint), #4 (versão do Node), #5 (dependências e audit), #6 (`jspdf` removido), #21 (constantes de diagramação), #19 (regras de lint), #9 (deploy em VPS), #7 (Dockerfile multi-stage), #8 (docker-compose e `.env.example`), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas), #16 (navbar e fonte do body).
 
@@ -315,5 +315,5 @@ A #18 saiu do grafo: a medição de texto nunca rodou a cada tecla, então não 
 ### Ordem prática de trabalho
 
 1. **Fila vazia.** As issues que receberam `next-up` foram todas fechadas, na ordem #8 → #6 → #21 → #19 → #9.
-2. **Em execução:** #23 (modelo de página do zine), armada com `openhands` depois do merge da #22.
-3. **Depois de #23:** #24 → #25 → (#26 → #27) e (#28 → #29). Todas seguem com `blocked` de propósito: cada uma depende do merge da anterior, e armar antes faz o trabalho começar sobre uma base que não existe.
+2. **Em execução:** #24 (auto-ajuste de fonte), liberada depois de #23.
+3. **Depois de #24:** #25 → (#26 → #27) e (#28 → #29). Todas seguem com `blocked` de propósito: cada uma depende do merge da anterior, e armar antes faz o trabalho começar sobre uma base que não existe.
