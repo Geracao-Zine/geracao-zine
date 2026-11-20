@@ -20,10 +20,10 @@ export default function FontSelector<T extends string>({
 	label,
 }: Props<T>) {
 	return (
-		<div className="space-y-3">
-			{label && <p className="font-semibold">{label}</p>}
+		<div className="space-y-1.5">
+			{label && <p className="text-sm font-semibold">{label}</p>}
 
-			<div className="grid grid-cols-1 gap-3">
+			<div className="flex flex-wrap gap-2">
 				{options.map((font) => {
 					const selected = value === font.id;
 
@@ -31,22 +31,23 @@ export default function FontSelector<T extends string>({
 						<button
 							key={font.id}
 							type="button"
+							aria-pressed={selected}
 							onClick={() => onChange(font.id)}
 							className={`
-								text-left px-4 py-3 rounded-xl border transition
+								flex-1 min-w-[9rem] text-left px-3 py-1.5 rounded-lg border transition
 								${font.className}
 								${selected
 									? "border-purple-600 bg-purple-50 dark:bg-zinc-800"
 									: "border-zinc-300 dark:border-zinc-700"
 								}
-              				`}
+						`}
 						>
-							<div className="text-lg">
-								{font.label}
-							</div>
-							<div className="text-sm opacity-60">
-								Exemplo de título
-							</div>
+							<span className="flex items-center justify-between gap-2">
+								<span className="text-sm font-semibold">{font.label}</span>
+								<span className="text-base leading-none opacity-70" aria-hidden="true">
+									Aa
+								</span>
+							</span>
 						</button>
 					);
 				})}

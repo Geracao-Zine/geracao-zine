@@ -17,12 +17,12 @@ export default function IssueList({
 	}
 
 	return (
-		<ul className="space-y-2">
+		<ul className="space-y-1">
 			{issues.map((issue) => (
 				<li
 					key={issue.id}
 					className={`
-						flex items-start gap-2 text-sm rounded-xl px-4 py-2
+						flex items-start gap-1.5 text-sm rounded-lg px-3 py-1
 						${issue.severity === "error"
 							? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300"
 							: "bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"}

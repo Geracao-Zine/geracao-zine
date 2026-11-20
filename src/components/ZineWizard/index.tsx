@@ -44,9 +44,9 @@ export default function ZineWizard({
 
 	return (
 		<main className="min-h-[calc(100vh-var(--navbar-height))] bg-[var(--background)] text-[var(--foreground)]">
-			<section className="max-w-5xl mx-auto px-6 py-12 space-y-10">
-				<header className="text-center space-y-2">
-					<h1 className="text-4xl font-bold">
+			<section className="max-w-5xl mx-auto px-6 py-6 space-y-5">
+				<header className="text-center space-y-1">
+					<h1 className="text-3xl font-bold">
 						Configure seu{" "}
 						<span className="text-[var(--purple-dark)]">Zine</span>
 					</h1>
@@ -68,7 +68,7 @@ export default function ZineWizard({
 				{!editor.ready ? (
 					<p className="text-center text-zinc-500">Carregando rascunho...</p>
 				) : (
-					<div className="rounded-3xl bg-white/70 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 p-6 md:p-10">
+					<div className="rounded-2xl bg-white/70 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 p-4 md:p-6">
 						{editor.step === "cover" ? (
 							<CoverStep
 								cover={editor.cover}
@@ -154,8 +154,8 @@ export default function ZineWizard({
 				</footer>
 
 				{editor.step !== "review" && editor.step !== "print" ? (
-					<section className="space-y-2">
-						<h2 className="font-semibold">Resumo das pendências</h2>
+					<section className="space-y-1">
+						<h2 className="text-sm font-semibold">Resumo das pendências</h2>
 						<IssueList
 							issues={editor.issues}
 							emptyMessage="Nenhuma pendência no zine."

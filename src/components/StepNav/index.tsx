@@ -36,7 +36,7 @@ export default function StepNav({
 					const status = statusOf(step.id);
 
 					return (
-						<li key={step.id} className="flex-1 min-w-[10rem]">
+						<li key={step.id} className="flex-1 min-w-[8rem]">
 							<button
 								type="button"
 								onClick={() => onSelect(step.id)}
@@ -44,7 +44,7 @@ export default function StepNav({
 								aria-current={active ? "step" : undefined}
 								title={open ? step.description : "Conclua o conteúdo mínimo para liberar"}
 								className={`
-									w-full text-left rounded-2xl border-2 px-4 py-3 transition
+									w-full text-left rounded-xl border-2 px-3 py-1.5 transition
 									${active
 										? "border-[var(--purple-dark)] bg-white dark:bg-zinc-900"
 										: "border-transparent bg-white/60 dark:bg-zinc-900/60"}
@@ -59,12 +59,12 @@ export default function StepNav({
 									</span>
 									<span
 										aria-label={`Situação: ${status}`}
-										className={`h-5 w-5 rounded-full text-[11px] flex items-center justify-center ${BADGE_CLASS[status]}`}
+										className={`h-4 w-4 rounded-full text-[10px] flex items-center justify-center shrink-0 ${BADGE_CLASS[status]}`}
 									>
 										{BADGE[status]}
 									</span>
 								</span>
-								<span className="block font-semibold text-sm mt-1">
+								<span className="block font-semibold text-sm mt-0.5 truncate">
 									{step.label}
 								</span>
 							</button>

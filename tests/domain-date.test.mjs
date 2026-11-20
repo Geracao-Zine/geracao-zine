@@ -105,3 +105,27 @@ test("o PDF so desenha a data quando ela existe", () => {
 	assert.ok(/const temData = Boolean\(input\.date\)/.test(fonte));
 	assert.ok(/if \(temData\) \{/.test(fonte), "o desenho da data deve ser condicional");
 });
+
+test("os campos obrigatorios da capa se anunciam com asterisco", () => {
+const fonte = ler("src/components/ZineWizard/steps/CoverStep.tsx");
+
+assert.ok(
+/Título da capa\{REQUIRED_MARK\}/.test(fonte),
+"o titulo precisa do marcador de obrigatorio",
+);
+assert.ok(
+/Nome do autor\(a\)\{REQUIRED_MARK\}/.test(fonte),
+"o autor precisa do marcador de obrigatorio",
+);
+const inicioData = fonte.indexOf("Data da capa");
+const blocoData = fonte.slice(inicioData, fonte.indexOf('id="cover-date"', inicioData));
+assert.ok(blocoData.includes("(opcional)"), "a data deve se anunciar como opcional");
+assert.ok(
+!blocoData.includes("REQUIRED_MARK"),
+"a data nao pode receber asterisco: ela e opcional",
+);
+assert.ok(
+fonte.includes('aria-required="true"'),
+"o asterisco precisa existir tambem para leitor de tela",
+);
+});

@@ -109,3 +109,25 @@ test("o README descreve o fluxo em etapas", () => {
 		assert.ok(readme.includes(etapa), `README: falta a etapa ${etapa}`);
 	}
 });
+
+test("o seletor de fonte mantem os exemplos na mesma linha", () => {
+const fonte = ler("src/components/FontSelector/index.tsx");
+
+assert.ok(
+!/grid-cols-1/.test(fonte),
+"grid-cols-1 empilha as fontes e estica o formulario na vertical",
+);
+assert.ok(
+/flex-wrap/.test(fonte),
+"as opcoes devem correr na horizontal e quebrar so quando faltar espaco",
+);
+});
+
+test("o formulario da capa agrupa titulo e autor lado a lado", () => {
+const fonte = ler("src/components/ZineWizard/steps/CoverStep.tsx");
+
+assert.ok(
+/sm:grid-cols-2/.test(fonte),
+"titulo e autor devem dividir a linha em telas largas",
+);
+});
