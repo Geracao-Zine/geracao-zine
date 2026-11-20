@@ -262,7 +262,7 @@ Para pedir uma segunda tentativa em uma issue já processada, remova e reaplique
 | 3 — Bugs | #10, #11, #12, #13, #14, #15, #16 | #10, #11, #12, #13, #14, #15 e #16 entregues |
 | 4 — Otimização | #17, #18 | #17 entregue; #18 fechada (o problema não existia) |
 | 5 — Padronização | #19, #20, #21 | fase concluída: #19, #20 e #21 entregues |
-| 6 — Fluxo e diagramação | #22 a #29 | #22 e #23 entregues; #24 armada (`openhands`); #25 a #29 bloqueadas |
+| 6 — Fluxo e diagramação | #22 a #29 | #22, #23 e #24 entregues; #25 armada (`openhands`); #26 a #29 bloqueadas |
 
 Fechadas: #3 (lint), #4 (versão do Node), #5 (dependências e audit), #6 (`jspdf` removido), #21 (constantes de diagramação), #19 (regras de lint), #9 (deploy em VPS), #7 (Dockerfile multi-stage), #8 (docker-compose e `.env.example`), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas), #16 (navbar e fonte do body).
 
@@ -300,10 +300,10 @@ ABERTAS
   #20 + #11 ──> #22 fluxo etapas (feita)
                    │
                    v
-              #23 pagina zine
+              #23 pagina zine (feita)
                    │
                    v
-              #24 auto-fonte
+              #24 auto-fonte (feita)
                    │
                    v
   #25 T1-T4 ──┬─> #26 T5,T11 ──> #27 T6-T10,T12
@@ -315,5 +315,5 @@ A #18 saiu do grafo: a medição de texto nunca rodou a cada tecla, então não 
 ### Ordem prática de trabalho
 
 1. **Fila vazia.** As issues que receberam `next-up` foram todas fechadas, na ordem #8 → #6 → #21 → #19 → #9.
-2. **Em execução:** #24 (auto-ajuste de fonte), armada com `openhands` depois do merge da #23.
-3. **Depois de #24:** #25 → (#26 → #27) e (#28 → #29). Todas seguem com `blocked` de propósito: cada uma depende do merge da anterior, e armar antes faz o trabalho começar sobre uma base que não existe.
+2. **Em execução:** #25 (templates T1 a T4), armada com `openhands` depois do merge da #24.
+3. **Depois de #25:** (#26 → #27) e (#28 → #29). Todas seguem com `blocked` de propósito: cada uma depende do merge da anterior, e armar antes faz o trabalho começar sobre uma base que não existe.
