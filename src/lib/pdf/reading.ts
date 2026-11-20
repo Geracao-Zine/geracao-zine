@@ -17,9 +17,9 @@ import {
 	PANEL_HEIGHT,
 	POEM_DIVIDER_COLOR,
 	POEM_DIVIDER_THICKNESS,
-	POEM_GAP_AFTER_HEADER,
 } from "./layout.ts";
 import type { PanelFonts, PanelRun } from "./panel.ts";
+import { panelFontsFrom } from "./panel-fonts.ts";
 import { layoutPanel } from "./panel.ts";
 import type { ReadingPdfInput } from "./types.ts";
 
@@ -111,12 +111,7 @@ export async function generateReadingPdf(
 	}
 
 	// ---------- PAGINAS DO ZINE ----------
-	const fonts: PanelFonts = {
-		title: titleFonts.bold,
-		subtitle: titleFonts.regular,
-		date: titleFonts.regular,
-		body: titleFonts.italic,
-	};
+	const fonts = panelFontsFrom(titleFonts);
 
 	for (const poem of input.poems) {
 		const layouts = layoutPanel(poem, fonts, PANEL_HEIGHT, contentWidth);
@@ -137,8 +132,8 @@ export async function generateReadingPdf(
 
 			// Divisoria entre o cabecalho e a caixa do texto. Sem
 			// cabecalho nao ha o que separar.
-			if (layout.header) {
-				const dividerY = top - (layout.box.top - POEM_GAP_AFTER_HEADER / 2);
+			if (layout.divider !== null) {
+				const dividerY = top - layout.divider;
 				page.drawLine({
 					start: { x: margin, y: dividerY },
 					end: { x: width - margin, y: dividerY },

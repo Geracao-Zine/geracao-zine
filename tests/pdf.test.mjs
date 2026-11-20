@@ -125,30 +125,28 @@ test("generateReadingPdf aceita zine sem poemas", async () => {
 	assert.equal(doc.getPageCount(), 1);
 });
 
-test("campo opcional vazio nao reserva espaco no PDF", async () => {
-        const { PANEL_HEIGHT, POEM_LINE_HEIGHT } = await import("../src/lib/pdf/layout.ts");
-        // Quantas linhas cabem na caixa quando nao ha cabecalho nenhum.
-        const capacidade = Math.floor(PANEL_HEIGHT / POEM_LINE_HEIGHT);
-        const corpo = Array.from({ length: capacidade }, (_, i) => `verso ${i + 1}`).join("\n");
+test("campo opcional vazio devolve altura e permite corpo maior no PDF", async () => {
+        const { PANEL_HEIGHT, POEM_BODY_MIN_SIZE } = await import("../src/lib/pdf/layout.ts");
+        const { layoutPanel } = await import("../src/lib/pdf/panel.ts");
+        const { StandardFonts: Fontes, PDFDocument: Documento } = await import("pdf-lib");
+        const doc = await Documento.create();
+        const fonte = await doc.embedFont(Fontes.Helvetica);
+        const fontes = { title: fonte, subtitle: fonte, date: fonte, body: fonte };
 
-        const semCampos = await generateReadingPdf({
-                ...cenario,
-                poems: [{ title: "", subtitle: "", date: "", body: corpo }],
-        });
-        const comCampos = await generateReadingPdf({
-                ...cenario,
-                poems: [
-                        {
-                                title: "Título",
-                                subtitle: "Subtítulo",
-                                date: "19/11/2026",
-                                body: corpo,
-                        },
-                ],
-        });
+        // Texto que so cabe com o corpo reduzido quando o cabecalho ocupa o topo.
+        const corpo = Array.from({ length: 50 }, (_, i) => `verso ${i + 1}`).join("\n");
+        const semCampos = layoutPanel({ title: "", subtitle: "", date: "", body: corpo }, fontes);
+        const comCampos = layoutPanel(
+                { title: "Título", subtitle: "Subtítulo", date: "19/11/2026", body: corpo },
+                fontes
+        );
 
-        // Sem cabecalho o texto ocupa a area inteira numa pagina so; com os
-        // tres campos preenchidos a mesma quantidade de verso transborda.
-        assert.equal((await PDFDocument.load(semCampos)).getPageCount(), 2);
-        assert.ok((await PDFDocument.load(comCampos)).getPageCount() > 2);
+        assert.equal(semCampos.length, 1, "sem cabecalho o texto deve caber numa pagina");
+        assert.equal(comCampos.length, 1, "o ajuste automatico deve evitar a continuacao");
+        assert.ok(
+                comCampos[0].bodySize < semCampos[0].bodySize,
+                "o cabecalho reduz a caixa e o corpo escolhido precisa diminuir"
+        );
+        assert.ok(comCampos[0].bodySize >= POEM_BODY_MIN_SIZE);
+        assert.ok(semCampos[0].box.height <= PANEL_HEIGHT);
 });

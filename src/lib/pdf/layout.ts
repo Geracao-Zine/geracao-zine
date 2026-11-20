@@ -36,8 +36,16 @@ export const POEM_SUBTITLE_SIZE = 14;
 export const POEM_SUBTITLE_LINE_HEIGHT = 20;
 export const POEM_DATE_SIZE = 12;
 export const POEM_DATE_LINE_HEIGHT = 16;
+// Corpo do texto: o maximo e o teto que a hierarquia permite (abaixo da data),
+// o minimo e o piso legivel. A bissecao escolhe o maior corpo inteiro da faixa
+// que faz o texto caber na caixa.
 export const POEM_BODY_SIZE = 11;
+export const POEM_BODY_MAX_SIZE = POEM_DATE_SIZE - 1;
+export const POEM_BODY_MIN_SIZE = 7;
 export const POEM_LINE_HEIGHT = 16;
+// Entrelinha e linha vazia proporcionais ao corpo escolhido.
+export const POEM_LINE_HEIGHT_RATIO = POEM_LINE_HEIGHT / POEM_BODY_SIZE;
+export const POEM_BLANK_LINE_RATIO = 0.5;
 
 export const POEM_GAP_AFTER_TITLE = 4;
 export const POEM_GAP_AFTER_SUBTITLE = 2;
@@ -48,7 +56,7 @@ export const POEM_DIVIDER_THICKNESS = 0.5;
 export const POEM_DIVIDER_COLOR = 0.75;
 export const POEM_BODY_COLOR = 0.15;
 export const POEM_DATE_COLOR = 0.5;
-export const POEM_BLANK_LINE_HEIGHT = POEM_LINE_HEIGHT / 2;
+export const POEM_BLANK_LINE_HEIGHT = POEM_LINE_HEIGHT * POEM_BLANK_LINE_RATIO;
 
 // Texto que nao cabe na caixa segue em pagina de continuacao identificada.
 export const POEM_CONTINUATION_LABEL = "continuação";

@@ -103,7 +103,7 @@ Objetivo: zerar os defeitos conhecidos e evitar regressão.
 - [ ] 3.3 Remover B6 (`console.log`) e qualquer log de depuração remanescente.
 - [ ] 3.4 Reescrever o modelo de dados do editor para eliminar B9 e B10: uma lista única e estável de páginas com `id`, sendo a capa um item tipado, não um índice mágico.
 - [ ] 3.5 Corrigir B11: palavra maior que a largura máxima deve ser quebrada por caractere.
-- [ ] 3.6 Corrigir B12: transbordo de poema deve ser controlado (ver Fase 6, ajuste automático de fonte) e, quando ainda assim estourar, gerar continuação identificada.
+- [x] 3.6 Corrigir B12: transbordo de poema deve ser controlado (ver Fase 6, ajuste automático de fonte) e, quando ainda assim estourar, gerar continuação identificada. Feito em #24.
 - [x] 3.7 Corrigir B13 (altura da navbar via variável, sem `mt-14` fixo) e B14 (fonte do `body`). Feito em #16.
 - [ ] 3.8 Corrigir B8: a fonte escolhida no cadastro deve valer no preview e no PDF (embutir a fonte no PDF).
 - [ ] 3.9 Corrigir B7: data opcional, editável e persistida.
@@ -165,11 +165,11 @@ Cada página do zine (não a folha A4, e sim o painel diagramado) tem esta compo
 Regras de diagramação:
 
 - [x] 6.2.1 O texto principal ocupa uma caixa de área fixa definida pela dobra; ele nunca ultrapassa essa caixa. Feito em #23.
-- [ ] 6.2.2 Ajuste automático de fonte: buscar por bisseção o maior corpo de fonte entre um mínimo e um máximo que faça o texto caber na caixa, respeitando entrelinha proporcional. Se o mínimo ainda não couber, dividir o texto em continuação com indicativo, nunca cortar em silêncio.
+- [x] 6.2.2 Ajuste automático de fonte: buscar por bisseção o maior corpo de fonte entre um mínimo e um máximo que faça o texto caber na caixa, respeitando entrelinha proporcional. Se o mínimo ainda não couber, dividir o texto em continuação com indicativo, nunca cortar em silêncio. Feito em #24.
 - [x] 6.2.3 Campos opcionais vazios não reservam espaço: a caixa do texto se expande quando título, subtítulo ou data estão ausentes. Feito em #23.
 - [x] 6.2.4 Hierarquia tipográfica fixa por painel: título > subtítulo > data > corpo, com proporções definidas em constantes. Feito em #23.
 - [ ] 6.2.5 Respeitar quebras de linha do autor (estrofe e verso) e hifenizar apenas quando necessário.
-- [ ] 6.2.6 Pré-visualização fiel: o mesmo motor de medição alimenta preview e PDF.
+- [x] 6.2.6 Pré-visualização fiel: o mesmo motor de medição alimenta preview e PDF. Feito em #24.
 
 ### 6.3 Catálogo de dobras e templates
 

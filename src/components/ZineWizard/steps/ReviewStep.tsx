@@ -3,6 +3,7 @@
 import type { JSX } from "react";
 import CoverCard from "@/components/CoverCard";
 import IssueList from "@/components/IssueList";
+import PoemPreview from "@/components/PoemPreview";
 import PoemGrid from "./PoemGrid";
 import type {
 	Cover,
@@ -12,6 +13,7 @@ import type {
 	ZineDoc,
 	ZineStep,
 } from "@/domain";
+import { formatIsoDate } from "@/domain";
 
 type Props = {
 	cover: Cover;
@@ -85,6 +87,26 @@ export default function ReviewStep({
 					onMove={onMove}
 					onRemove={onRemove}
 				/>
+			</section>
+
+			<section className="space-y-4">
+				<h2 className="font-semibold">Pré-visualização</h2>
+				<p className="text-sm text-zinc-600 dark:text-zinc-400">
+					Mesmo motor de medição do PDF: o corpo da fonte é o maior que cabe na caixa e o
+					texto que não couber segue em continuação identificada.
+				</p>
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+					{poems.map((poem) => (
+						<PoemPreview
+							key={poem.id}
+							title={poem.title}
+							subtitle={poem.subtitle}
+							date={formatIsoDate(poem.date)}
+							body={poem.body}
+							font={cover.titleFont}
+						/>
+					))}
+				</div>
 			</section>
 		</div>
 	);
