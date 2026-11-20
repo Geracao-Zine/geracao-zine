@@ -28,15 +28,22 @@ export {
 	draftIssues,
 	hasPoemContent,
 	isDraftDiagrammable,
-	isZineFormat,
 	isZineStep,
 	parseDraft,
 	serializeDraft,
 	stepIndex,
 	stepStatus,
 } from "./draft.ts";
-export type { ZineFormat, FormatOption } from "./format.ts";
-export { DEFAULT_FORMAT, FORMAT_OPTIONS, isFormatAvailable } from "./format.ts";
+export type { ZineFormat, FormatOption, FormatOrientation } from "./format.ts";
+export {
+        DEFAULT_FORMAT,
+        FORMAT_OPTIONS,
+        formatFrom,
+        formatOption,
+        isFormatAvailable,
+        isZineFormat,
+        panelsPerFace,
+} from "./format.ts";
 export type { Cover } from "./cover.ts";
 export {
 	authorClassOf,

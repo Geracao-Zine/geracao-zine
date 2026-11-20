@@ -100,7 +100,7 @@ test("a data vazia nao renderiza a linha na capa", () => {
 });
 
 test("o PDF so desenha a data quando ela existe", () => {
-	const fonte = ler("src/lib/pdf/reading.ts");
+	const fonte = ler("src/lib/pdf/zine.ts");
 
 	assert.ok(/const temData = Boolean\(input\.date\)/.test(fonte));
 	assert.ok(/if \(temData\) \{/.test(fonte), "o desenho da data deve ser condicional");

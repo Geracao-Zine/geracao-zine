@@ -130,26 +130,22 @@ Cada página do zine (o painel diagramado, não a folha A4 inteira) é composta 
 | Data | Não | Formato pt-BR, editável |
 | Texto principal | Sim | Ocupa a caixa de área fixa que sobra do cabeçalho |
 
-A hierarquia tipográfica é fixa: título > subtítulo > data > corpo. Um campo opcional vazio não deixa faixa em branco — a caixa do texto começa mais acima e cresce. O texto nunca transborda a caixa: o que não couber segue em página de continuação identificada, sem perder linha. O ajuste automático de corpo de fonte é a próxima etapa do roadmap.
+A hierarquia tipográfica é fixa: título > subtítulo > data > corpo. Um campo opcional vazio não deixa faixa em branco — a caixa do texto começa mais acima e cresce. O texto nunca transborda a caixa: o ajuste automático busca o maior corpo que cabe e, quando nem o mínimo cabe, o que sobra segue em página de continuação identificada, sem perder linha.
 
 ### Modelos de dobra
 
-| Modelo | Painéis por face | Páginas por folha |
-|---|---|---|
-| Banner A4 (uma poesia por folha) | 1 | 1 |
-| Duas colunas vertical | 2 | 2 |
-| Duas colunas horizontal | 2 | 2 |
-| Quatro retângulos | 4 | 4 |
-| Minizine de 8 páginas | 8 | 8 |
-| Tríptico | 3 | 6 |
-| Dobra em Z | 3 | 6 |
-| Acordeão | 4 a 6 | 8 a 12 |
-| Gatefold | 4 | 8 |
-| Folha única frente e verso | 1 | 2 |
-| Fanzine grampeado | 2 | múltiplos de 4 |
-| Livrinho de 16 páginas | 16 | 16 |
+As quatro dobras básicas têm imposição implementada. A ordem de leitura é sempre da esquerda para a direita e de cima para baixo; o seletor mostra o diagrama de cada dobra com essa numeração.
 
-Os templates com imposição implementada e os que estão em desenvolvimento são controlados pelo roadmap.
+| ID | Modelo | Folha | Painéis por face | Ordem de leitura |
+|---|---|---|---|---|
+| T1 | Banner A4 (uma poesia por folha) | A4 retrato | 1 | única |
+| T2 | Duas colunas vertical | A4 retrato | 2 | 1 → 2, esquerda para a direita |
+| T3 | Duas colunas horizontal | A4 paisagem | 2 | 1 → 2, cima para baixo |
+| T4 | Quatro retângulos | A4 retrato | 4 | 1 → 2 → 3 → 4, em Z |
+
+A imposição distribui as páginas dos poemas nas faces do template. Um poema curto ocupa um painel e divide a folha com o próximo; um poema que não cabe num painel continua na face seguinte, identificado como continuação. Quando o conteúdo termina no meio de uma face, os painéis restantes ficam vazios — nenhuma página em branco é inventada.
+
+Os demais templates do catálogo aparecem no seletor como "Em breve" e estão detalhados no roadmap.
 
 ## Convenções de código
 

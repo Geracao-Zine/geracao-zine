@@ -190,11 +190,11 @@ Cada dobra é um template com: quantidade de painéis por face, ordem de leitura
 | T11 | Fanzine grampeado | Múltiplas A4 | 2 | múltiplos de 4 | Dobra na lombada e grampo |
 | T12 | Livrinho de 16 páginas | A4 retrato | 16 | 16 | Minizine estendido com dois cortes |
 
-- [ ] 6.3.1 Implementar T1 a T4 (base pedida), com imposição correta e ordem de leitura validada em impressão real.
+- [x] 6.3.1 Implementar T1 a T4 (base pedida), com imposição correta e ordem de leitura definida. Feito em #25; a validação em impressão real segue em 6.3.6.
 - [ ] 6.3.2 Implementar T5 e T11, que já existem como opção desabilitada no seletor.
 - [ ] 6.3.3 Implementar T6 a T10 e T12 como alternativas de dobra.
-- [ ] 6.3.4 Cada template define quantas poesias cabem e como paginar quando há mais texto que painéis.
-- [ ] 6.3.5 Diagrama visual de cada dobra no seletor, mostrando frente, verso e ordem de leitura.
+- [x] 6.3.4 Cada template define quantas poesias cabem e como paginar quando há mais texto que painéis. Feito em #25.
+- [x] 6.3.5 Diagrama visual de cada dobra no seletor, mostrando a ordem de leitura. Feito em #25.
 - [ ] 6.3.6 Validar cada template com uma impressão física: dobra, corte, ordem das páginas e legibilidade da margem de segurança.
 
 ### 6.4 Impressão e download

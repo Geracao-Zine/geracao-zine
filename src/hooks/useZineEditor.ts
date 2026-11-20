@@ -20,6 +20,7 @@ import {
 	draftIssues,
 	formatIsoDate,
 	isDraftDiagrammable,
+	isFormatAvailable,
 	isZineStep,
 	movePage,
 	poemPages,
@@ -35,8 +36,8 @@ import {
 	saveDraft,
 } from "@/lib/draft-storage";
 import { downloadBlob } from "@/lib/download";
-import type { ReadingPdfInput } from "@/lib/pdf";
-import { generateReadingPdf } from "@/lib/pdf";
+import type { ZinePdfInput } from "@/lib/pdf";
+import { generateZinePdf } from "@/lib/pdf";
 
 export type ZineEditor = {
 	/** Falso enquanto o rascunho salvo ainda nao foi lido do navegador. */
@@ -69,11 +70,6 @@ export type ZineEditor = {
 	canOpen: (step: ZineStep) => boolean;
 	download: () => Promise<void>;
 	reset: () => void;
-};
-
-const UNIMPLEMENTED: Record<Exclude<ZineFormat, "reading">, string> = {
-	"mini-zine": "O formato Minizine de 1 folha ainda está em desenvolvimento. Em breve!",
-	"saddle-stitch": "O formato Fanzine grampeado ainda está em desenvolvimento. Em breve!",
 };
 
 /**
@@ -206,17 +202,18 @@ export function useZineEditor(
 	const canOpen = (step: ZineStep): boolean => canEnterStep(draft, step);
 
 	const download = async (): Promise<void> => {
-		if (draft.format !== "reading") {
-			alert(UNIMPLEMENTED[draft.format]);
+		if (!isFormatAvailable(draft.format)) {
+			alert("Essa dobra ainda está em desenvolvimento. Em breve!");
 			return;
 		}
 
-		const input: ReadingPdfInput = {
+		const input: ZinePdfInput = {
 			coverTitle: cover.title,
 			authorName: cover.author,
 			titleFont: cover.titleFont,
 			authorFont: cover.authorFont,
 			date: formattedDate,
+			format: draft.format,
 			poems: poems.map((poem) => ({
 				title: poem.title,
 				subtitle: poem.subtitle,
@@ -225,8 +222,8 @@ export function useZineEditor(
 			})),
 		};
 
-		const bytes = await generateReadingPdf(input);
-		downloadBlob(bytes, "zine-leitura.pdf");
+		const bytes = await generateZinePdf(input);
+		downloadBlob(bytes, `zine-${draft.format}.pdf`);
 	};
 
 	const reset = (): void => {

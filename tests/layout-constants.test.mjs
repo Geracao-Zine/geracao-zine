@@ -14,7 +14,7 @@ test("layout declara A4 retrato e paisagem com a origem documentada", async () =
   assert.match(ts, /210 x 297 mm/);
 });
 
-for (const arquivo of ["reading.ts", "panel.ts"]) {
+for (const arquivo of ["zine.ts", "panel.ts", "imposition.ts", "templates.ts"]) {
   test(`${arquivo} nao tem numero magico de diagramacao`, async () => {
     const ts = await ler(`src/lib/pdf/${arquivo}`);
     const corpo = ts
@@ -50,6 +50,7 @@ test("constantes de capa e poema ficam no modulo de layout", async () => {
     "POEM_LINE_HEIGHT",
     "PANEL_HEIGHT",
     "PAGE_MARGIN",
+    "PANEL_GUTTER",
   ]) {
     assert.match(ts, new RegExp(`export const ${nome} =`), `falta ${nome}`);
   }
