@@ -57,13 +57,13 @@ test("o fluxo tem as quatro etapas na ordem do produto", () => {
 test("o rascunho sobrevive a serializacao e leitura", () => {
 	const original = draftCom(capa, [{ title: "Primeiro", body: "texto\ncom quebra" }]);
 	original.step = "review";
-	original.format = "reading";
+	original.format = "banner-a4";
 
 	const restored = parseDraft(serializeDraft(original));
 
 	assert.ok(restored);
 	assert.equal(restored.step, "review");
-	assert.equal(restored.format, "reading");
+	assert.equal(restored.format, "banner-a4");
 	assert.equal(restored.cover.title, "Zine");
 	assert.equal(restored.cover.author, "Steve");
 	assert.equal(restored.doc.pages.length, original.doc.pages.length);
@@ -92,12 +92,19 @@ test("parseDraft cai no padrao quando os campos vem corrompidos", () => {
 
 	assert.ok(draft);
 	assert.equal(draft.step, "cover");
-	assert.equal(draft.format, "reading");
+	assert.equal(draft.format, "banner-a4");
 	assert.equal(draft.cover.title, "");
 	assert.equal(draft.cover.author, "");
 	assert.equal(draft.cover.titleFont, "geistSans");
 	assert.equal(draft.doc.pages[0].kind, "cover");
 	assert.equal(poemPages(draft.doc).length, 1);
+});
+
+test("parseDraft aceita o formato antigo como banner A4", () => {
+        const draft = parseDraft(JSON.stringify({ format: "reading" }));
+
+        assert.ok(draft);
+        assert.equal(draft.format, "banner-a4");
 });
 
 test("parseDraft sempre repoe a capa e remove ids duplicados", () => {

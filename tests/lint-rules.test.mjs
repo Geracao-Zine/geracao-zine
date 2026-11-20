@@ -39,7 +39,7 @@ test("nenhum any explicito em src", async () => {
 test("as regras de any e ponto e virgula estao ativas como erro", async () => {
   const { stdout } = await exec(eslint, [
     "--print-config",
-    "src/lib/pdf/reading.ts",
+    "src/lib/pdf/zine.ts",
   ], { cwd: raiz });
   const regras = JSON.parse(stdout).rules;
   assert.deepEqual(regras["@typescript-eslint/no-explicit-any"], [2]);

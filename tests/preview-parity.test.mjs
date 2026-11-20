@@ -23,7 +23,7 @@ globalThis.fetch = async (url) => {
 
 const { loadPanelFonts, layoutPreview } = await import("../src/lib/preview/index.ts");
 const { layoutPanel } = await import("../src/lib/pdf/panel.ts");
-const { generateReadingPdf } = await import("../src/lib/pdf/reading.ts");
+const { generateZinePdf } = await import("../src/lib/pdf/zine.ts");
 
 function inflate(bytes) {
 	try {
@@ -105,12 +105,13 @@ test("o PDF respeita o corpo escolhido pelo motor", async () => {
 	const layout = layoutPanel(poema, fonts)[0];
 	const esperados = [...new Set(layout.runs.map((run) => run.size))].sort();
 
-	const bytes = await generateReadingPdf({
+	const bytes = await generateZinePdf({
 		coverTitle: "Zine",
 		authorName: "Steve",
 		titleFont: "geistSans",
 		authorFont: "geistSans",
 		date: "19/11/2026",
+		format: "banner-a4",
 		poems: [poema],
 	});
 

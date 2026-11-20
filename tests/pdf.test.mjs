@@ -19,7 +19,7 @@ globalThis.fetch = async (url) => {
 	};
 };
 
-const { generateReadingPdf } = await import("../src/lib/pdf/reading.ts");
+const { generateZinePdf } = await import("../src/lib/pdf/zine.ts");
 
 const cenario = {
 	coverTitle: "Meu Zine Teste",
@@ -27,6 +27,7 @@ const cenario = {
 	titleFont: "geistMono",
 	authorFont: "geistSans",
 	date: "19/11/2026",
+	format: "banner-a4",
 	poems: [
 		{
 			title: "Primeiro poema",
@@ -78,8 +79,8 @@ test("o modulo de PDF nao importa pdf-lib estaticamente", () => {
 	}
 });
 
-test("generateReadingPdf gera um PDF valido", async () => {
-	const bytes = await generateReadingPdf(cenario);
+test("generateZinePdf gera um PDF valido", async () => {
+	const bytes = await generateZinePdf(cenario);
 
 	assert.ok(bytes instanceof Uint8Array);
 	assert.ok(bytes.length > 1000);
@@ -92,16 +93,16 @@ test("generateReadingPdf gera um PDF valido", async () => {
 	assert.equal(doc.getPageCount(), 3);
 });
 
-test("generateReadingPdf e deterministico com o relogio fixo", async () => {
-	const primeiro = await comRelogioFixo(() => generateReadingPdf(cenario));
-	const segundo = await comRelogioFixo(() => generateReadingPdf(cenario));
+test("generateZinePdf e deterministico com o relogio fixo", async () => {
+	const primeiro = await comRelogioFixo(() => generateZinePdf(cenario));
+	const segundo = await comRelogioFixo(() => generateZinePdf(cenario));
 
 	assert.deepEqual(primeiro, segundo);
 });
 
-test("generateReadingPdf quebra pagina quando o poema nao cabe", async () => {
+test("generateZinePdf quebra pagina quando o poema nao cabe", async () => {
 	const verso = Array.from({ length: 80 }, (_, i) => `linha ${i + 1}`).join("\n");
-	const bytes = await generateReadingPdf({
+	const bytes = await generateZinePdf({
 		...cenario,
 		poems: [{ title: "Longo", subtitle: "", date: "", body: verso }],
 	});
@@ -111,15 +112,15 @@ test("generateReadingPdf quebra pagina quando o poema nao cabe", async () => {
 	assert.ok(doc.getPageCount() > 2, `esperava mais de 2 paginas, veio ${doc.getPageCount()}`);
 });
 
-test("generateReadingPdf aceita zine sem autor", async () => {
-	const bytes = await generateReadingPdf({ ...cenario, authorName: "" });
+test("generateZinePdf aceita zine sem autor", async () => {
+	const bytes = await generateZinePdf({ ...cenario, authorName: "" });
 
 	const doc = await PDFDocument.load(bytes);
 	assert.equal(doc.getPageCount(), 3);
 });
 
-test("generateReadingPdf aceita zine sem poemas", async () => {
-	const bytes = await generateReadingPdf({ ...cenario, poems: [] });
+test("generateZinePdf aceita zine sem poemas", async () => {
+	const bytes = await generateZinePdf({ ...cenario, poems: [] });
 
 	const doc = await PDFDocument.load(bytes);
 	assert.equal(doc.getPageCount(), 1);

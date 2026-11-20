@@ -39,18 +39,33 @@ function arquivos(rel) {
 		});
 }
 
-test("apenas o formato de leitura esta disponivel", () => {
-	assert.equal(DEFAULT_FORMAT, "reading");
-	assert.equal(isFormatAvailable("reading"), true);
+test("as quatro dobras basicas estao disponiveis", () => {
+	assert.equal(DEFAULT_FORMAT, "banner-a4");
+
+	for (const id of [
+		"banner-a4",
+		"duas-colunas-vertical",
+		"duas-colunas-horizontal",
+		"quatro-retangulos",
+	]) {
+		assert.equal(isFormatAvailable(id), true, `${id} deveria estar disponivel`);
+	}
+
 	assert.equal(isFormatAvailable("mini-zine"), false);
 	assert.equal(isFormatAvailable("saddle-stitch"), false);
 });
 
-test("as tres opcoes de formato continuam na tela", () => {
-	assert.equal(FORMAT_OPTIONS.length, 3);
+test("o seletor mostra as quatro dobras e as duas futuras", () => {
 	assert.deepEqual(
 		FORMAT_OPTIONS.map((o) => o.id),
-		["reading", "mini-zine", "saddle-stitch"]
+		[
+			"banner-a4",
+			"duas-colunas-vertical",
+			"duas-colunas-horizontal",
+			"quatro-retangulos",
+			"mini-zine",
+			"saddle-stitch",
+		]
 	);
 });
 
@@ -122,7 +137,7 @@ test("nenhum componente de tela gera PDF", () => {
 	for (const caminho of arquivos("src/components")) {
 		const fonte = ler(caminho);
 		assert.ok(
-			!/generateReadingPdf|lib\/pdf/.test(fonte),
+			!/generateZinePdf|lib\/pdf/.test(fonte),
 			`${caminho} gera PDF diretamente`
 		);
 	}
@@ -142,5 +157,5 @@ test("nenhuma pagina de rota gera PDF diretamente", () => {
 
 test("o hook e o unico ponto que chama o motor de PDF", () => {
 	const hook = ler("src/hooks/useZineEditor.ts");
-	assert.ok(hook.includes("generateReadingPdf"), "o hook deve gerar o PDF");
+	assert.ok(hook.includes("generateZinePdf"), "o hook deve gerar o PDF");
 });
