@@ -1,0 +1,44 @@
+"use client";
+
+import type { JSX } from "react";
+import IssueList from "@/components/IssueList";
+import type { DraftIssue, PoemField, PoemPage, ZineDoc } from "@/domain";
+import PoemGrid from "./PoemGrid";
+
+type Props = {
+	doc: ZineDoc;
+	poems: PoemPage[];
+	issues: DraftIssue[];
+	onChange: (id: string, field: PoemField, value: string) => void;
+	onAdd: () => void;
+	onMove: (id: string, direction: -1 | 1) => void;
+	onRemove: (id: string) => void;
+};
+
+export default function PoemsStep({
+	doc,
+	poems,
+	issues,
+	onChange,
+	onAdd,
+	onMove,
+	onRemove,
+}: Props): JSX.Element {
+	return (
+		<div className="space-y-8">
+			<section className="space-y-2" aria-live="polite">
+				<h2 className="font-semibold">Pendências</h2>
+				<IssueList issues={issues} emptyMessage="Todas as poesias estão prontas." />
+			</section>
+
+			<PoemGrid
+				doc={doc}
+				poems={poems}
+				onChange={onChange}
+				onAdd={onAdd}
+				onMove={onMove}
+				onRemove={onRemove}
+			/>
+		</div>
+	);
+}

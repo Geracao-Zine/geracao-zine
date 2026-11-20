@@ -115,6 +115,10 @@ O objetivo do fluxo é pedir pouca informação por vez, permitindo que o autor 
 3. **Revisão** — conferência do conteúdo e das pendências antes de diagramar.
 4. **Dobra e impressão** — escolha do modelo de dobra, opção de apenas frente ou frente e verso, e download do PDF.
 
+O rascunho é salvo no navegador (`localStorage`, chave `geracao-zine:draft`) a cada alteração, junto com a etapa atual. Recarregar a página, trocar de etapa ou abrir o link antigo `/Editor?coverTitle=...` não perde o que já foi escrito: um rascunho salvo sempre tem prioridade sobre os parâmetros da URL.
+
+As pendências aparecem já na etapa de poesias e se repetem na revisão, sempre em linguagem direta: "2 poesias sem título", "1 página vazia". A etapa de dobra só é liberada quando existe capa completa e ao menos uma poesia com texto; até lá o botão de avançar fica desabilitado.
+
 ### Anatomia de uma página do zine
 
 Cada página do zine (o painel diagramado, não a folha A4 inteira) é composta por:
