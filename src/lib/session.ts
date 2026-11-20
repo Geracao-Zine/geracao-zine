@@ -97,7 +97,17 @@ export function readSessionCookie(request: Request): string | null {
 
 		if (part.slice(0, separator).trim() === SESSION_COOKIE) {
 			const value = part.slice(separator + 1).trim();
-			return value.length > 0 ? decodeURIComponent(value) : null;
+
+			if (value.length === 0) {
+				return null;
+			}
+
+			try {
+				return decodeURIComponent(value);
+			} catch {
+				// Cookie malformado e visitante anonimo, nao erro de servidor.
+				return null;
+			}
 		}
 	}
 

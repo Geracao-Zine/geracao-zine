@@ -144,3 +144,15 @@ test("cookie com valor codificado e decodificado", () => {
 
         assert.equal(readSessionCookie(request), "a b");
 });
+
+test("cookie malformado vira anonimo, e nao erro de servidor", () => {
+        // decodeURIComponent lança URIError com estas entradas; sem o guard a
+        // rota devolvia 500 e qualquer um derrubava o /me com um cookie torto.
+        for (const valor of ["%", "%E0%A4%A", "abc%zz", "%zz%zz"]) {
+                const request = new Request("http://x/", {
+                        headers: { cookie: `${SESSION_COOKIE}=${valor}` },
+                });
+
+                assert.equal(readSessionCookie(request), null, `valor ${valor}`);
+        }
+});

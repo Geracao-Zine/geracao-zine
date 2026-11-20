@@ -107,6 +107,13 @@ test("me com token invalido responde 401", async () => {
         assert.equal((await response.json()).error, "sessao_invalida");
 });
 
+test("me com cookie malformado responde 401, e nao 500", async () => {
+        const response = await me(pedidoMe(`${SESSION_COOKIE}=%`));
+
+        assert.equal(response.status, 401);
+        assert.equal((await response.json()).error, "nao_autenticado");
+});
+
 test("logout limpa o cookie e responde 200", async () => {
         const response = await logout(new Request(`${BASE}/api/auth/logout`, { method: "POST" }));
         const cookies = response.headers.getSetCookie();
