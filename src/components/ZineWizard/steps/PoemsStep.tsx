@@ -2,14 +2,14 @@
 
 import type { JSX } from "react";
 import IssueList from "@/components/IssueList";
-import type { DraftIssue, PoemField, PoemPage, ZineDoc } from "@/domain";
+import type { DraftIssue, PageField, PoemPage, ZineDoc } from "@/domain";
 import PoemGrid from "./PoemGrid";
 
 type Props = {
 	doc: ZineDoc;
 	poems: PoemPage[];
 	issues: DraftIssue[];
-	onChange: (id: string, field: PoemField, value: string) => void;
+	onChange: (id: string, field: PageField, value: string) => void;
 	onAdd: () => void;
 	onMove: (id: string, direction: -1 | 1) => void;
 	onRemove: (id: string) => void;

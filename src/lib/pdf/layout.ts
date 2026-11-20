@@ -24,14 +24,31 @@ export const COVER_DIVIDER_THICKNESS = 1;
 export const COVER_DIVIDER_COLOR = 0.6;
 export const COVER_DATE_COLOR = 0.5;
 
-// Paginas de poema
+// Paginas do zine (o painel diagramado, nao a folha A4).
+// A area do painel e fixa: a caixa do texto e o que sobra dela depois do
+// cabecalho, entao campo opcional vazio devolve a altura para o texto.
+export const PANEL_HEIGHT = A4_PORTRAIT.height - PAGE_MARGIN * 2;
+
+// Hierarquia tipografica fixa: titulo > subtitulo > data > corpo.
 export const POEM_TITLE_SIZE = 20;
-export const POEM_BODY_SIZE = 13;
-export const POEM_LINE_HEIGHT = 22;
-export const POEM_TITLE_LINE_HEIGHT = POEM_TITLE_SIZE + 6;
-export const POEM_GAP_AFTER_TITLE = 6;
-export const POEM_GAP_AFTER_DIVIDER = 30;
+export const POEM_TITLE_LINE_HEIGHT = 26;
+export const POEM_SUBTITLE_SIZE = 14;
+export const POEM_SUBTITLE_LINE_HEIGHT = 20;
+export const POEM_DATE_SIZE = 12;
+export const POEM_DATE_LINE_HEIGHT = 16;
+export const POEM_BODY_SIZE = 11;
+export const POEM_LINE_HEIGHT = 16;
+
+export const POEM_GAP_AFTER_TITLE = 4;
+export const POEM_GAP_AFTER_SUBTITLE = 2;
+export const POEM_GAP_AFTER_DATE = 2;
+export const POEM_GAP_AFTER_HEADER = 24;
+
 export const POEM_DIVIDER_THICKNESS = 0.5;
 export const POEM_DIVIDER_COLOR = 0.75;
 export const POEM_BODY_COLOR = 0.15;
+export const POEM_DATE_COLOR = 0.5;
 export const POEM_BLANK_LINE_HEIGHT = POEM_LINE_HEIGHT / 2;
+
+// Texto que nao cabe na caixa segue em pagina de continuacao identificada.
+export const POEM_CONTINUATION_LABEL = "continuação";

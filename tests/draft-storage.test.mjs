@@ -36,7 +36,7 @@ test("salvar e carregar preserva o conteudo do rascunho", () => {
 	const poema = poemPages(draft.doc)[0];
 
 	draft.cover.title = "Zine Salvo";
-	draft.doc = setPoemField(draft.doc, poema.id, "poetry", "verso guardado");
+	draft.doc = setPoemField(draft.doc, poema.id, "body", "verso guardado");
 	draft.step = "poems";
 
 	saveDraft(storage, draft);
@@ -44,7 +44,7 @@ test("salvar e carregar preserva o conteudo do rascunho", () => {
 
 	assert.ok(lido);
 	assert.equal(lido.cover.title, "Zine Salvo");
-	assert.equal(poemPages(lido.doc)[0].poetry, "verso guardado");
+	assert.equal(poemPages(lido.doc)[0].body, "verso guardado");
 	assert.equal(lido.step, "poems");
 });
 

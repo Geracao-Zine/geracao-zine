@@ -1,22 +1,28 @@
 import type { JSX } from "react";
-import type { PoemField } from "@/domain";
+import type { PageField } from "@/domain";
 
 type Props = {
 	id: string;
 	title: string;
-	poetry: string;
+	subtitle: string;
+	date: string;
+	body: string;
 	position: number;
 	canMoveUp: boolean;
 	canMoveDown: boolean;
-	onChange: (id: string, field: PoemField, value: string) => void;
+	onChange: (id: string, field: PageField, value: string) => void;
 	onMove: (id: string, direction: -1 | 1) => void;
 	onRemove: (id: string) => void;
 };
 
+const FIELD_CLASS = "bg-transparent outline-none w-full focus:border-purple-600";
+
 export default function PoemCard({
 	id,
 	title,
-	poetry,
+	subtitle,
+	date,
+	body,
 	position,
 	canMoveUp,
 	canMoveDown,
@@ -56,26 +62,49 @@ export default function PoemCard({
 			</div>
 
 			<label className="sr-only" htmlFor={`poem-title-${id}`}>
-				Título da poesia {position}
+				Título da página {position}
 			</label>
 			<input
 				id={`poem-title-${id}`}
 				type="text"
-				placeholder="Título da página"
+				placeholder="Título (opcional)"
 				value={title}
 				onChange={(e) => onChange(id, "title", e.target.value)}
-				className="text-xl font-semibold bg-transparent border-b border-zinc-300 dark:border-zinc-700 outline-none mb-4 pb-2 pr-16 focus:border-purple-600"
+				className={`text-xl font-semibold border-b border-zinc-300 dark:border-zinc-700 mb-2 pb-2 pr-16 ${FIELD_CLASS}`}
+			/>
+
+			<label className="sr-only" htmlFor={`poem-subtitle-${id}`}>
+				Subtítulo da página {position}
+			</label>
+			<input
+				id={`poem-subtitle-${id}`}
+				type="text"
+				placeholder="Subtítulo (opcional)"
+				value={subtitle}
+				onChange={(e) => onChange(id, "subtitle", e.target.value)}
+				className={`text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2 ${FIELD_CLASS}`}
+			/>
+
+			<label className="sr-only" htmlFor={`poem-date-${id}`}>
+				Data da página {position}
+			</label>
+			<input
+				id={`poem-date-${id}`}
+				type="date"
+				value={date}
+				onChange={(e) => onChange(id, "date", e.target.value)}
+				className={`text-xs text-zinc-500 mb-4 ${FIELD_CLASS}`}
 			/>
 
 			<label className="sr-only" htmlFor={`poem-text-${id}`}>
-				Texto da poesia {position}
+				Texto da página {position}
 			</label>
 			<textarea
 				id={`poem-text-${id}`}
 				placeholder="Escreva sua poesia aqui..."
-				value={poetry}
-				onChange={(e) => onChange(id, "poetry", e.target.value)}
-				className="flex-1 resize-none bg-transparent outline-none text-sm leading-relaxed"
+				value={body}
+				onChange={(e) => onChange(id, "body", e.target.value)}
+				className={`flex-1 resize-none text-sm leading-relaxed ${FIELD_CLASS}`}
 			/>
 
 			<div className="text-center text-xs text-zinc-400 mt-4">{position}</div>

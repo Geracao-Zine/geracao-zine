@@ -2,13 +2,13 @@
 
 import type { JSX } from "react";
 import PoemCard from "@/components/PoemCard";
-import type { PoemField, PoemPage, ZineDoc } from "@/domain";
+import type { PageField, PoemPage, ZineDoc } from "@/domain";
 import { positionOf } from "@/domain";
 
 type Props = {
 	doc: ZineDoc;
 	poems: PoemPage[];
-	onChange: (id: string, field: PoemField, value: string) => void;
+	onChange: (id: string, field: PageField, value: string) => void;
 	onAdd: () => void;
 	onMove: (id: string, direction: -1 | 1) => void;
 	onRemove: (id: string) => void;
@@ -43,7 +43,9 @@ export default function PoemGrid({
 						key={poem.id}
 						id={poem.id}
 						title={poem.title}
-						poetry={poem.poetry}
+						subtitle={poem.subtitle}
+						date={poem.date}
+						body={poem.body}
 						position={positionOf(doc, poem.id)}
 						canMoveUp={index > 0}
 						canMoveDown={index < poems.length - 1}

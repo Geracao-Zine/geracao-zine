@@ -28,8 +28,13 @@ const cenario = {
 	authorFont: "geistSans",
 	date: "19/11/2026",
 	poems: [
-		{ title: "Primeiro poema", poetry: "coração ação linguiça avó São Paulo\n\nsegunda estrofe" },
-		{ title: "", poetry: "poema sem titulo" },
+		{
+			title: "Primeiro poema",
+			subtitle: "um subtítulo",
+			date: "19/11/2026",
+			body: "coração ação linguiça avó São Paulo\n\nsegunda estrofe",
+		},
+		{ title: "", subtitle: "", date: "", body: "poema sem titulo" },
 	],
 };
 
@@ -98,7 +103,7 @@ test("generateReadingPdf quebra pagina quando o poema nao cabe", async () => {
 	const verso = Array.from({ length: 80 }, (_, i) => `linha ${i + 1}`).join("\n");
 	const bytes = await generateReadingPdf({
 		...cenario,
-		poems: [{ title: "Longo", poetry: verso }],
+		poems: [{ title: "Longo", subtitle: "", date: "", body: verso }],
 	});
 
 	const doc = await PDFDocument.load(bytes);
@@ -118,4 +123,32 @@ test("generateReadingPdf aceita zine sem poemas", async () => {
 
 	const doc = await PDFDocument.load(bytes);
 	assert.equal(doc.getPageCount(), 1);
+});
+
+test("campo opcional vazio nao reserva espaco no PDF", async () => {
+        const { PANEL_HEIGHT, POEM_LINE_HEIGHT } = await import("../src/lib/pdf/layout.ts");
+        // Quantas linhas cabem na caixa quando nao ha cabecalho nenhum.
+        const capacidade = Math.floor(PANEL_HEIGHT / POEM_LINE_HEIGHT);
+        const corpo = Array.from({ length: capacidade }, (_, i) => `verso ${i + 1}`).join("\n");
+
+        const semCampos = await generateReadingPdf({
+                ...cenario,
+                poems: [{ title: "", subtitle: "", date: "", body: corpo }],
+        });
+        const comCampos = await generateReadingPdf({
+                ...cenario,
+                poems: [
+                        {
+                                title: "Título",
+                                subtitle: "Subtítulo",
+                                date: "19/11/2026",
+                                body: corpo,
+                        },
+                ],
+        });
+
+        // Sem cabecalho o texto ocupa a area inteira numa pagina so; com os
+        // tres campos preenchidos a mesma quantidade de verso transborda.
+        assert.equal((await PDFDocument.load(semCampos)).getPageCount(), 2);
+        assert.ok((await PDFDocument.load(comCampos)).getPageCount() > 2);
 });
