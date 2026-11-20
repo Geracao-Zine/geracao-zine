@@ -262,7 +262,7 @@ Para pedir uma segunda tentativa em uma issue já processada, remova e reaplique
 | 3 — Bugs | #10, #11, #12, #13, #14, #15, #16 | #10, #11, #12, #13, #14, #15 e #16 entregues |
 | 4 — Otimização | #17, #18 | #17 entregue; #18 fechada (o problema não existia) |
 | 5 — Padronização | #19, #20, #21 | fase concluída: #19, #20 e #21 entregues |
-| 6 — Fluxo e diagramação | #22 a #29 | #22 destravada; #23 a #29 seguem em cadeia |
+| 6 — Fluxo e diagramação | #22 a #29 | #22 armada (`openhands`); #23 a #29 bloqueadas pela cadeia |
 
 Fechadas: #3 (lint), #4 (versão do Node), #5 (dependências e audit), #6 (`jspdf` removido), #21 (constantes de diagramação), #19 (regras de lint), #9 (deploy em VPS), #7 (Dockerfile multi-stage), #8 (docker-compose e `.env.example`), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas), #16 (navbar e fonte do body).
 
@@ -278,7 +278,7 @@ A #21 veio depois da #20 por depender do `src/domain` já separado. As constante
 
 A #19 ficou por último de propósito: ao exigir ponto e vírgula em todo o `src/`, ela reformataria os arquivos que as anteriores escrevem. Na prática o código já estava conforme — ligar as regras não exigiu uma única correção —, mas a ordem evitou o risco.
 
-A #22 (fluxo em etapas) também está destravada, mas fica para depois da fila acima: é funcionalidade nova e grande, e convém que o modelo de data e capa já esteja estável (a #14 fechou isso) antes de o cadastro virar etapas.
+A #22 (fluxo em etapas) ficou para depois da fila acima: é funcionalidade nova e grande, e convém que o modelo de data e capa já esteja estável (a #14 fechou isso) antes de o cadastro virar etapas. Com a fila vazia, recebeu o label `openhands`.
 
 ### Grafo de dependências
 
@@ -315,5 +315,5 @@ A #18 saiu do grafo: a medição de texto nunca rodou a cada tecla, então não 
 ### Ordem prática de trabalho
 
 1. **Fila vazia.** As issues que receberam `next-up` foram todas fechadas, na ordem #8 → #6 → #21 → #19 → #9.
-2. **Próxima, já destravada:** #22 (fluxo em etapas), funcionalidade nova e maior.
-3. **Depois de #22:** #23 → #24 → #25 → (#26 → #27) e (#28 → #29).
+2. **Em execução:** #22 (fluxo em etapas), armada com `openhands`.
+3. **Depois de #22:** #23 → #24 → #25 → (#26 → #27) e (#28 → #29). Todas seguem com `blocked` de propósito: cada uma depende do merge da anterior, e armar antes faz o trabalho começar sobre uma base que não existe.
