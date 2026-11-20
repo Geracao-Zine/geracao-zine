@@ -32,6 +32,9 @@ services:
       HOSTNAME: 0.0.0.0
       NEXT_TELEMETRY_DISABLED: 1
       DATABASE_URL: ${DATABASE_URL}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      JWT_SECRET: ${JWT_SECRET}
     healthcheck:
       # A imagem alpine traz wget; use ele para nao depender de pacote extra.
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/"]

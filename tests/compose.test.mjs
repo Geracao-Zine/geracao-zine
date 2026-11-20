@@ -22,7 +22,9 @@ test("healthcheck usa wget, que existe na imagem alpine", async () => {
 test("env de exemplo documenta APP_PORT sem segredos", async () => {
   const env = await ler(".env.example");
   assert.match(env, /APP_PORT=\d+/);
-  assert.doesNotMatch(env, /(token|secret|senha|password|key)\s*=\s*\S+/i);
+  // `[^\S\n]*` em vez de `\s*`: sem isso o padrao atravessa a quebra de linha
+  // e casa `SECRET=` (valor vazio) com o `#` do comentario seguinte.
+  assert.doesNotMatch(env, /(token|secret|senha|password|key)[^\S\n]*=[^\S\n]*\S+/i);
 });
 
 test("gitignore ignora .env mas versiona .env.example", async () => {

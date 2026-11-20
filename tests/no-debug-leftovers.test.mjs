@@ -21,13 +21,22 @@ function sourceOf(suffix) {
 	return readFileSync(match, "utf8");
 }
 
-test("no console.* calls remain in src/", () => {
-	const offenders = files
-		.filter((file) => /\bconsole\.\w+\(/.test(readFileSync(file, "utf8")))
-		.map((file) => file.slice(SRC_DIR.length));
+	// O ponto unico de log do servidor. A regra continua valendo para todo o resto
+	// de src/: e o que impede depuracao esquecida de voltar.
+	const LOG_MODULE = "lib/log.ts";
 
-	assert.deepEqual(offenders, []);
-});
+	test("no console.* calls remain in src/", () => {
+		const offenders = files
+			.filter((file) => !file.endsWith(LOG_MODULE))
+			.filter((file) => /\bconsole\.\w+\(/.test(readFileSync(file, "utf8")))
+			.map((file) => file.slice(SRC_DIR.length));
+
+		assert.deepEqual(offenders, []);
+	});
+
+	test("o modulo de log concentra as chamadas de console", () => {
+		assert.match(sourceOf(LOG_MODULE), /console\.error\(/);
+	});
 
 test("Editor page imports only the pdf-lib symbols it uses", () => {
 	const source = sourceOf("app/Editor/page.tsx");
