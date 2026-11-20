@@ -19,16 +19,51 @@ export type ZineDoc = {
 	sequence: number;
 };
 
-const COVER_ID = "cover";
+export const COVER_PAGE_ID = "cover";
 
 export function createDoc(): ZineDoc {
 	return {
 		pages: [
-			{ id: COVER_ID, kind: "cover" },
+			{ id: COVER_PAGE_ID, kind: "cover" },
 			{ id: "page-1", kind: "poem", title: "", poetry: "" },
 		],
 		sequence: 1,
 	};
+}
+
+/**
+ * Move uma poesia uma posicao para cima (-1) ou para baixo (1).
+ *
+ * A capa nunca se move: a troca acontece entre posicoes ocupadas por poemas,
+ * entao a capa continua no lugar mesmo quando ha outras paginas entre ela e a
+ * poesia movida.
+ */
+export function movePage(
+	doc: ZineDoc,
+	id: string,
+	direction: -1 | 1
+): ZineDoc {
+	const poems = poemPages(doc);
+	const from = poems.findIndex((page) => page.id === id);
+
+	if (from === -1) {
+		return doc;
+	}
+
+	const to = from + direction;
+
+	if (to < 0 || to >= poems.length) {
+		return doc;
+	}
+
+	const fromIndex = doc.pages.indexOf(poems[from]);
+	const toIndex = doc.pages.indexOf(poems[to]);
+	const pages = [...doc.pages];
+
+	pages[fromIndex] = poems[to];
+	pages[toIndex] = poems[from];
+
+	return { ...doc, pages };
 }
 
 export function addPage(doc: ZineDoc): ZineDoc {

@@ -84,7 +84,7 @@ test("a data nao entra no criterio de capa completa", () => {
 });
 
 test("o cadastro oferece o campo de data como opcional", () => {
-	const fonte = ler("src/app/Create/page.tsx");
+	const fonte = ler("src/components/ZineWizard/steps/CoverStep.tsx");
 
 	assert.ok(fonte.includes('type="date"'), "falta o campo de data");
 	assert.ok(fonte.includes("(opcional)"), "o campo deve se anunciar como opcional");

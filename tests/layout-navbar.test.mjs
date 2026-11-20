@@ -89,7 +89,7 @@ test("as paginas de conteudo descontam a navbar do min-h", () => {
 		"src/app/page.tsx",
 		"src/app/Library/page.tsx",
 		"src/app/Support/page.tsx",
-		"src/app/Create/page.tsx",
+		"src/components/ZineWizard/index.tsx",
 	];
 	for (const pagina of paginas) {
 		const fonte = ler(pagina);
