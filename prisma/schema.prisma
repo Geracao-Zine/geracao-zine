@@ -1,0 +1,29 @@
+// Schema Code-First. A fonte da verdade e este arquivo: as migrations sao
+// geradas a partir dele e nunca editadas a mao.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Conta criada pelo fluxo "Entrar com Google".
+///
+/// O `googleId` guarda o `sub` do ID token, que e estavel e nunca muda. O email
+/// pode mudar de dono na Google, entao ele identifica a conta apenas na primeira
+/// entrada, quando ainda nao existe `googleId` vinculado.
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  email         String   @unique
+  name          String?
+  avatarUrl     String?
+  googleId      String?  @unique
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("users")
+}

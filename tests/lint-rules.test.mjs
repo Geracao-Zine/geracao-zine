@@ -9,10 +9,16 @@ const raiz = new URL("../", import.meta.url).pathname;
 const exec = promisify(execFile);
 const eslint = join(raiz, "node_modules/.bin/eslint");
 
+// src/generated e saida do `prisma generate` (versionada no .gitignore, nao no
+// repo). Auditar codigo de terceiros gerado so produz ruido: ele nao segue as
+// regras do projeto e nao pode ser corrigido a mao.
+const IGNORADOS = new Set(["generated"]);
+
 async function fontes(dir) {
   const entradas = await readdir(dir, { withFileTypes: true });
   const achados = [];
   for (const e of entradas) {
+    if (e.isDirectory() && IGNORADOS.has(e.name)) continue;
     const caminho = join(dir, e.name);
     if (e.isDirectory()) achados.push(...(await fontes(caminho)));
     else if (/\.(ts|tsx)$/.test(e.name)) achados.push(caminho);
