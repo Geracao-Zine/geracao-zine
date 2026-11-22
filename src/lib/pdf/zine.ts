@@ -1,7 +1,9 @@
 import { fontById } from "../fonts.ts";
 import { wrapText } from "../wrap-text.ts";
 import { embedZineFonts } from "./fonts.ts";
-import { imposePoems } from "./imposition.ts";
+import { imposeSheets } from "./imposition.ts";
+import type { ImposedFace } from "./imposition.ts";
+import type { PDFPage } from "pdf-lib";
 import {
         COVER_AUTHOR_SIZE,
         COVER_DATE_COLOR,
@@ -121,47 +123,73 @@ export async function generateZinePdf(input: ZinePdfInput): Promise<Uint8Array> 
 
         // ---------- FACES DO ZINE ----------
         const fonts = panelFontsFrom(titleFonts);
+        const duplex = input.printMode === "duplex";
 
-        for (const face of imposePoems(template, input.poems, fonts)) {
-                const page = pdfDoc.addPage([face.width, face.height]);
+        // No duplex a capa ocupa so a frente da primeira folha. Reservar o verso
+        // dela mantem a regra "toda face de verso e espelhada": sem isso a
+        // primeira face cairia atras da capa sem passar pelo espelho.
+        if (duplex) {
+                pdfDoc.addPage([width, height]);
+        }
 
-                face.panels.forEach((layout, index) => {
-                        if (!layout) {
-                                return;
-                        }
+        for (const sheet of imposeSheets(template, input.poems, fonts, input.printMode)) {
+                drawFace(pdfDoc.addPage([width, height]), sheet.front, fonts, rgb);
 
-                        const slot = face.slots[index];
-                        const top = slot.y + slot.height;
+                if (sheet.back) {
+                        drawFace(pdfDoc.addPage([width, height]), sheet.back, fonts, rgb);
+                }
+        }
 
-                        for (const run of layout.runs) {
-                                page.drawText(run.text, {
-                                        x: slot.x,
-                                        y: top - run.baseline,
-                                        size: run.size,
-                                        font: fontOf(run, fonts),
-                                        color: rgb(run.color, run.color, run.color),
-                                });
-                        }
-
-                        // Divisoria entre o cabecalho e a caixa do texto. Sem
-                        // cabecalho nao ha o que separar.
-                        if (layout.divider !== null) {
-                                const dividerY = top - layout.divider;
-                                page.drawLine({
-                                        start: { x: slot.x, y: dividerY },
-                                        end: { x: slot.x + slot.width, y: dividerY },
-                                        thickness: POEM_DIVIDER_THICKNESS,
-                                        color: rgb(
-                                                POEM_DIVIDER_COLOR,
-                                                POEM_DIVIDER_COLOR,
-                                                POEM_DIVIDER_COLOR
-                                        ),
-                                });
-                        }
-                });
+        // O duplex le a pilha em pares: com numero impar de paginas a ultima
+        // frente ficaria sozinha e receberia a proxima folha no verso.
+        if (duplex && pdfDoc.getPageCount() % 2 === 1) {
+                pdfDoc.addPage([width, height]);
         }
 
         return pdfDoc.save();
+}
+
+/** Desenha uma face: cada painel no seu slot, na ordem de leitura. */
+function drawFace(
+        page: PDFPage,
+        face: ImposedFace,
+        fonts: PanelFonts,
+        rgb: (r: number, g: number, b: number) => ReturnType<typeof import("pdf-lib").rgb>
+): void {
+        face.panels.forEach((layout, index) => {
+                if (!layout) {
+                        return;
+                }
+
+                const slot = face.slots[index];
+                const top = slot.y + slot.height;
+
+                for (const run of layout.runs) {
+                        page.drawText(run.text, {
+                                x: slot.x,
+                                y: top - run.baseline,
+                                size: run.size,
+                                font: fontOf(run, fonts),
+                                color: rgb(run.color, run.color, run.color),
+                        });
+                }
+
+                // Divisoria entre o cabecalho e a caixa do texto. Sem cabecalho
+                // nao ha o que separar.
+                if (layout.divider !== null) {
+                        const dividerY = top - layout.divider;
+                        page.drawLine({
+                                start: { x: slot.x, y: dividerY },
+                                end: { x: slot.x + slot.width, y: dividerY },
+                                thickness: POEM_DIVIDER_THICKNESS,
+                                color: rgb(
+                                        POEM_DIVIDER_COLOR,
+                                        POEM_DIVIDER_COLOR,
+                                        POEM_DIVIDER_COLOR
+                                ),
+                        });
+                }
+        });
 }
 
 function fontOf(run: PanelRun, fonts: PanelFonts): PanelFonts["body"] {

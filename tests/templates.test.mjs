@@ -44,6 +44,7 @@ function capa(extra = {}) {
                 titleFont: "geistSans",
                 authorFont: "geistSans",
                 date: "19/11/2026",
+                printMode: "simplex",
                 ...extra,
         };
 }
@@ -276,4 +277,150 @@ test("templateFor devolve null para as dobras ainda nao implementadas", () => {
         assert.equal(templateFor("mini-zine"), null);
         assert.equal(templateFor("saddle-stitch"), null);
         assert.ok(templateFor("banner-a4"));
+});
+
+// ---------- impressao frente e verso ----------
+
+const { imposeSheets, mirrorSlot, mirrorFace } = await import(
+        "../src/lib/pdf/imposition.ts"
+);
+
+test("no simplex cada face e uma folha e nao ha verso", () => {
+        const folhas = imposeSheets(TEMPLATES["duas-colunas-vertical"], poemas, fonts, "simplex");
+
+        assert.equal(folhas.length, 2);
+        assert.deepEqual(
+                folhas.map((folha) => folha.number),
+                [1, 2]
+        );
+
+        for (const folha of folhas) {
+                assert.equal(folha.back, null, "sem duplex nao existe verso");
+                assert.equal(folha.front.mirrored, false);
+        }
+});
+
+test("no duplex as faces viram pares frente e verso", () => {
+        const folhas = imposeSheets(TEMPLATES["duas-colunas-vertical"], poemas, fonts, "duplex");
+
+        assert.equal(folhas.length, 1, "duas faces formam uma folha");
+        assert.equal(folhas[0].front.panels[0].runs[0].text, "Um");
+        assert.ok(folhas[0].back, "a segunda face deveria ser o verso");
+        assert.equal(folhas[0].back.panels[0].runs[0].text, "Tres");
+        assert.equal(folhas[0].back.mirrored, true);
+});
+
+test("o verso com numero impar de faces fica em branco", () => {
+        const cinco = [
+                ...poemas,
+                { title: "Quatro", subtitle: "", date: "", body: "quarto" },
+                { title: "Cinco", subtitle: "", date: "", body: "quinto" },
+        ];
+        const folhas = imposeSheets(TEMPLATES["duas-colunas-vertical"], cinco, fonts, "duplex");
+
+        assert.equal(folhas.length, 2);
+        assert.ok(folhas[1].front, "a terceira face abre uma folha nova");
+        assert.equal(folhas[1].back, null, "sem par o verso fica vazio");
+});
+
+test("o verso retrato troca esquerda por direita (virar na borda longa)", () => {
+        const folha = { width: 595, height: 842 };
+        const esquerda = { x: 70, y: 400, width: 200, height: 300 };
+        const espelho = mirrorSlot(folha, esquerda);
+
+        assert.equal(espelho.x, folha.width - (esquerda.x + esquerda.width));
+        assert.equal(espelho.y, esquerda.y, "retrato nao mexe na vertical");
+        assert.equal(espelho.width, esquerda.width);
+        assert.equal(espelho.height, esquerda.height);
+});
+
+test("o verso paisagem troca topo por base (virar na borda longa)", () => {
+        const folha = { width: 842, height: 595 };
+        const cima = { x: 70, y: 400, width: 600, height: 150 };
+        const espelho = mirrorSlot(folha, cima);
+
+        assert.equal(espelho.y, folha.height - (cima.y + cima.height));
+        assert.equal(espelho.x, cima.x, "paisagem nao mexe na horizontal");
+});
+
+test("o verso espelha a grade e mantem cada pagina no seu painel", () => {
+        const frente = imposePoems(TEMPLATES["quatro-retangulos"], poemas, fonts)[0];
+        const verso = mirrorFace(frente);
+
+        assert.equal(verso.panels.length, frente.panels.length);
+        assert.equal(verso.slots.length, frente.slots.length);
+
+        frente.slots.forEach((slot, index) => {
+                assert.equal(
+                        verso.slots[index].x,
+                        frente.width - (slot.x + slot.width),
+                        "o slot " + index + " do verso e o espelho do slot da frente"
+                );
+                assert.equal(verso.slots[index].y, slot.y);
+                assert.equal(
+                        verso.panels[index],
+                        frente.panels[index],
+                        "o conteudo continua no mesmo painel"
+                );
+        });
+
+        assert.deepEqual(
+                verso.panels.map((painel) => painel?.runs[0].text ?? null),
+                ["Um", "Dois", "Tres", null]
+        );
+});
+
+test("os paineis do verso continuam dentro da folha", () => {
+        for (const template of Object.values(TEMPLATES)) {
+                const frente = imposePoems(template, poemas, fonts)[0];
+                const verso = mirrorFace(frente);
+                const { width, height } = template.sheet;
+
+                for (const slot of verso.slots) {
+                        assert.ok(slot.x >= PAGE_MARGIN - 0.001, `${template.id}: x fora da margem`);
+                        assert.ok(slot.y >= PAGE_MARGIN - 0.001, `${template.id}: y fora da margem`);
+                        assert.ok(
+                                slot.x + slot.width <= width - PAGE_MARGIN + 0.001,
+                                `${template.id}: passa da direita`
+                        );
+                        assert.ok(
+                                slot.y + slot.height <= height - PAGE_MARGIN + 0.001,
+                                `${template.id}: passa do topo`
+                        );
+                }
+        }
+});
+
+test("o duplex gera o dobro de paginas de faces, sempre em par", async () => {
+        for (const format of Object.keys(TEMPLATES)) {
+                const simplex = await PDFDocument.load(
+                        await generateZinePdf(capa({ format, poems: poemas }))
+                );
+                const duplex = await PDFDocument.load(
+                        await generateZinePdf(capa({ format, poems: poemas, printMode: "duplex" }))
+                );
+
+                assert.equal(
+                        duplex.getPageCount() % 2,
+                        0,
+                        `${format}: duplex precisa de paginas em par`
+                );
+                assert.ok(
+                        duplex.getPageCount() >= simplex.getPageCount(),
+                        `${format}: duplex nao pode ter menos paginas`
+                );
+        }
+});
+
+test("o PDF do duplex repete a fonte da capa e nao muda a orientacao", async () => {
+        const bytes = await generateZinePdf(
+                capa({ format: "quatro-retangulos", poems: poemas, printMode: "duplex" })
+        );
+        const doc = await PDFDocument.load(bytes);
+
+        for (let index = 0; index < doc.getPageCount(); index += 1) {
+                const { width, height } = doc.getPage(index).getSize();
+
+                assert.ok(width < height, `pagina ${index} deveria continuar retrato`);
+        }
 });

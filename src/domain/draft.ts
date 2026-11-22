@@ -2,6 +2,8 @@ import type { Cover } from "./cover.ts";
 import { isCoverComplete } from "./cover.ts";
 import type { ZineFormat } from "./format.ts";
 import { DEFAULT_FORMAT, formatFrom } from "./format.ts";
+import type { PrintMode } from "./print.ts";
+import { DEFAULT_PRINT_MODE, printModeFrom } from "./print.ts";
 import type { PageFields } from "./page.ts";
 import { pageFieldsFrom } from "./page.ts";
 import type { PoemPage, ZineDoc } from "./zine.ts";
@@ -49,6 +51,7 @@ export type ZineDraft = {
 	cover: Cover;
 	doc: ZineDoc;
 	format: ZineFormat;
+	printMode: PrintMode;
 };
 
 export type DraftIssue = {
@@ -73,6 +76,7 @@ export function createDraft(): ZineDraft {
 		},
 		doc: createDoc(),
 		format: DEFAULT_FORMAT,
+		printMode: DEFAULT_PRINT_MODE,
 	};
 }
 
@@ -128,6 +132,7 @@ export function parseDraft(raw: string | null): ZineDraft | null {
 		version: DRAFT_VERSION,
 		step: isZineStep(source.step) ? source.step : DEFAULT_STEP,
 		format: formatFrom(source.format),
+		printMode: printModeFrom(source.printMode),
 		cover: {
 			title: text(coverSource.title),
 			author: text(coverSource.author),

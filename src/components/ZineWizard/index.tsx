@@ -109,9 +109,11 @@ export default function ZineWizard({
 						{editor.step === "print" ? (
 							<PrintStep
 								format={editor.format}
+								printMode={editor.printMode}
 								issues={editor.issues}
 								diagrammable={editor.diagrammable}
 								onFormatChange={editor.setFormat}
+								onPrintModeChange={editor.setPrintMode}
 								onDownload={editor.download}
 								onGoTo={editor.goToStep}
 							/>

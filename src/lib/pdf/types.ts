@@ -1,5 +1,6 @@
 import type { ZineFormat } from "../../domain/format.ts";
 import type { PageFields } from "../../domain/page.ts";
+import type { PrintMode } from "../../domain/print.ts";
 import type { FontId } from "../fonts";
 
 /** Uma pagina do zine pronta para diagramar: os quatro campos do modelo. */
@@ -13,6 +14,8 @@ export type ZinePdfInput = {
         date: string;
         /** Dobra escolhida: define orientacao, paineis por face e ordem de leitura. */
         format: ZineFormat;
+        /** So frente ou frente e verso; no duplex o verso sai espelhado. */
+        printMode: PrintMode;
         poems: PdfPoem[];
 };
 

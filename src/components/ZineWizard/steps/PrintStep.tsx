@@ -3,22 +3,27 @@
 import type { JSX } from "react";
 import { FormatSelector } from "@/components/FormatSelector";
 import IssueList from "@/components/IssueList";
-import type { DraftIssue, ZineFormat, ZineStep } from "@/domain";
+import PrintModeSelector from "@/components/PrintModeSelector";
+import type { DraftIssue, PrintMode, ZineFormat, ZineStep } from "@/domain";
 
 type Props = {
 	format: ZineFormat;
+	printMode: PrintMode;
 	issues: DraftIssue[];
 	diagrammable: boolean;
 	onFormatChange: (format: ZineFormat) => void;
+	onPrintModeChange: (mode: PrintMode) => void;
 	onDownload: () => Promise<void>;
 	onGoTo: (step: ZineStep) => void;
 };
 
 export default function PrintStep({
 	format,
+	printMode,
 	issues,
 	diagrammable,
 	onFormatChange,
+	onPrintModeChange,
 	onDownload,
 	onGoTo,
 }: Props): JSX.Element {
@@ -51,6 +56,11 @@ export default function PrintStep({
 			<section className="space-y-4">
 				<h2 className="font-semibold">Escolha a dobra</h2>
 				<FormatSelector value={format} onChange={onFormatChange} />
+			</section>
+
+			<section className="space-y-4">
+				<h2 className="font-semibold">Como vai imprimir</h2>
+				<PrintModeSelector value={printMode} onChange={onPrintModeChange} />
 			</section>
 
 			<div className="text-center">

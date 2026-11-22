@@ -1,6 +1,6 @@
 export { generateZinePdf } from "./zine.ts";
-export { imposePoems } from "./imposition.ts";
-export type { ImposedFace } from "./imposition.ts";
+export { imposePoems, imposeSheets, mirrorFace, mirrorSlot } from "./imposition.ts";
+export type { ImposedFace, ImposedSheet } from "./imposition.ts";
 export { layoutPanel } from "./panel.ts";
 export type { PanelBox, PanelFonts, PanelPageLayout, PanelRole, PanelRun } from "./panel.ts";
 export { TEMPLATES, isTemplateId, panelSize, templateFor } from "./templates.ts";

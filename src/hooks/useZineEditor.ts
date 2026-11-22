@@ -9,6 +9,7 @@ import type {
 	StepStatus,
 	ZineDoc,
 	ZineDraft,
+	PrintMode,
 	ZineFormat,
 	ZineStep,
 } from "@/domain";
@@ -59,6 +60,8 @@ export type ZineEditor = {
 	formattedDate: string;
 	format: ZineFormat;
 	setFormat: (format: ZineFormat) => void;
+	printMode: PrintMode;
+	setPrintMode: (mode: PrintMode) => void;
 	changeField: (id: string, field: PageField, value: string) => void;
 	addPoem: () => void;
 	removePoem: (id: string) => void;
@@ -141,6 +144,10 @@ export function useZineEditor(
 		update((current) => ({ ...current, format }));
 	};
 
+	const setPrintMode = (printMode: PrintMode): void => {
+		update((current) => ({ ...current, printMode }));
+	};
+
 	const goToStep = (step: ZineStep): void => {
 		update((current) =>
 			canEnterStep(current, step) ? { ...current, step } : current
@@ -214,6 +221,7 @@ export function useZineEditor(
 			authorFont: cover.authorFont,
 			date: formattedDate,
 			format: draft.format,
+			printMode: draft.printMode,
 			poems: poems.map((poem) => ({
 				title: poem.title,
 				subtitle: poem.subtitle,
@@ -223,7 +231,7 @@ export function useZineEditor(
 		};
 
 		const bytes = await generateZinePdf(input);
-		downloadBlob(bytes, `zine-${draft.format}.pdf`);
+		downloadBlob(bytes, `zine-${draft.format}-${draft.printMode}.pdf`);
 	};
 
 	const reset = (): void => {
@@ -248,6 +256,8 @@ export function useZineEditor(
 		formattedDate,
 		format: draft.format,
 		setFormat,
+		printMode: draft.printMode,
+		setPrintMode,
 		changeField,
 		addPoem,
 		removePoem,

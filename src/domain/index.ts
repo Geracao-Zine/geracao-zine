@@ -52,4 +52,12 @@ export {
 	isCoverComplete,
 	titleClassOf,
 } from "./cover.ts";
+export type { PrintMode, PrintModeOption } from "./print.ts";
+export {
+	DEFAULT_PRINT_MODE,
+	PRINT_MODES,
+	isPrintMode,
+	printModeFrom,
+	printModeOption,
+} from "./print.ts";
 export { formatIsoDate, isIsoDate } from "./date.ts";

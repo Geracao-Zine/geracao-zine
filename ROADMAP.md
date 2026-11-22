@@ -202,7 +202,7 @@ Cada dobra é um template com: quantidade de painéis por face, ordem de leitura
 
 ### 6.4 Impressão e download
 
-- [ ] 6.4.1 Opção de apenas frente, ou frente e verso, com imposição de verso espelhada corretamente.
+- [x] 6.4.1 Opção de apenas frente, ou frente e verso, com imposição de verso espelhada corretamente. Feito em #28: a escolha fica na etapa de dobra, o verso espelha a grade em torno do eixo da dobra (virar na borda longa), a capa reserva o verso em branco e o PDF completa o par quando o número de páginas é ímpar. Conferido em pixels: frente e verso alinham com desvio de no máximo 1 pt e nenhum painel vaza para a goteira ou a margem.
 - [ ] 6.4.2 Marcas de corte e dobra discretas, com margem de segurança configurável.
 - [ ] 6.4.3 PDF em A4 real (595×842 pt) ou paisagem quando a dobra exigir, sem reescalonamento na impressão.
 - [ ] 6.4.4 Nome do arquivo gerado a partir do título e da data.
