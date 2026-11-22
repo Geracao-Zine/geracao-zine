@@ -2,15 +2,15 @@
 
 import type { JSX } from "react";
 import { useEffect, useMemo, useState } from "react";
+import type { ZineFormat } from "@/domain";
 import type { FontId } from "@/lib/fonts";
 import {
 	PREVIEW_DIVIDER_COLOR,
 	PREVIEW_DIVIDER_THICKNESS,
-	PREVIEW_HEIGHT,
-	PREVIEW_WIDTH,
 	gray,
 	layoutPreview,
 	loadPanelFonts,
+	previewPanelFor,
 } from "@/lib/preview";
 import type { PanelFonts, PanelPageLayout } from "@/lib/preview";
 
@@ -21,6 +21,8 @@ type Props = {
 	body: string;
 	/** Fonte do titulo do zine: o painel inteiro usa esta face. */
 	font: FontId;
+	/** Dobra escolhida: define o tamanho do painel medido no preview. */
+	format: ZineFormat;
 };
 
 // As fontes vivem em globals.css apontando para os mesmos TTF que o PDF embute.
@@ -46,6 +48,7 @@ export default function PoemPreview({
 	date,
 	body,
 	font,
+	format,
 }: Props): JSX.Element {
 	// A fonte carregada vem junto com o id: quando o autor troca de fonte, o
 	// id deixa de bater e o preview volta ao estado de carregamento sem
@@ -74,12 +77,14 @@ export default function PoemPreview({
 
 	const fonts = loaded?.id === font ? loaded.fonts : null;
 
+	const painel = useMemo(() => previewPanelFor(format), [format]);
+
 	const pages = useMemo<PanelPageLayout[]>(
 		() =>
 			fonts
-				? layoutPreview({ title, subtitle, date, body }, fonts)
+				? layoutPreview({ title, subtitle, date, body }, fonts, painel)
 				: [],
-		[fonts, title, subtitle, date, body]
+		[fonts, painel, title, subtitle, date, body]
 	);
 
 	if (!fonts) {
@@ -93,7 +98,7 @@ export default function PoemPreview({
 			{pages.map((page, index) => (
 				<figure key={index} className="space-y-1">
 					<svg
-						viewBox={`0 0 ${PREVIEW_WIDTH} ${PREVIEW_HEIGHT}`}
+						viewBox={`0 0 ${painel.width} ${painel.height}`}
 						role="img"
 						aria-label={`Pré-visualização da página ${index + 1}`}
 						className="w-full rounded-lg border border-zinc-300 bg-white"
@@ -101,7 +106,7 @@ export default function PoemPreview({
 						{page.divider === null ? null : (
 							<line
 								x1={0}
-								x2={PREVIEW_WIDTH}
+								x2={painel.width}
 								y1={page.divider}
 								y2={page.divider}
 								stroke={PREVIEW_DIVIDER_COLOR}

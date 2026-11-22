@@ -7,6 +7,9 @@ export const A4_LANDSCAPE = {
 } as const;
 
 export const PAGE_MARGIN = 70;
+// Folga entre paineis vizinhos. A dobra fica no meio dela, entao o texto de um
+// painel nunca encosta na lombada do outro.
+export const PANEL_GUTTER = 24;
 export const CONTENT_WIDTH = A4_PORTRAIT.width - PAGE_MARGIN * 2;
 
 export const A4 = { ...A4_PORTRAIT, margin: PAGE_MARGIN } as const;

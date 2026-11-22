@@ -94,6 +94,7 @@ export default function ZineWizard({
 								cover={editor.cover}
 								formattedDate={editor.formattedDate}
 								doc={editor.doc}
+								format={editor.format}
 								poems={editor.poems}
 								issues={editor.issues}
 								diagrammable={editor.diagrammable}

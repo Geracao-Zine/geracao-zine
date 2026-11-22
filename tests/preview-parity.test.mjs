@@ -23,7 +23,7 @@ globalThis.fetch = async (url) => {
 
 const { loadPanelFonts, layoutPreview } = await import("../src/lib/preview/index.ts");
 const { layoutPanel } = await import("../src/lib/pdf/panel.ts");
-const { generateReadingPdf } = await import("../src/lib/pdf/reading.ts");
+const { generateZinePdf } = await import("../src/lib/pdf/zine.ts");
 
 function inflate(bytes) {
 	try {
@@ -105,12 +105,13 @@ test("o PDF respeita o corpo escolhido pelo motor", async () => {
 	const layout = layoutPanel(poema, fonts)[0];
 	const esperados = [...new Set(layout.runs.map((run) => run.size))].sort();
 
-	const bytes = await generateReadingPdf({
+	const bytes = await generateZinePdf({
 		coverTitle: "Zine",
 		authorName: "Steve",
 		titleFont: "geistSans",
 		authorFont: "geistSans",
 		date: "19/11/2026",
+		format: "banner-a4",
 		poems: [poema],
 	});
 
@@ -161,4 +162,54 @@ test("o modulo de preview nao importa React", () => {
 			`${nome} importa React`
 		);
 	}
+});
+
+test("preview e PDF medem no mesmo tamanho de painel em toda dobra", async () => {
+        const { loadPanelFonts, layoutPreview, previewPanelFor } = await import(
+                "../src/lib/preview/index.ts"
+        );
+        const { TEMPLATES, panelSize } = await import("../src/lib/pdf/templates.ts");
+
+        const fonts = await loadPanelFonts("geistSans");
+        const corpos = [3, 40, 120];
+
+        for (const id of Object.keys(TEMPLATES)) {
+                const { width, height } = panelSize(TEMPLATES[id]);
+
+                for (const total of corpos) {
+                        const poema = {
+                                title: "T",
+                                subtitle: "s",
+                                date: "19/11/2026",
+                                body: Array.from({ length: total }, (_, i) => `verso ${i + 1}`).join("\n"),
+                        };
+
+                        const preview = layoutPreview(poema, fonts, previewPanelFor(id));
+                        const pdf = layoutPanel(poema, fonts, height, width);
+
+                        assert.equal(
+                                preview.length,
+                                pdf.length,
+                                `${id} com ${total} versos: numero de paginas divergente`
+                        );
+                        assert.equal(
+                                preview[0].bodySize,
+                                pdf[0].bodySize,
+                                `${id} com ${total} versos: corpo de fonte divergente`
+                        );
+                }
+        }
+});
+
+test("o painel do preview vem do template da dobra", async () => {
+        const { previewPanelFor } = await import("../src/lib/preview/index.ts");
+        const { TEMPLATES, panelSize } = await import("../src/lib/pdf/templates.ts");
+
+        for (const id of Object.keys(TEMPLATES)) {
+                assert.deepEqual(
+                        previewPanelFor(id),
+                        panelSize(TEMPLATES[id]),
+                        `a dobra ${id} precisa usar o painel do seu template`
+                );
+        }
 });
