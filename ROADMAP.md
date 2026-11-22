@@ -172,7 +172,7 @@ Regras de diagramação:
 - [x] 6.2.3 Campos opcionais vazios não reservam espaço: a caixa do texto se expande quando título, subtítulo ou data estão ausentes. Feito em #23.
 - [x] 6.2.4 Hierarquia tipográfica fixa por painel: título > subtítulo > data > corpo, com proporções definidas em constantes. Feito em #23.
 - [ ] 6.2.5 Respeitar quebras de linha do autor (estrofe e verso) e hifenizar apenas quando necessário.
-- [x] 6.2.6 Pré-visualização fiel: o mesmo motor de medição alimenta preview e PDF. Feito em #24.
+- [x] 6.2.6 Pré-visualização fiel: o mesmo motor de medição alimenta preview e PDF. Feito em #24. O preview também mede no painel da dobra escolhida, não na largura da folha, desde #39.
 
 ### 6.3 Catálogo de dobras e templates
 
@@ -193,7 +193,7 @@ Cada dobra é um template com: quantidade de painéis por face, ordem de leitura
 | T11 | Fanzine grampeado | Múltiplas A4 | 2 | múltiplos de 4 | Dobra na lombada e grampo |
 | T12 | Livrinho de 16 páginas | A4 retrato | 16 | 16 | Minizine estendido com dois cortes |
 
-- [x] 6.3.1 Implementar T1 a T4 (base pedida), com imposição correta e ordem de leitura definida. Feito em #25; a validação em impressão real segue em 6.3.6.
+- [x] 6.3.1 Implementar T1 a T4 (base pedida), com imposição correta e ordem de leitura definida. Feito em #25; a validação em impressão real segue em 6.3.6. Conferido em #39: nenhum painel vaza para a goteira ou para a margem, e a ordem de leitura sai correta nas quatro dobras.
 - [ ] 6.3.2 Implementar T5 e T11, que já existem como opção desabilitada no seletor.
 - [ ] 6.3.3 Implementar T6 a T10 e T12 como alternativas de dobra.
 - [x] 6.3.4 Cada template define quantas poesias cabem e como paginar quando há mais texto que painéis. Feito em #25.
