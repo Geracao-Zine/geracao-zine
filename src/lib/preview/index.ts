@@ -1,8 +1,10 @@
 import type { PageFields } from "../../domain/page.ts";
+import type { ZineFormat } from "../../domain/format.ts";
 import type { FontId } from "../fonts.ts";
 import { fontById } from "../fonts.ts";
 import type { PanelFonts, PanelPageLayout } from "../pdf/panel.ts";
 import { panelFontsFrom } from "../pdf/panel-fonts.ts";
+import { panelSize, templateFor } from "../pdf/templates.ts";
 import {
 	A4_CONTENT_WIDTH,
 	PANEL_HEIGHT,
@@ -75,10 +77,23 @@ export function loadPanelFonts(id: FontId): Promise<PanelFonts> {
 	return loading;
 }
 
-/** Diagrama uma poesia para a tela com o mesmo motor do PDF. */
+/** Diagrama uma poesia para a tela com o mesmo motor e o mesmo tamanho de painel do PDF. */
 export function layoutPreview(
 	page: PageFields,
-	fonts: PanelFonts
+	fonts: PanelFonts,
+	panel: PanelSize = { width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT }
 ): PanelPageLayout[] {
-	return layoutPanel(page, fonts);
+	return layoutPanel(page, fonts, panel.height, panel.width);
+}
+
+export type PanelSize = { width: number; height: number };
+
+/**
+ * Tamanho do painel do formato escolhido, ou o de uma pagina inteira quando a
+ * dobra ainda nao tem imposicao. Sem isso o preview mediria numa caixa que o
+ * PDF nao usa e prometeria um corpo de fonte que a impressao nao entrega.
+ */
+export function previewPanelFor(format: ZineFormat): PanelSize {
+	const template = templateFor(format);
+	return template ? panelSize(template) : { width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT };
 }

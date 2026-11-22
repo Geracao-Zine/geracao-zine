@@ -11,6 +11,7 @@ import type {
 	PageField,
 	PoemPage,
 	ZineDoc,
+	ZineFormat,
 	ZineStep,
 } from "@/domain";
 import { formatIsoDate } from "@/domain";
@@ -19,6 +20,7 @@ type Props = {
 	cover: Cover;
 	formattedDate: string;
 	doc: ZineDoc;
+	format: ZineFormat;
 	poems: PoemPage[];
 	issues: DraftIssue[];
 	diagrammable: boolean;
@@ -33,6 +35,7 @@ export default function ReviewStep({
 	cover,
 	formattedDate,
 	doc,
+	format,
 	poems,
 	issues,
 	diagrammable,
@@ -104,6 +107,7 @@ export default function ReviewStep({
 							date={formatIsoDate(poem.date)}
 							body={poem.body}
 							font={cover.titleFont}
+							format={format}
 						/>
 					))}
 				</div>

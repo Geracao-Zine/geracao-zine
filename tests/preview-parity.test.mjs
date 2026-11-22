@@ -163,3 +163,53 @@ test("o modulo de preview nao importa React", () => {
 		);
 	}
 });
+
+test("preview e PDF medem no mesmo tamanho de painel em toda dobra", async () => {
+        const { loadPanelFonts, layoutPreview, previewPanelFor } = await import(
+                "../src/lib/preview/index.ts"
+        );
+        const { TEMPLATES, panelSize } = await import("../src/lib/pdf/templates.ts");
+
+        const fonts = await loadPanelFonts("geistSans");
+        const corpos = [3, 40, 120];
+
+        for (const id of Object.keys(TEMPLATES)) {
+                const { width, height } = panelSize(TEMPLATES[id]);
+
+                for (const total of corpos) {
+                        const poema = {
+                                title: "T",
+                                subtitle: "s",
+                                date: "19/11/2026",
+                                body: Array.from({ length: total }, (_, i) => `verso ${i + 1}`).join("\n"),
+                        };
+
+                        const preview = layoutPreview(poema, fonts, previewPanelFor(id));
+                        const pdf = layoutPanel(poema, fonts, height, width);
+
+                        assert.equal(
+                                preview.length,
+                                pdf.length,
+                                `${id} com ${total} versos: numero de paginas divergente`
+                        );
+                        assert.equal(
+                                preview[0].bodySize,
+                                pdf[0].bodySize,
+                                `${id} com ${total} versos: corpo de fonte divergente`
+                        );
+                }
+        }
+});
+
+test("o painel do preview vem do template da dobra", async () => {
+        const { previewPanelFor } = await import("../src/lib/preview/index.ts");
+        const { TEMPLATES, panelSize } = await import("../src/lib/pdf/templates.ts");
+
+        for (const id of Object.keys(TEMPLATES)) {
+                assert.deepEqual(
+                        previewPanelFor(id),
+                        panelSize(TEMPLATES[id]),
+                        `a dobra ${id} precisa usar o painel do seu template`
+                );
+        }
+});
