@@ -4,6 +4,7 @@ import Image from "next/image";
 import logo_fundo_transparente from "@/assets/GeraçãoZine.png";
 import { useEffect, useRef, useState } from "react";
 import { GrMenu, GrClose } from "react-icons/gr";
+import BotaoEntrar from "@/components/BotaoEntrar";
 
 const Navbar: React.FC = () => {
 	const navRef = useRef<HTMLDivElement>(null);
@@ -76,6 +77,7 @@ const Navbar: React.FC = () => {
 					{/* DESKTOP NAV */}
 					<nav className="hidden md:flex items-center gap-6 text-sm font-semibold">
 						<NavLinks />
+						<BotaoEntrar />
 					</nav>
 				</div>
 
@@ -100,6 +102,7 @@ const Navbar: React.FC = () => {
 								/>
 							</Link>
 							<NavLinks onClick={() => setIsOpen(false)} />
+							<BotaoEntrar onNavegar={() => setIsOpen(false)} />
 						</nav>
 					</div>
 				)}

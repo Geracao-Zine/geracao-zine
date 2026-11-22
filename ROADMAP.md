@@ -24,6 +24,9 @@ Levantamento feito no commit `5683f1c`, branch `master`.
 - Rotas existentes: `/`, `/Create`, `/Editor`, `/Library`, `/Support`.
 - Geração de PDF no formato "só para ler" (uma poesia por página A4 retrato) com capa, título, autor e data.
 - Preview do editor em grid com adição e remoção de páginas.
+- Login com Google na interface: o botão da navbar abre o popup do Google Identity
+  Services, troca o código no servidor, guarda a sessão em cookie e passa a mostrar
+  o nome de quem entrou, com opção de sair.
 
 **O que está quebrado ou incompleto**
 
