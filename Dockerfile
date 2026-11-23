@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM node:24-alpine AS deps
+FROM node:26-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 # O postinstall roda `prisma generate`, que precisa do schema. Copiar so o
@@ -10,7 +10,7 @@ COPY prisma ./prisma
 COPY prisma7.config.ts ./
 RUN npm ci
 
-FROM node:24-alpine AS builder
+FROM node:26-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -27,7 +27,7 @@ RUN npm run build
 # estagio final, evita que os bytes viagem na camada do COPY.
 RUN rm -rf .next/standalone/node_modules/typescript
 
-FROM node:24-alpine AS runner
+FROM node:26-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production

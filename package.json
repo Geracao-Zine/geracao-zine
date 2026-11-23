@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=22"
+    "node": "26.x"
   },
   "scripts": {
     "dev": "next dev",
@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.5",
-    "@types/node": "^24",
+    "@types/node": "^26",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "dotenv": "^18.0.10",
@@ -41,5 +41,9 @@
     "prisma": "^7.10.1",
     "tailwindcss": "^4.3.5",
     "typescript": "^5"
+  },
+  "allowScripts": {
+    "prisma": true,
+    "@prisma/engines": true
   }
 }
