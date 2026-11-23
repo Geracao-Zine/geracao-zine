@@ -10,19 +10,19 @@ const nvmrc = read(".nvmrc").trim();
 const pkg = JSON.parse(read("package.json"));
 const readme = read("README.md");
 
-test(".nvmrc fixes the Node 24 runtime", () => {
-        assert.equal(nvmrc, "24");
+test(".nvmrc fixes the Node 26 runtime", () => {
+        assert.equal(nvmrc, "26");
 });
 
-test("package.json declares the supported Node range", () => {
-        assert.equal(pkg.engines?.node, ">=22");
+test("package.json pins the same major as .nvmrc", () => {
+        assert.equal(pkg.engines?.node, `${nvmrc}.x`);
 });
 
 test("@types/node tracks the pinned runtime major", () => {
-        assert.match(pkg.devDependencies["@types/node"], /^\^24$/);
+        assert.match(pkg.devDependencies["@types/node"], /^\^26$/);
 });
 
 test("README documents the required Node version", () => {
-        assert.match(readme, /Node\.js 24/);
+        assert.match(readme, /Node\.js 26/);
         assert.match(readme, /\.nvmrc/);
 });

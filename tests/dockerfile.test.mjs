@@ -30,11 +30,11 @@ test("o Dockerfile tem os tres estagios", () => {
 	}
 });
 
-test("o estagio final roda node:24-alpine e sem root", () => {
+test("o estagio final roda node:26-alpine e sem root", () => {
 	const dockerfile = ler("Dockerfile");
 	const final = dockerfile.slice(dockerfile.lastIndexOf("FROM "));
 
-	assert.ok(/FROM\s+node:24-alpine\s+AS\s+runner/.test(dockerfile));
+	assert.ok(/FROM\s+node:26-alpine\s+AS\s+runner/.test(dockerfile));
 	assert.ok(/USER\s+nextjs/.test(final), "o container deve rodar com usuario nao-root");
 	assert.ok(/adduser[^\n]*--uid\s+1001/.test(dockerfile), "o usuario precisa de uid fixo");
 });

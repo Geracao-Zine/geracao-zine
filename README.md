@@ -55,7 +55,7 @@ Telas de Biblioteca (`/Library`) e Apoio (`/Support`) são placeholders.
 
 ## Requisitos
 
-- Node.js 24 LTS e npm 11 ou superior. A versão está fixada em [`.nvmrc`](./.nvmrc); o `package.json` declara `engines.node` como `>=22`.
+- Node.js 26 LTS e npm 11 ou superior. A versão está fixada em [`.nvmrc`](./.nvmrc); o `package.json` declara `engines.node` como `26.x`.
 - Git
 
 ## Como rodar

@@ -60,7 +60,7 @@ Levantamento feito no commit `5683f1c`, branch `master`.
 | eslint | 10.15.0 | 10.15.0 (em dia) |
 | eslint-config-next | 16.4.6 | 16.4.6 (em dia) |
 | @types/react / @types/react-dom | 19.3.0 | 19.3.0 (em dia) |
-| @types/node | 24.19.2 | 26.6.6 (salto maior) |
+| @types/node | 26.6.6 | 26.6.6 (em dia) |
 | react-icons | 5.7.0 | 5.7.0 (em dia) |
 | ~~jspdf~~ | — | removido (nunca era usado) |
 | pdf-lib | 1.17.1 | 1.17.1 (em dia) |
@@ -72,7 +72,7 @@ Levantamento feito no commit `5683f1c`, branch `master`.
 
 Objetivo: base reprodutível, lint funcionando e versões alinhadas.
 
-- [x] 1.1 Fixar a versão do Node com `.nvmrc` (Node 24 LTS) e adicionar `"engines": { "node": ">=22" }` no `package.json`.
+- [x] 1.1 Fixar a versão do Node com `.nvmrc` (Node 26 LTS) e declarar `"engines": { "node": "26.x" }` no `package.json`.
 - [x] 1.2 Alinhar `@types/node` com a versão real do runtime (hoje `^20` com Node 24).
 - [x] 1.3 Corrigir `eslint-config-next` de `0.2.4` para `^16.4.6` e validar `npm run lint` (resolve B1).
 - [x] 1.4 Atualizar dependências de patch/minor: `next`, `react`, `react-dom`, `tailwindcss`, `@tailwindcss/postcss`, `eslint`, `@types/react`, `@types/react-dom`, `react-icons`, `jspdf`.
@@ -87,7 +87,7 @@ Objetivo: base reprodutível, lint funcionando e versões alinhadas.
 
 Objetivo: deploy reprodutível em VPS com imagem enxuta.
 
-- [x] 2.1 `Dockerfile` multi-stage usando `output: "standalone"` no `next.config.ts`: estágio `deps` → `builder` → `runner` (`node:24-alpine`), usuário não-root.
+- [x] 2.1 `Dockerfile` multi-stage usando `output: "standalone"` no `next.config.ts`: estágio `deps` → `builder` → `runner` (`node:26-alpine`), usuário não-root.
 - [x] 2.2 `.dockerignore` cobrindo `node_modules`, `.next`, `.git`, `*.md`.
 - [x] 2.3 `docker-compose.yml` com serviço da aplicação, porta configurável, `restart: unless-stopped` e healthcheck em `/`.
 - [x] 2.4 Variáveis de ambiente por `.env.example` documentado (sem segredos no repositório).
