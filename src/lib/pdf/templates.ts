@@ -2,13 +2,30 @@ import type { FormatOrientation, ZineFormat } from "../../domain/format.ts";
 import {
         A4_LANDSCAPE,
         A4_PORTRAIT,
+        ACCORDION_GUTTER,
+        ACCORDION_MARGIN,
         BOOKLET_GUTTER,
         BOOKLET_MARGIN,
+        GATEFOLD_GUTTER,
+        GATEFOLD_MARGIN,
+        MINIZINE16_GUTTER,
+        MINIZINE16_MARGIN,
         MINIZINE_GUTTER,
         MINIZINE_MARGIN,
         PAGE_MARGIN,
         PANEL_GUTTER,
+        TRIFOLD_GUTTER,
+        TRIFOLD_MARGIN,
 } from "./layout.ts";
+import {
+        ACCORDION_PLAN,
+        FOLIO_PLAN,
+        GATEFOLD_PLAN,
+        MINIZINE16_PLAN,
+        MINIZINE_PLAN,
+        TRIFOLD_PLAN,
+        ZFOLD_PLAN,
+} from "./plans.ts";
 
 /** Formatos com imposicao implementada. */
 export type TemplateId =
@@ -17,7 +34,13 @@ export type TemplateId =
         | "duas-colunas-horizontal"
         | "quatro-retangulos"
         | "mini-zine"
-        | "saddle-stitch";
+        | "saddle-stitch"
+        | "trifold"
+        | "z-fold"
+        | "accordion"
+        | "gatefold"
+        | "folio-unico"
+        | "mini-zine-16";
 
 export type SheetSize = {
         width: number;
@@ -36,10 +59,36 @@ export type PanelSlot = {
 export type ImpositionKind =
         /** Ordem de leitura: a pagina i vai para o slot i. */
         | "sequence"
-        /** Permutacao fixa por folha de 8 paginas, com metade dos slots girados. */
+        /** Permutacao fixa numa folha de N paginas, com parte dos slots girados. */
         | "minizine"
         /** Cadernos: cada folha carrega 4 paginas, dobradas e grampeadas. */
-        | "booklet";
+        | "booklet"
+        /** Frente e verso com paginas fixas por slot, escritas como o leitor ve. */
+        | "spread";
+
+/**
+ * Plano de uma folha unica que vira livrinho por corte e dobra.
+ *
+ * `pages` tem um item por slot e guarda a pagina (1-based) que cada posicao
+ * recebe; 0 significa slot reservado a branco. `upsideDown` lista os slots
+ * impressos girados 180 graus, que sao as fileiras que a dobra inverte.
+ */
+export type SheetPlan = {
+        pageCount: number;
+        pages: number[];
+        upsideDown: number[];
+};
+
+/**
+ * Plano de uma dobra de leitura: a frente e o verso recebem paginas fixas.
+ *
+ * O verso vai escrito como o leitor o encontra depois de virar a folha, do
+ * mesmo jeito que nos cadernos: quem inverte o papel e a impressora.
+ */
+export type SpreadPlan = {
+        front: number[];
+        back: number[];
+};
 
 export type ImpositionTemplate = {
         id: TemplateId;
@@ -57,27 +106,18 @@ export type ImpositionTemplate = {
         /** Margem da folha ate o primeiro painel, e folga entre paineis. */
         margin: number;
         gutter: number;
+        /** Presente nas dobras de folha unica (minizine e livrinho de 16). */
+        sheetPlan?: SheetPlan;
+        /** Presente nas dobras de frente e verso com paginas fixas. */
+        spreadPlan?: SpreadPlan;
 };
-
-/**
- * Minizine: uma folha A4 deitada, 4 colunas por 2 fileiras, vira um livrinho de
- * 8 paginas depois de um corte no meio e das dobras.
- *
- * A ordem e a da imposicao classica: os pares que se abrem juntos sao (8,1),
- * (2,3), (4,5) e (6,7). A fileira de baixo vai de cabeca para baixo porque a
- * folha gira meia volta ao ser dobrada; sem isso o leitor encontra a pagina de
- * cabeca para baixo no meio do livrinho.
- */
-const MINIZINE_PAGES = [8, 1, 2, 3, 7, 6, 5, 4];
-/** Indices da fileira de baixo: impressos girados 180 graus. */
-const MINIZINE_UPSIDE_DOWN = [4, 5, 6, 7];
-
-export const MINIZINE_PAGE_COUNT = MINIZINE_PAGES.length;
 
 type TemplateOptions = {
         margin?: number;
         gutter?: number;
         imposition?: ImpositionKind;
+        sheetPlan?: SheetPlan;
+        spreadPlan?: SpreadPlan;
 };
 
 function buildTemplate(
@@ -117,6 +157,8 @@ function buildTemplate(
                 imposition: options.imposition ?? "sequence",
                 margin,
                 gutter,
+                ...(options.sheetPlan ? { sheetPlan: options.sheetPlan } : {}),
+                ...(options.spreadPlan ? { spreadPlan: options.spreadPlan } : {}),
         };
 }
 
@@ -151,6 +193,7 @@ export const TEMPLATES: Record<TemplateId, ImpositionTemplate> = {
                 margin: MINIZINE_MARGIN,
                 gutter: MINIZINE_GUTTER,
                 imposition: "minizine",
+                sheetPlan: MINIZINE_PLAN,
         }),
         // Cadernos: folha deitada dobrada na lombada, dois paineis por face. A
         // margem da lombada e maior para o grampo nao encostar no texto.
@@ -159,16 +202,60 @@ export const TEMPLATES: Record<TemplateId, ImpositionTemplate> = {
                 gutter: BOOKLET_GUTTER,
                 imposition: "booklet",
         }),
+        // Tríptico e dobra em Z: tres colunas numa folha deitada, uma dobra a
+        // mais que as duas colunas simples.
+        trifold: buildTemplate("trifold", A4_LANDSCAPE, "landscape", 3, 1, {
+                margin: TRIFOLD_MARGIN,
+                gutter: TRIFOLD_GUTTER,
+                imposition: "spread",
+                spreadPlan: TRIFOLD_PLAN,
+        }),
+        "z-fold": buildTemplate("z-fold", A4_LANDSCAPE, "landscape", 3, 1, {
+                margin: TRIFOLD_MARGIN,
+                gutter: TRIFOLD_GUTTER,
+                imposition: "spread",
+                spreadPlan: ZFOLD_PLAN,
+        }),
+        // Acordeao: quatro tiras. A folga menor compensa as tres dobras.
+        accordion: buildTemplate("accordion", A4_LANDSCAPE, "landscape", 4, 1, {
+                margin: ACCORDION_MARGIN,
+                gutter: ACCORDION_GUTTER,
+                imposition: "spread",
+                spreadPlan: ACCORDION_PLAN,
+        }),
+        gatefold: buildTemplate("gatefold", A4_LANDSCAPE, "landscape", 4, 1, {
+                margin: GATEFOLD_MARGIN,
+                gutter: GATEFOLD_GUTTER,
+                imposition: "spread",
+                spreadPlan: GATEFOLD_PLAN,
+        }),
+        // Folha unica: um painel por face, duas paginas. Reusa a grade do
+        // banner, mas com imposicao de frente e verso.
+        "folio-unico": buildTemplate("folio-unico", A4_PORTRAIT, "portrait", 1, 1, {
+                imposition: "spread",
+                spreadPlan: FOLIO_PLAN,
+        }),
+        // Livrinho de 16 paginas: 4x4 na folha retrato, dois cortes (um vertical
+        // e um horizontal) produzem dois minizines de 8 paginas.
+        "mini-zine-16": buildTemplate("mini-zine-16", A4_PORTRAIT, "portrait", 4, 4, {
+                margin: MINIZINE16_MARGIN,
+                gutter: MINIZINE16_GUTTER,
+                imposition: "minizine",
+                sheetPlan: MINIZINE16_PLAN,
+        }),
 };
 
-/** Pagina (1-based) que o slot recebe na folha do minizine. */
-export function minizineSlotPage(slot: number): number | null {
-        return MINIZINE_PAGES[slot] ?? null;
+export const MINIZINE_PAGE_COUNT = MINIZINE_PLAN.pageCount;
+export const MINIZINE16_PAGE_COUNT = MINIZINE16_PLAN.pageCount;
+
+/** Pagina (1-based) que o slot recebe no plano de folha unica, ou 0 para branco. */
+export function sheetPlanPage(template: ImpositionTemplate, slot: number): number {
+        return template.sheetPlan?.pages[slot] ?? 0;
 }
 
-/** Verdadeiro quando o slot do minizine sai impresso de cabeca para baixo. */
-export function minizineSlotUpsideDown(slot: number): boolean {
-        return MINIZINE_UPSIDE_DOWN.includes(slot);
+/** Verdadeiro quando o slot do plano de folha unica sai de cabeca para baixo. */
+export function sheetPlanUpsideDown(template: ImpositionTemplate, slot: number): boolean {
+        return template.sheetPlan?.upsideDown.includes(slot) ?? false;
 }
 
 export function isTemplateId(format: ZineFormat): format is TemplateId {

@@ -23,6 +23,21 @@ export const MINIZINE_GUTTER = 16;
 export const BOOKLET_MARGIN = 36;
 /** Folga larga na lombada: o grampo nao pode encostar no texto. */
 export const BOOKLET_GUTTER = 32;
+// Dobras de tres paineis: a folga fica sobre a dobra, que e uma aresta viva.
+export const TRIFOLD_MARGIN = 36;
+export const TRIFOLD_GUTTER = 24;
+// Sanfona: cada painel vira uma dobra, entao a folga se repete muitas vezes e
+// precisa ser menor para nao comer a largura util.
+export const ACCORDION_MARGIN = 32;
+export const ACCORDION_GUTTER = 20;
+// Gatefold: as duas portas se encontram no centro; a folga central e maior
+// porque ali caem duas dobras encostadas.
+export const GATEFOLD_MARGIN = 36;
+export const GATEFOLD_GUTTER = 28;
+// Livrinho de 16 paginas: 4x4 numa folha retrato. Paineis pequenos, margem e
+// folga proporcionais.
+export const MINIZINE16_MARGIN = 22;
+export const MINIZINE16_GUTTER = 12;
 export const CONTENT_WIDTH = A4_PORTRAIT.width - PAGE_MARGIN * 2;
 
 export const A4 = { ...A4_PORTRAIT, margin: PAGE_MARGIN } as const;

@@ -44,6 +44,7 @@ export {
         isFormatAvailable,
         isZineFormat,
         panelsPerFace,
+        poemCapacity,
 } from "./format.ts";
 export type { Cover } from "./cover.ts";
 export {

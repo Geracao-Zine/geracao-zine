@@ -118,6 +118,104 @@ function FormatDiagram({ format }: { format: ZineFormat }): JSX.Element {
                 );
         }
 
+        if (format === "trifold") {
+                // Tres colunas; a da direita entra para dentro e a capa fica na
+                // esquerda, do lado de fora.
+                return (
+                        <svg viewBox="0 0 120 80" className="w-full h-20" aria-hidden="true">
+                                <rect x="6" y="10" width="108" height="60" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
+                                <FoldLine x1={42} y1={10} x2={42} y2={70} />
+                                <FoldLine x1={78} y1={10} x2={78} y2={70} />
+                                <text x="24" y="44" {...LABEL}>1</text>
+                                <text x="60" y="44" {...LABEL}>6</text>
+                                <text x="96" y="44" {...LABEL}>3</text>
+                        </svg>
+                );
+        }
+
+        if (format === "z-fold") {
+                // Sanfona de tres: as faces alternam de lado.
+                return (
+                        <svg viewBox="0 0 120 80" className="w-full h-20" aria-hidden="true">
+                                <rect x="6" y="10" width="108" height="60" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
+                                <FoldLine x1={42} y1={10} x2={42} y2={70} />
+                                <FoldLine x1={78} y1={10} x2={78} y2={70} />
+                                <text x="24" y="30" {...LABEL}>1</text>
+                                <text x="60" y="30" {...LABEL}>3</text>
+                                <text x="96" y="30" {...LABEL}>5</text>
+                                <text x="24" y="62" {...LABEL}>2</text>
+                                <text x="60" y="62" {...LABEL}>4</text>
+                                <text x="96" y="62" {...LABEL}>6</text>
+                        </svg>
+                );
+        }
+
+        if (format === "accordion") {
+                // Quatro tiras continuas: a leitura vai e volta na sanfona.
+                return (
+                        <svg viewBox="0 0 120 80" className="w-full h-20" aria-hidden="true">
+                                <rect x="4" y="10" width="112" height="60" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
+                                <FoldLine x1={32} y1={10} x2={32} y2={70} />
+                                <FoldLine x1={60} y1={10} x2={60} y2={70} />
+                                <FoldLine x1={88} y1={10} x2={88} y2={70} />
+                                <text x="18" y="30" {...LABEL}>1</text>
+                                <text x="46" y="30" {...LABEL}>3</text>
+                                <text x="74" y="30" {...LABEL}>5</text>
+                                <text x="102" y="30" {...LABEL}>7</text>
+                                <text x="18" y="62" {...LABEL}>2</text>
+                                <text x="46" y="62" {...LABEL}>4</text>
+                                <text x="74" y="62" {...LABEL}>6</text>
+                                <text x="102" y="62" {...LABEL}>8</text>
+                        </svg>
+                );
+        }
+
+        if (format === "gatefold") {
+                // Duas portas fechadas sobre o miolo: a capa na porta direita.
+                return (
+                        <svg viewBox="0 0 120 80" className="w-full h-20" aria-hidden="true">
+                                <rect x="4" y="10" width="112" height="60" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
+                                <line x1="32" y1="10" x2="32" y2="70" stroke="currentColor" strokeWidth="2" />
+                                <line x1="88" y1="10" x2="88" y2="70" stroke="currentColor" strokeWidth="2" />
+                                <FoldLine x1={60} y1={10} x2={60} y2={70} />
+                                <text x="18" y="44" {...LABEL}>8</text>
+                                <text x="46" y="44" {...LABEL}>7</text>
+                                <text x="74" y="44" {...LABEL}>6</text>
+                                <text x="102" y="44" {...LABEL}>1</text>
+                        </svg>
+                );
+        }
+
+        if (format === "folio-unico") {
+                return (
+                        <svg viewBox="0 0 120 80" className="w-full h-20" aria-hidden="true">
+                                <rect x="39" y="10" width="42" height="60" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
+                                <text x="60" y="36" {...LABEL}>1</text>
+                                <text x="60" y="56" {...LABEL}>2</text>
+                        </svg>
+                );
+        }
+
+        if (format === "mini-zine-16") {
+                // 4x4: dois cortes separam dois minizines de 8 paginas.
+                return (
+                        <svg viewBox="0 0 120 80" className="w-full h-20" aria-hidden="true">
+                                <rect x="24" y="2" width="72" height="76" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
+                                <FoldLine x1={42} y1={2} x2={42} y2={78} />
+                                <FoldLine x1={60} y1={2} x2={60} y2={78} />
+                                <FoldLine x1={78} y1={2} x2={78} y2={78} />
+                                <FoldLine x1={24} y1={21} x2={96} y2={21} />
+                                <FoldLine x1={24} y1={40} x2={96} y2={40} />
+                                <FoldLine x1={24} y1={59} x2={96} y2={59} />
+                                <line x1="24" y1="40" x2="96" y2="40" stroke="currentColor" strokeWidth="2" />
+                                <text x="60" y="15" {...LABEL}>1</text>
+                                <text x="60" y="34" {...LABEL}>4</text>
+                                <text x="60" y="53" {...LABEL}>13</text>
+                                <text x="60" y="72" {...LABEL}>16</text>
+                        </svg>
+                );
+        }
+
         return (
                 <svg viewBox="0 0 120 80" className="w-full h-20" aria-hidden="true">
                         <rect x="39" y="10" width="42" height="60" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />

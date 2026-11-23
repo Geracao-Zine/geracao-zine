@@ -4,10 +4,9 @@ import { DEFAULT_PRINT_MODE } from "../../domain/print.ts";
 import { layoutPanel } from "./panel.ts";
 import type { PanelFonts, PanelPageLayout } from "./panel.ts";
 import {
-        MINIZINE_PAGE_COUNT,
-        minizineSlotPage,
-        minizineSlotUpsideDown,
         panelSize,
+        sheetPlanPage,
+        sheetPlanUpsideDown,
 } from "./templates.ts";
 import type { ImpositionTemplate, PanelSlot, SheetSize } from "./templates.ts";
 
@@ -124,11 +123,13 @@ export function mirrorFace(face: ImposedFace): ImposedFace {
 
 /** Modo de impressao que o template aceita: escolha do autor ou fixo. */
 export function effectivePrintMode(template: ImpositionTemplate, mode: PrintMode): PrintMode {
+        // Folha unica vira livrinho por corte: so tem um lado impresso.
         if (template.imposition === "minizine") {
                 return "simplex";
         }
 
-        if (template.imposition === "booklet") {
+        // Cadernos, tríptico, sanfona e folha unica precisam dos dois lados.
+        if (template.imposition === "booklet" || template.imposition === "spread") {
                 return "duplex";
         }
 
@@ -139,15 +140,16 @@ export function effectivePrintMode(template: ImpositionTemplate, mode: PrintMode
  * Impoe o zine inteiro: capa e poemas na ordem em que o leitor os encontra.
  *
  * Nas dobras de leitura simples a capa e uma folha inteira e fica de fora da
- * imposicao. No minizine e nos cadernos a capa e a pagina 1 do livrinho, entao
- * ela entra na conta e e diagramada dentro de um painel.
+ * imposicao. No minizine, nos cadernos e nas dobras de frente e verso com
+ * paginas fixas a capa e a pagina 1 do livrinho, entao ela entra na conta e e
+ * diagramada dentro de um painel.
  */
 export function imposeZine(options: {
         template: ImpositionTemplate;
         poems: PageFields[];
         fonts: PanelFonts;
         mode: PrintMode;
-        /** Diagramacao da capa num painel; obrigatoria no minizine e nos cadernos. */
+        /** Diagramacao da capa num painel; obrigatoria quando a capa entra na conta. */
         cover?: PanelPageLayout | null;
 }): ImposedSheet[] {
         const { template, poems, fonts } = options;
@@ -161,9 +163,17 @@ export function imposeZine(options: {
         const poemPages = poems.flatMap((poem) => layoutPanel(poem, fonts, height, width));
         const pages: (PanelPageLayout | null)[] = [options.cover ?? null, ...poemPages];
 
-        return template.imposition === "minizine"
-                ? imposeMinizine(template, pad(pages, MINIZINE_PAGE_COUNT))
-                : imposeBooklet(template, pad(pages, bookletPageCount(pages.length)));
+        if (template.imposition === "minizine") {
+                const count = template.sheetPlan?.pageCount ?? pages.length;
+                return imposeSheetPlan(template, pad(pages, count));
+        }
+
+        if (template.imposition === "spread") {
+                const slots = template.slots.length;
+                return imposeSpreadPlan(template, pad(pages, slots * 2));
+        }
+
+        return imposeBooklet(template, pad(pages, bookletPageCount(pages.length)));
 }
 
 function pairFaces(faces: ImposedFace[], mode: PrintMode): ImposedSheet[] {
@@ -203,24 +213,51 @@ function emptyFace(template: ImpositionTemplate): ImposedFace {
 }
 
 /**
- * Uma folha, uma frente: o minizine nao tem verso porque as 8 paginas saem
- * todas no mesmo lado do papel.
+ * Folha unica que vira livrinho por corte e dobra: o minizine e o de 16 paginas.
+ *
+ * Nao ha verso porque todas as paginas saem no mesmo lado do papel; a ordem e a
+ * rotacao de cada slot vem do plano declarado no template.
  */
-function imposeMinizine(
+function imposeSheetPlan(
         template: ImpositionTemplate,
         pages: (PanelPageLayout | null)[]
 ): ImposedSheet[] {
         const front = emptyFace(template);
 
         front.panels = template.slots.map((_, slot) => {
-                const page = minizineSlotPage(slot);
-                return page === null ? null : (pages[page - 1] ?? null);
+                const page = sheetPlanPage(template, slot);
+                return page === 0 ? null : (pages[page - 1] ?? null);
         });
         front.rotations = template.slots.map((_, slot) =>
-                minizineSlotUpsideDown(slot) ? 180 : 0
+                sheetPlanUpsideDown(template, slot) ? 180 : 0
         );
 
         return [{ number: 1, front, back: null }];
+}
+
+/**
+ * Frente e verso com paginas fixas por slot: tríptico, dobra em Z, acordeao,
+ * gatefold e folha unica.
+ *
+ * O plano ja traz o verso na ordem em que o leitor o encontra depois de virar a
+ * folha, entao nao passa pelo espelho: quem inverte o papel e a impressora. O
+ * numero da pagina e 1-based e 0 significa painel em branco.
+ */
+function imposeSpreadPlan(
+        template: ImpositionTemplate,
+        pages: (PanelPageLayout | null)[]
+): ImposedSheet[] {
+        const plan = template.spreadPlan;
+        const front = emptyFace(template);
+        const back = emptyFace(template);
+
+        const pick = (page: number): PanelPageLayout | null =>
+                page === 0 ? null : (pages[page - 1] ?? null);
+
+        front.panels = template.slots.map((_, slot) => pick(plan?.front[slot] ?? 0));
+        back.panels = template.slots.map((_, slot) => pick(plan?.back[slot] ?? 0));
+
+        return [{ number: 1, front, back }];
 }
 
 /**

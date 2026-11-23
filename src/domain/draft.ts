@@ -1,7 +1,7 @@
 import type { Cover } from "./cover.ts";
 import { isCoverComplete } from "./cover.ts";
 import type { ZineFormat } from "./format.ts";
-import { DEFAULT_FORMAT, formatFrom } from "./format.ts";
+import { DEFAULT_FORMAT, formatFrom, poemCapacity } from "./format.ts";
 import type { PrintMode } from "./print.ts";
 import { DEFAULT_PRINT_MODE, printModeFrom } from "./print.ts";
 import type { PageFields } from "./page.ts";
@@ -46,7 +46,7 @@ export const DEFAULT_STEP: ZineStep = "cover";
 export const DRAFT_VERSION = 1;
 
 /** Paineis do minizine depois da capa, que ocupa a pagina 1. */
-export const MINIZINE_POEM_SLOTS = 7;
+export const MINIZINE_POEM_SLOTS = poemCapacity("mini-zine") ?? 0;
 
 export type ZineDraft = {
 	version: number;
@@ -263,17 +263,19 @@ export function draftIssues(draft: ZineDraft): DraftIssue[] {
 		});
 	}
 
-	// O minizine e uma folha so: a capa ocupa a pagina 1 e sobram 7 paineis.
-	// Avisar aqui evita o autor descobrir so na impressao que o excedente saiu.
-	const excedente = poems.length - MINIZINE_POEM_SLOTS;
+	// As dobras de folha unica tem numero fixo de paineis: a capa ocupa a
+	// pagina 1 e o excedente nao sai no PDF. Avisar aqui evita o autor
+	// descobrir so na impressao.
+	const capacity = poemCapacity(draft.format);
+	const excedente = capacity === null ? 0 : poems.length - capacity;
 
-	if (draft.format === "mini-zine" && excedente > 0) {
+	if (excedente > 0) {
 		issues.push({
-			id: "minizine-overflow",
+			id: "format-overflow",
 			message:
 				excedente === 1
-					? "O minizine comporta 7 poesias: 1 ficara de fora"
-					: `O minizine comporta 7 poesias: ${excedente} ficarao de fora`,
+					? `Esta dobra comporta ${capacity} poesias: 1 ficara de fora`
+					: `Esta dobra comporta ${capacity} poesias: ${excedente} ficarao de fora`,
 			severity: "warning",
 			step: "print",
 		});

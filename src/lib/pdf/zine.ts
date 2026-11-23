@@ -64,9 +64,11 @@ export async function generateZinePdf(input: ZinePdfInput): Promise<Uint8Array> 
         const { width, height } = template.sheet;
         const fonts = panelFontsFrom(titleFonts);
         const mode = effectivePrintMode(template, input.printMode);
-        const booklet = template.imposition !== "sequence";
+        // Nas dobras de folha unica, cadernos e frente-e-verso com paginas
+        // fixas a capa e a pagina 1 do zine, entao ela entra na imposicao.
+        const coverInside = template.imposition !== "sequence";
 
-        if (!booklet) {
+        if (!coverInside) {
                 drawCover(pdfDoc.addPage([width, height]), input, titleFonts, authorFonts, rgb);
 
                 // No duplex a capa ocupa so a frente da primeira folha. Reservar
@@ -76,7 +78,7 @@ export async function generateZinePdf(input: ZinePdfInput): Promise<Uint8Array> 
                 }
         }
 
-        const cover = booklet ? coverPanel(template, input, fonts) : null;
+        const cover = coverInside ? coverPanel(template, input, fonts) : null;
         const sheets = imposeZine({ template, poems: input.poems, fonts, mode, cover });
 
         for (const sheet of sheets) {
@@ -89,7 +91,7 @@ export async function generateZinePdf(input: ZinePdfInput): Promise<Uint8Array> 
 
         // O duplex le a pilha em pares: com numero impar de paginas a ultima
         // frente ficaria sozinha e receberia a proxima folha no verso.
-        if (mode === "duplex" && !booklet && pdfDoc.getPageCount() % 2 === 1) {
+        if (mode === "duplex" && !coverInside && pdfDoc.getPageCount() % 2 === 1) {
                 pdfDoc.addPage([width, height]);
         }
 

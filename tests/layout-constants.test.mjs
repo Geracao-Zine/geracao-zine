@@ -14,14 +14,25 @@ test("layout declara A4 retrato e paisagem com a origem documentada", async () =
   assert.match(ts, /210 x 297 mm/);
 });
 
+// A regra vale para literais numericos de medida, nao para numeros que
+// aparecem em texto: comentario, docstring e id de formato nao sao diagramacao.
+const semTexto = (ts) =>
+  ts
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .split("\n")
+    .filter((l) => !l.trim().startsWith("//"))
+    .join("\n")
+    .replace(/"(?:[^"\\]|\\.)*"/g, '""')
+    .replace(/'(?:[^'\\]|\\.)*'/g, "''")
+    .replace(/`(?:[^`\\]|\\.)*`/g, "``");
+
 for (const arquivo of ["zine.ts", "panel.ts", "imposition.ts", "templates.ts"]) {
   test(`${arquivo} nao tem numero magico de diagramacao`, async () => {
     const ts = await ler(`src/lib/pdf/${arquivo}`);
-    const corpo = ts
-      .split("\n")
-      .filter((l) => !l.trim().startsWith("//"))
-      .join("\n")
-      .replace(/from "\.\/layout\.ts"[\s\S]*?\} from "\.\/layout\.ts";/, "");
+    const corpo = semTexto(ts).replace(
+      /from "\.\/layout\.ts"[\s\S]*?\} from "\.\/layout\.ts";/,
+      ""
+    );
     const proibidos = [
       /\b595\b/, /\b842\b/, /\b70\b/,
       /\b(10|11|13|14|16|20|22|24|26|30|38|40|60)\b/,

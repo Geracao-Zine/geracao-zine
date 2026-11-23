@@ -195,7 +195,7 @@ Cada dobra é um template com: quantidade de painéis por face, ordem de leitura
 
 - [x] 6.3.1 Implementar T1 a T4 (base pedida), com imposição correta e ordem de leitura definida. Feito em #25; a validação em impressão real segue em 6.3.6. Conferido em #39: nenhum painel vaza para a goteira ou para a margem, e a ordem de leitura sai correta nas quatro dobras.
 - [x] 6.3.2 Implementar T5 e T11, que já existem como opção desabilitada no seletor. Feito: o minizine impõe as 8 páginas numa folha A4 deitada (capa como página 1, fileira de baixo girada 180° e frente única forçada) e o fanzine grampeado impõe cadernos com (última, primeira) na frente e (segunda, penúltima) no verso, crescendo em múltiplos de 4. Falta só a validação em impressão real, que segue em 6.3.6.
-- [ ] 6.3.3 Implementar T6 a T10 e T12 como alternativas de dobra.
+- [x] 6.3.3 Implementar T6 a T10 e T12 como alternativas de dobra. Feito: T6 (tríptico), T7 (dobra em Z), T8 (acordeão), T9 (gatefold), T10 (folha única frente e verso) e T12 (livrinho de 16 páginas) entraram no catálogo com imposição própria. Os planos de página de cada dobra ficaram declarados em `src/lib/pdf/plans.ts`, separados das medidas, e a imposição ganhou o tipo `spread` para frente e verso com páginas fixas. O aviso de excedente passou a valer para toda dobra de número fixo. Falta só a validação em impressão real, que segue em 6.3.6.
 - [x] 6.3.4 Cada template define quantas poesias cabem e como paginar quando há mais texto que painéis. Feito em #25.
 - [x] 6.3.5 Diagrama visual de cada dobra no seletor, mostrando a ordem de leitura. Feito em #25.
 - [ ] 6.3.6 Validar cada template com uma impressão física: dobra, corte, ordem das páginas e legibilidade da margem de segurança.

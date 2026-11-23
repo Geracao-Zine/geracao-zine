@@ -4,7 +4,13 @@ export type ZineFormat =
         | "duas-colunas-horizontal"
         | "quatro-retangulos"
         | "mini-zine"
-        | "saddle-stitch";
+        | "saddle-stitch"
+        | "trifold"
+        | "z-fold"
+        | "accordion"
+        | "gatefold"
+        | "folio-unico"
+        | "mini-zine-16";
 
 export type FormatOrientation = "portrait" | "landscape";
 
@@ -74,6 +80,60 @@ export const FORMAT_OPTIONS: FormatOption[] = [
                 panelsPerFace: 2,
                 orientation: "landscape",
         },
+        {
+                id: "trifold",
+                label: "Tríptico (carta)",
+                description: "Dobra em três: a porta menor entra para dentro e a capa fica na coluna da esquerda. Seis páginas.",
+                badge: "Disponível",
+                available: true,
+                panelsPerFace: 3,
+                orientation: "landscape",
+        },
+        {
+                id: "z-fold",
+                label: "Dobra em Z",
+                description: "Sanfona de três painéis, com leitura alternada de um lado e do outro. Seis páginas.",
+                badge: "Disponível",
+                available: true,
+                panelsPerFace: 3,
+                orientation: "landscape",
+        },
+        {
+                id: "accordion",
+                label: "Acordeão",
+                description: "Quatro tiras contínuas, sem corte: o zine desdobra numa tira só. Oito páginas.",
+                badge: "Disponível",
+                available: true,
+                panelsPerFace: 4,
+                orientation: "landscape",
+        },
+        {
+                id: "gatefold",
+                label: "Gatefold (portas)",
+                description: "Duas portas abrem para um painel central duplo. Oito páginas.",
+                badge: "Disponível",
+                available: true,
+                panelsPerFace: 4,
+                orientation: "landscape",
+        },
+        {
+                id: "folio-unico",
+                label: "Folha única frente e verso",
+                description: "Uma poesia por face, na mesma folha. Duas páginas.",
+                badge: "Disponível",
+                available: true,
+                panelsPerFace: 1,
+                orientation: "portrait",
+        },
+        {
+                id: "mini-zine-16",
+                label: "Livrinho de 16 páginas",
+                description: "Minizine estendido: uma folha A4, dois cortes e quatro dobras viram um livrinho de 16 páginas.",
+                badge: "Disponível",
+                available: true,
+                panelsPerFace: 16,
+                orientation: "portrait",
+        },
 ];
 
 export const DEFAULT_FORMAT: ZineFormat = "banner-a4";
@@ -120,4 +180,25 @@ export function isFormatAvailable(format: ZineFormat): boolean {
 
 export function panelsPerFace(format: ZineFormat): number {
         return formatOption(format)?.panelsPerFace ?? 0;
+}
+
+/**
+ * Poesias que cabem na dobra, ou null quando o formato cresce com o conteudo.
+ *
+ * Nas dobras de folha unica a capa ocupa a pagina 1 e o resto e fixo: o que
+ * passar disso nao sai no PDF. Nas dobras de leitura simples e nos cadernos o
+ * numero de folhas acompanha o conteudo, entao nao ha limite.
+ */
+const POEM_CAPACITY: Partial<Record<ZineFormat, number>> = {
+        "mini-zine": 7,
+        "mini-zine-16": 15,
+        "folio-unico": 1,
+        trifold: 5,
+        "z-fold": 5,
+        accordion: 7,
+        gatefold: 7,
+};
+
+export function poemCapacity(format: ZineFormat): number | null {
+        return POEM_CAPACITY[format] ?? null;
 }

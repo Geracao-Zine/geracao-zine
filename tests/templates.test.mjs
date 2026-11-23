@@ -269,6 +269,12 @@ test("todas as dobras estao habilitadas com a contagem de paineis certa", () => 
                         ["quatro-retangulos", 4],
                         ["mini-zine", 8],
                         ["saddle-stitch", 2],
+                        ["trifold", 3],
+                        ["z-fold", 3],
+                        ["accordion", 4],
+                        ["gatefold", 4],
+                        ["folio-unico", 1],
+                        ["mini-zine-16", 16],
                 ]
         );
 
@@ -396,7 +402,7 @@ test("os paineis do verso continuam dentro da folha", () => {
         }
 });
 
-test("o duplex gera paginas em par, menos no minizine que e so frente", async () => {
+test("o duplex gera paginas em par, menos nas dobras de frente unica", async () => {
         for (const format of Object.keys(TEMPLATES)) {
                 const simplex = await PDFDocument.load(
                         await generateZinePdf(capa({ format, poems: poemas }))
@@ -405,10 +411,10 @@ test("o duplex gera paginas em par, menos no minizine que e so frente", async ()
                         await generateZinePdf(capa({ format, poems: poemas, printMode: "duplex" }))
                 );
 
-                // O minizine imprime as 8 paginas no mesmo lado da folha: nao
-                // existe verso para espelhar, entao ele ignora o duplex.
-                if (format === "mini-zine") {
-                        assert.equal(duplex.getPageCount(), 1, "minizine e uma folha so");
+                // Minizine e livrinho de 16 imprimem todas as paginas no mesmo
+                // lado da folha: nao existe verso para espelhar.
+                if (effectivePrintMode(TEMPLATES[format], "duplex") === "simplex") {
+                        assert.equal(duplex.getPageCount(), 1, `${format}: uma folha so`);
                         continue;
                 }
 
@@ -440,7 +446,7 @@ test("o PDF do duplex repete a fonte da capa e nao muda a orientacao", async () 
 // ---------- T5 (minizine) e T11 (fanzine grampeado) ----------
 
 const { imposeZine, effectivePrintMode } = await import("../src/lib/pdf/imposition.ts");
-const { MINIZINE_PAGE_COUNT, minizineSlotPage, minizineSlotUpsideDown } = await import(
+const { MINIZINE_PAGE_COUNT, sheetPlanPage, sheetPlanUpsideDown } = await import(
         "../src/lib/pdf/templates.ts"
 );
 
@@ -521,9 +527,8 @@ test("T5 poe a capa como pagina 1 e numera o resto em ordem", () => {
 test("T5 le as paginas 1 a 8 em sequencia ao dobrar e cortar", () => {
         // Modelo fisico: dobra a fileira de baixo para tras, corta no meio e
         // empilha. A leitura resultante tem que ser 1..8 sem buraco nem repeticao.
-        const ordemNaFolha = TEMPLATES["mini-zine"].slots.map((_, slot) =>
-                minizineSlotPage(slot)
-        );
+        const mini = TEMPLATES["mini-zine"];
+        const ordemNaFolha = mini.slots.map((_, slot) => sheetPlanPage(mini, slot));
         const topo = ordemNaFolha.slice(0, 4);
         const base = ordemNaFolha.slice(4).reverse();
         const leitura = [...topo, ...base];
@@ -541,7 +546,7 @@ test("T5 gira 180 a fileira de baixo e mantem a de cima em pe", () => {
 
         for (let slot = 0; slot < 8; slot += 1) {
                 assert.equal(
-                        minizineSlotUpsideDown(slot),
+                        sheetPlanUpsideDown(template, slot),
                         slot >= 4,
                         `slot ${slot}: rotacao errada`
                 );
@@ -666,7 +671,7 @@ test("o minizine avisa quando o conteudo passa dos 7 paineis", async () => {
         let draft = createDraft();
         draft = { ...draft, format: "mini-zine" };
 
-        const caber = draftIssues(draft).filter((i) => i.id === "minizine-overflow");
+        const caber = draftIssues(draft).filter((i) => i.id === "format-overflow");
         assert.equal(caber.length, 0, "uma poesia cabe no minizine");
 
         // Enche o documento ate passar dos 7 paineis disponiveis.
@@ -681,11 +686,11 @@ test("o minizine avisa quando o conteudo passa dos 7 paineis", async () => {
                 draft = { ...draft, doc: setPoemField(draft.doc, page.id, "body", "texto") };
         }
 
-        const aviso = draftIssues(draft).find((i) => i.id === "minizine-overflow");
+        const aviso = draftIssues(draft).find((i) => i.id === "format-overflow");
 
         assert.ok(aviso, "o excedente precisa virar aviso");
         assert.equal(aviso.severity, "warning");
         assert.equal(aviso.step, "print");
-        assert.match(aviso.message, /7 poesias/);
+        assert.match(aviso.message, /comporta 7 poesias/);
         assert.ok(poemas.length >= 1);
 });

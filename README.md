@@ -134,7 +134,7 @@ A hierarquia tipográfica é fixa: título > subtítulo > data > corpo. Um campo
 
 ### Modelos de dobra
 
-As quatro dobras básicas têm imposição implementada. A ordem de leitura é sempre da esquerda para a direita e de cima para baixo; o seletor mostra o diagrama de cada dobra com essa numeração.
+Todas as dobras do catálogo têm imposição implementada. Nas dobras de leitura simples a ordem é da esquerda para a direita e de cima para baixo; nas demais a tabela descreve a ordem física. O seletor mostra o diagrama de cada dobra com essa numeração.
 
 | ID | Modelo | Folha | Painéis por face | Ordem de leitura |
 |---|---|---|---|---|
@@ -143,11 +143,19 @@ As quatro dobras básicas têm imposição implementada. A ordem de leitura é s
 | T3 | Duas colunas horizontal | A4 paisagem | 2 | 1 → 2, cima para baixo |
 | T4 | Quatro retângulos | A4 retrato | 4 | 1 → 2 → 3 → 4, em Z |
 | T5 | Minizine de 8 páginas | A4 paisagem | 8 | 8 → 1 → 2 → 3 → 4 → 5 → 6 → 7, com a fileira de baixo girada 180° |
+| T6 | Tríptico (carta) | A4 paisagem | 3 | frente 1, 6, 3; verso 2, 4, 5 |
+| T7 | Dobra em Z | A4 paisagem | 3 | frente 1, 3, 5; verso 2, 4, 6 |
+| T8 | Acordeão | A4 paisagem | 4 | frente 1, 3, 5, 7; verso 2, 4, 6, 8 |
+| T9 | Gatefold (portas) | A4 paisagem | 4 | frente 8, 7, 6, 1; verso 5, 4, 3, 2 |
+| T10 | Folha única frente e verso | A4 retrato | 1 | frente 1, verso 2 |
 | T11 | Fanzine grampeado | A4 paisagem | 2 | caderno: (última, primeira) na frente, (segunda, penúltima) no verso |
+| T12 | Livrinho de 16 páginas | A4 retrato | 16 | dois minizines empilhados: 1–8 em cima, 9–16 embaixo |
 
 A imposição distribui as páginas dos poemas nas faces do template. Um poema curto ocupa um painel e divide a folha com o próximo; um poema que não cabe num painel continua na face seguinte, identificado como continuação. Quando o conteúdo termina no meio de uma face, os painéis restantes ficam vazios — nenhuma página em branco é inventada.
 
-No minizine a capa é a página 1 do livrinho: a folha é uma só, sai sempre em frente única e a fileira de baixo é impressa de cabeça para baixo para que o texto apareça em pé depois da dobra. No fanzine grampeado a capa também entra na contagem e o número de páginas cresce em múltiplos de 4, para a lombada fechar sem sobra.
+No minizine e no livrinho de 16 a capa é a página 1: a folha é uma só, sai sempre em frente única e as fileiras de baixo vão giradas 180° para o texto aparecer em pé depois da dobra. O livrinho de 16 é o minizine com uma fileira a mais: o corte horizontal separa dois cadernos de 8 páginas, um sobre o outro. No fanzine grampeado a capa também entra na contagem e o número de páginas cresce em múltiplos de 4, para a lombada fechar sem sobra.
+
+Nas dobras de frente e verso (T6, T7, T8, T9 e T10) a capa é a página 1 e as demais páginas entram em posições fixas. O verso já sai escrito como o leitor o encontra depois de virar a folha — quem inverte o papel é a impressora. Como essas dobras têm número fixo de painéis, a etapa de dobra avisa quando o conteúdo passa da capacidade: 5 poesias no tríptico e na dobra em Z, 7 no acordeão e no gatefold, 1 na folha única e 15 no livrinho de 16.
 
 ## Convenções de código
 

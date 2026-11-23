@@ -51,11 +51,21 @@ test("as quatro dobras basicas estao disponiveis", () => {
 		assert.equal(isFormatAvailable(id), true, `${id} deveria estar disponivel`);
 	}
 
-	assert.equal(isFormatAvailable("mini-zine"), true);
-	assert.equal(isFormatAvailable("saddle-stitch"), true);
+	for (const id of [
+		"mini-zine",
+		"saddle-stitch",
+		"trifold",
+		"z-fold",
+		"accordion",
+		"gatefold",
+		"folio-unico",
+		"mini-zine-16",
+	]) {
+		assert.equal(isFormatAvailable(id), true, `${id} deveria estar disponivel`);
+	}
 });
 
-test("o seletor mostra as seis dobras", () => {
+test("o seletor mostra as doze dobras", () => {
 	assert.deepEqual(
 		FORMAT_OPTIONS.map((o) => o.id),
 		[
@@ -65,6 +75,12 @@ test("o seletor mostra as seis dobras", () => {
 			"quatro-retangulos",
 			"mini-zine",
 			"saddle-stitch",
+			"trifold",
+			"z-fold",
+			"accordion",
+			"gatefold",
+			"folio-unico",
+			"mini-zine-16",
 		]
 	);
 });
