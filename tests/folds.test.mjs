@@ -299,6 +299,31 @@ test("a capacidade de poesias acompanha os paineis de cada dobra", () => {
         assert.equal(poemCapacity("saddle-stitch"), null);
 });
 
+test("a capa e a pagina 1 tambem nas dobras de leitura simples", () => {
+        for (const id of [
+                "banner-a4",
+                "duas-colunas-vertical",
+                "duas-colunas-horizontal",
+                "quatro-retangulos",
+        ]) {
+                const template = TEMPLATES[id];
+                const sheets = imposeZine({
+                        template,
+                        poems: poemasDe(3),
+                        fonts,
+                        mode: "simplex",
+                        cover: capaDePainel(template),
+                });
+
+                const paginas = sheets
+                        .flatMap((folha) => folha.front.panels)
+                        .map(paginaDoPainel)
+                        .filter((pagina) => pagina !== null);
+
+                assert.deepEqual(paginas, [1, 2, 3, 4], `${id}: a capa precisa abrir a leitura`);
+        }
+});
+
 test("cada dobra nova gera PDF na orientacao e no numero de paginas certos", async () => {
         const esperado = {
                 trifold: { pages: 2, paisagem: true },

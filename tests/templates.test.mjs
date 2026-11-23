@@ -199,9 +199,9 @@ test("poema longo atravessa faces sem perder verso", () => {
 test("cada dobra gera o PDF na orientacao e no numero de folhas certos", async () => {
         const esperado = {
                 "banner-a4": { paginas: 4, orientacao: "portrait" },
-                "duas-colunas-vertical": { paginas: 3, orientacao: "portrait" },
-                "duas-colunas-horizontal": { paginas: 3, orientacao: "landscape" },
-                "quatro-retangulos": { paginas: 2, orientacao: "portrait" },
+                "duas-colunas-vertical": { paginas: 2, orientacao: "portrait" },
+                "duas-colunas-horizontal": { paginas: 2, orientacao: "landscape" },
+                "quatro-retangulos": { paginas: 1, orientacao: "portrait" },
         };
 
         for (const [format, medidas] of Object.entries(esperado)) {

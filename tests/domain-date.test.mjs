@@ -100,10 +100,12 @@ test("a data vazia nao renderiza a linha na capa", () => {
 });
 
 test("o PDF so desenha a data quando ela existe", () => {
-	const fonte = ler("src/lib/pdf/zine.ts");
+	const fonte = ler("src/lib/pdf/panel.ts");
 
-	assert.ok(/const temData = Boolean\(input\.date\)/.test(fonte));
-	assert.ok(/if \(temData\) \{/.test(fonte), "o desenho da data deve ser condicional");
+	assert.ok(
+		/if \(page\.date\.trim\(\)\) \{/.test(fonte),
+		"o cabecalho do painel so entra com data preenchida",
+	);
 });
 
 test("os campos obrigatorios da capa se anunciam com asterisco", () => {

@@ -43,18 +43,6 @@ export const CONTENT_WIDTH = A4_PORTRAIT.width - PAGE_MARGIN * 2;
 export const A4 = { ...A4_PORTRAIT, margin: PAGE_MARGIN } as const;
 export const A4_CONTENT_WIDTH = CONTENT_WIDTH;
 
-// Capa
-export const COVER_TITLE_SIZE = 30;
-export const COVER_TITLE_LINE_HEIGHT = 38;
-export const COVER_AUTHOR_SIZE = 14;
-export const COVER_DATE_SIZE = 10;
-export const COVER_GAP_TITLE_TO_AUTHOR = 40;
-export const COVER_GAP_AUTHOR_TO_DATE = 10;
-export const COVER_DIVIDER_WIDTH = 60;
-export const COVER_DIVIDER_THICKNESS = 1;
-export const COVER_DIVIDER_COLOR = 0.6;
-export const COVER_DATE_COLOR = 0.5;
-
 // Paginas do zine (o painel diagramado, nao a folha A4).
 // A area do painel e fixa: a caixa do texto e o que sobra dela depois do
 // cabecalho, entao campo opcional vazio devolve a altura para o texto.

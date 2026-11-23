@@ -45,23 +45,28 @@ export type ImposedSheet = {
 };
 
 /**
- * Distribui as paginas dos poemas nas faces do template, na ordem de leitura.
+ * Distribui as paginas nas faces do template, na ordem de leitura.
  *
- * Cada poema vira uma ou mais paginas de painel (continuacao quando o texto
- * nao cabe) e a sequencia inteira e cortada em blocos do tamanho da face. Um
- * poema longo, portanto, atravessa faces; um poema curto divide a folha com o
- * proximo.
+ * A capa, quando informada, e a pagina 1 e ocupa o primeiro slot. Cada poema
+ * vira uma ou mais paginas de painel (continuacao quando o texto nao cabe) e a
+ * sequencia inteira e cortada em blocos do tamanho da face. Um poema longo,
+ * portanto, atravessa faces; um poema curto divide a folha com o proximo.
  *
- * Vale so para as dobras de leitura simples; minizine e cadernos tem imposicao
- * propria em `imposeZine`.
+ * `cover` ausente monta um zine sem capa; `null` reserva o primeiro slot em
+ * branco. Vale so para as dobras de leitura simples; minizine e cadernos tem
+ * imposicao propria em `imposeZine`.
  */
 export function imposePoems(
         template: ImpositionTemplate,
         poems: PageFields[],
-        fonts: PanelFonts
+        fonts: PanelFonts,
+        cover?: PanelPageLayout | null
 ): ImposedFace[] {
         const { width, height } = panelSize(template);
-        const pages = poems.flatMap((poem) => layoutPanel(poem, fonts, height, width));
+        const pages = [
+                ...(cover === undefined ? [] : [cover]),
+                ...poems.flatMap((poem) => layoutPanel(poem, fonts, height, width)),
+        ];
         const faces: ImposedFace[] = [];
 
         for (let start = 0; start < pages.length; start += template.slots.length) {
@@ -139,24 +144,23 @@ export function effectivePrintMode(template: ImpositionTemplate, mode: PrintMode
 /**
  * Impoe o zine inteiro: capa e poemas na ordem em que o leitor os encontra.
  *
- * Nas dobras de leitura simples a capa e uma folha inteira e fica de fora da
- * imposicao. No minizine, nos cadernos e nas dobras de frente e verso com
- * paginas fixas a capa e a pagina 1 do livrinho, entao ela entra na conta e e
- * diagramada dentro de um painel.
+ * A capa e sempre a pagina 1. Nas dobras de leitura simples ela ocupa o
+ * primeiro slot da primeira face; no minizine, nos cadernos e nas dobras de
+ * frente e verso entra no plano como as demais paginas.
  */
 export function imposeZine(options: {
         template: ImpositionTemplate;
         poems: PageFields[];
         fonts: PanelFonts;
         mode: PrintMode;
-        /** Diagramacao da capa num painel; obrigatoria quando a capa entra na conta. */
+        /** Diagramacao da capa num painel; ausente reserva a pagina 1 em branco. */
         cover?: PanelPageLayout | null;
 }): ImposedSheet[] {
         const { template, poems, fonts } = options;
         const mode = effectivePrintMode(template, options.mode);
 
         if (template.imposition === "sequence") {
-                return pairFaces(imposePoems(template, poems, fonts), mode);
+                return pairFaces(imposePoems(template, poems, fonts, options.cover ?? null), mode);
         }
 
         const { width, height } = panelSize(template);

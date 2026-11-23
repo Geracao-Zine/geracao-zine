@@ -31,12 +31,11 @@ O projeto está em desenvolvimento ativo. O roadmap completo, com fases, tarefas
 **Funcionando hoje**
 
 - Site institucional (`/`), cadastro (`/Create`) e editor (`/Editor`) com pré-visualização.
-- Geração de PDF no formato "só para ler": uma poesia por página A4, com capa, título, autor e data.
+- Geração de PDF com imposição para as 12 dobras do catálogo, com a capa como página 1, título, autor e data.
 - Build de produção e verificação de tipos passando.
 
 **Em desenvolvimento**
 
-- Dobras e templates de diagramação (duas colunas, quatro painéis, minizine, tríptico, sanfona e outros).
 - Ajuste automático de fonte por área limitada, com frente e verso.
 - Empacotamento em Docker para hospedagem em VPS.
 - Correção dos bugs mapeados na auditoria do roadmap.
@@ -153,9 +152,9 @@ Todas as dobras do catálogo têm imposição implementada. Nas dobras de leitur
 
 A imposição distribui as páginas dos poemas nas faces do template. Um poema curto ocupa um painel e divide a folha com o próximo; um poema que não cabe num painel continua na face seguinte, identificado como continuação. Quando o conteúdo termina no meio de uma face, os painéis restantes ficam vazios — nenhuma página em branco é inventada.
 
-No minizine e no livrinho de 16 a capa é a página 1: a folha é uma só, sai sempre em frente única e as fileiras de baixo vão giradas 180° para o texto aparecer em pé depois da dobra. O livrinho de 16 é o minizine com uma fileira a mais: o corte horizontal separa dois cadernos de 8 páginas, um sobre o outro. No fanzine grampeado a capa também entra na contagem e o número de páginas cresce em múltiplos de 4, para a lombada fechar sem sobra.
+Em todas as dobras a capa é a página 1 do zine: ela entra na imposição como os demais painéis e ocupa o primeiro slot da primeira face, em vez de sair numa folha separada. No minizine e no livrinho de 16 a folha é uma só, sai sempre em frente única e as fileiras de baixo vão giradas 180° para o texto aparecer em pé depois da dobra. O livrinho de 16 é o minizine com uma fileira a mais: o corte horizontal separa dois cadernos de 8 páginas, um sobre o outro. No fanzine grampeado o número de páginas cresce em múltiplos de 4, para a lombada fechar sem sobra.
 
-Nas dobras de frente e verso (T6, T7, T8, T9 e T10) a capa é a página 1 e as demais páginas entram em posições fixas. O verso já sai escrito como o leitor o encontra depois de virar a folha — quem inverte o papel é a impressora. Como essas dobras têm número fixo de painéis, a etapa de dobra avisa quando o conteúdo passa da capacidade: 5 poesias no tríptico e na dobra em Z, 7 no acordeão e no gatefold, 1 na folha única e 15 no livrinho de 16.
+Nas dobras de frente e verso (T6, T7, T8, T9 e T10) as demais páginas entram em posições fixas. O verso já sai escrito como o leitor o encontra depois de virar a folha — quem inverte o papel é a impressora. Como essas dobras têm número fixo de painéis, a etapa de dobra avisa quando o conteúdo passa da capacidade: 5 poesias no tríptico e na dobra em Z, 7 no acordeão e no gatefold, 1 na folha única e 15 no livrinho de 16.
 
 ## Convenções de código
 

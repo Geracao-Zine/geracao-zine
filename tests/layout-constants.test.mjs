@@ -44,16 +44,9 @@ for (const arquivo of ["zine.ts", "panel.ts", "imposition.ts", "templates.ts"]) 
   });
 }
 
-test("constantes de capa e poema ficam no modulo de layout", async () => {
+test("constantes de poema e painel ficam no modulo de layout", async () => {
   const ts = await ler("src/lib/pdf/layout.ts");
   for (const nome of [
-    "COVER_TITLE_SIZE",
-    "COVER_TITLE_LINE_HEIGHT",
-    "COVER_AUTHOR_SIZE",
-    "COVER_DATE_SIZE",
-    "COVER_GAP_TITLE_TO_AUTHOR",
-    "COVER_GAP_AUTHOR_TO_DATE",
-    "COVER_DIVIDER_WIDTH",
     "POEM_TITLE_SIZE",
     "POEM_SUBTITLE_SIZE",
     "POEM_DATE_SIZE",
