@@ -10,6 +10,19 @@ export const PAGE_MARGIN = 70;
 // Folga entre paineis vizinhos. A dobra fica no meio dela, entao o texto de um
 // painel nunca encosta na lombada do outro.
 export const PANEL_GUTTER = 24;
+
+/**
+ * Margens e folgas proprias das dobras que passam por corte e dobra.
+ *
+ * Sao menores que a margem de uma pagina inteira porque cada painel e uma
+ * fracao da folha, e o papel ainda perde borda no corte e na dobra. Ficam aqui
+ * para nao virar numero solto no modulo de templates.
+ */
+export const MINIZINE_MARGIN = 28;
+export const MINIZINE_GUTTER = 16;
+export const BOOKLET_MARGIN = 36;
+/** Folga larga na lombada: o grampo nao pode encostar no texto. */
+export const BOOKLET_GUTTER = 32;
 export const CONTENT_WIDTH = A4_PORTRAIT.width - PAGE_MARGIN * 2;
 
 export const A4 = { ...A4_PORTRAIT, margin: PAGE_MARGIN } as const;

@@ -51,11 +51,11 @@ test("as quatro dobras basicas estao disponiveis", () => {
 		assert.equal(isFormatAvailable(id), true, `${id} deveria estar disponivel`);
 	}
 
-	assert.equal(isFormatAvailable("mini-zine"), false);
-	assert.equal(isFormatAvailable("saddle-stitch"), false);
+	assert.equal(isFormatAvailable("mini-zine"), true);
+	assert.equal(isFormatAvailable("saddle-stitch"), true);
 });
 
-test("o seletor mostra as quatro dobras e as duas futuras", () => {
+test("o seletor mostra as seis dobras", () => {
 	assert.deepEqual(
 		FORMAT_OPTIONS.map((o) => o.id),
 		[

@@ -1,5 +1,11 @@
 export { generateZinePdf } from "./zine.ts";
-export { imposePoems, imposeSheets, mirrorFace, mirrorSlot } from "./imposition.ts";
+export {
+	effectivePrintMode,
+	imposePoems,
+	imposeSheets,
+	mirrorFace,
+	mirrorSlot,
+} from "./imposition.ts";
 export type { ImposedFace, ImposedSheet } from "./imposition.ts";
 export { layoutPanel } from "./panel.ts";
 export type { PanelBox, PanelFonts, PanelPageLayout, PanelRole, PanelRun } from "./panel.ts";

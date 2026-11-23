@@ -194,7 +194,7 @@ Cada dobra é um template com: quantidade de painéis por face, ordem de leitura
 | T12 | Livrinho de 16 páginas | A4 retrato | 16 | 16 | Minizine estendido com dois cortes |
 
 - [x] 6.3.1 Implementar T1 a T4 (base pedida), com imposição correta e ordem de leitura definida. Feito em #25; a validação em impressão real segue em 6.3.6. Conferido em #39: nenhum painel vaza para a goteira ou para a margem, e a ordem de leitura sai correta nas quatro dobras.
-- [ ] 6.3.2 Implementar T5 e T11, que já existem como opção desabilitada no seletor.
+- [x] 6.3.2 Implementar T5 e T11, que já existem como opção desabilitada no seletor. Feito: o minizine impõe as 8 páginas numa folha A4 deitada (capa como página 1, fileira de baixo girada 180° e frente única forçada) e o fanzine grampeado impõe cadernos com (última, primeira) na frente e (segunda, penúltima) no verso, crescendo em múltiplos de 4. Falta só a validação em impressão real, que segue em 6.3.6.
 - [ ] 6.3.3 Implementar T6 a T10 e T12 como alternativas de dobra.
 - [x] 6.3.4 Cada template define quantas poesias cabem e como paginar quando há mais texto que painéis. Feito em #25.
 - [x] 6.3.5 Diagrama visual de cada dobra no seletor, mostrando a ordem de leitura. Feito em #25.

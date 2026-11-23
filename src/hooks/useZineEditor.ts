@@ -38,7 +38,7 @@ import {
 } from "@/lib/draft-storage";
 import { downloadBlob } from "@/lib/download";
 import type { ZinePdfInput } from "@/lib/pdf";
-import { generateZinePdf } from "@/lib/pdf";
+import { effectivePrintMode, generateZinePdf, templateFor } from "@/lib/pdf";
 
 export type ZineEditor = {
 	/** Falso enquanto o rascunho salvo ainda nao foi lido do navegador. */
@@ -231,7 +231,12 @@ export function useZineEditor(
 		};
 
 		const bytes = await generateZinePdf(input);
-		downloadBlob(bytes, `zine-${draft.format}-${draft.printMode}.pdf`);
+		const template = templateFor(draft.format);
+		const mode = template
+			? effectivePrintMode(template, draft.printMode)
+			: draft.printMode;
+
+		downloadBlob(bytes, `zine-${draft.format}-${mode}.pdf`);
 	};
 
 	const reset = (): void => {

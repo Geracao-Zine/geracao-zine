@@ -79,25 +79,49 @@ function FormatDiagram({ format }: { format: ZineFormat }): JSX.Element {
         }
 
         if (format === "mini-zine") {
+                // 4 colunas por 2 fileiras; a de baixo vai girada e o corte fica
+                // entre as duas colunas do meio.
                 return (
                         <svg viewBox="0 0 120 80" className="w-full h-20" aria-hidden="true">
-                                <rect x="10" y="10" width="100" height="60" rx="4" fill="none" stroke="currentColor" strokeWidth="2" />
-                                <line x1="60" y1="10" x2="60" y2="70" stroke="currentColor" strokeWidth="1" strokeDasharray="4 3" />
-                                <line x1="10" y1="40" x2="110" y2="40" stroke="currentColor" strokeWidth="1" strokeDasharray="4 3" />
-                                <line x1="35" y1="40" x2="85" y2="40" stroke="currentColor" strokeWidth="2" />
+                                <rect x="6" y="10" width="108" height="60" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
+                                <FoldLine x1={33} y1={10} x2={33} y2={70} />
+                                <FoldLine x1={60} y1={10} x2={60} y2={70} />
+                                <FoldLine x1={87} y1={10} x2={87} y2={70} />
+                                <FoldLine x1={6} y1={40} x2={114} y2={40} />
+                                <line x1="60" y1="10" x2="60" y2="70" stroke="currentColor" strokeWidth="2" />
+                                <text x="19" y="30" {...LABEL}>8</text>
+                                <text x="46" y="30" {...LABEL}>1</text>
+                                <text x="73" y="30" {...LABEL}>2</text>
+                                <text x="100" y="30" {...LABEL}>3</text>
+                                <text x="100" y="62" {...LABEL}>4</text>
+                                <text x="73" y="62" {...LABEL}>5</text>
+                                <text x="46" y="62" {...LABEL}>6</text>
+                                <text x="19" y="62" {...LABEL}>7</text>
                         </svg>
                 );
         }
 
-        // saddle-stitch
+        if (format === "saddle-stitch") {
+                // Cadernos dobrados na lombada, dois paineis por face: a capa e
+                // a ultima pagina dividem a mesma folha.
+                return (
+                        <svg viewBox="0 0 120 80" className="w-full h-20" aria-hidden="true">
+                                <rect x="20" y="8" width="80" height="64" rx="3" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.4" />
+                                <rect x="15" y="12" width="80" height="64" rx="3" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.7" />
+                                <rect x="10" y="16" width="80" height="64" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
+                                <FoldLine x1={50} y1={16} x2={50} y2={80} />
+                                <text x="30" y="50" {...LABEL}>2</text>
+                                <text x="70" y="50" {...LABEL}>1</text>
+                                <rect x="47" y="20" width="6" height="3" fill="currentColor" />
+                                <rect x="47" y="72" width="6" height="3" fill="currentColor" />
+                        </svg>
+                );
+        }
+
         return (
                 <svg viewBox="0 0 120 80" className="w-full h-20" aria-hidden="true">
-                        <rect x="20" y="8" width="80" height="64" rx="3" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.4" />
-                        <rect x="15" y="12" width="80" height="64" rx="3" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.7" />
-                        <rect x="10" y="16" width="80" height="64" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
-                        <line x1="50" y1="10" x2="50" y2="86" stroke="currentColor" strokeWidth="1" strokeDasharray="3 2" />
-                        <rect x="47" y="20" width="6" height="3" fill="currentColor" />
-                        <rect x="47" y="72" width="6" height="3" fill="currentColor" />
+                        <rect x="39" y="10" width="42" height="60" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
+                        <text x="60" y="44" {...LABEL}>1</text>
                 </svg>
         );
 }

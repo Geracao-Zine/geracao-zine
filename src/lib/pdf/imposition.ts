@@ -3,21 +3,31 @@ import type { PrintMode } from "../../domain/print.ts";
 import { DEFAULT_PRINT_MODE } from "../../domain/print.ts";
 import { layoutPanel } from "./panel.ts";
 import type { PanelFonts, PanelPageLayout } from "./panel.ts";
-import { panelSize } from "./templates.ts";
+import {
+        MINIZINE_PAGE_COUNT,
+        minizineSlotPage,
+        minizineSlotUpsideDown,
+        panelSize,
+} from "./templates.ts";
 import type { ImpositionTemplate, PanelSlot, SheetSize } from "./templates.ts";
 
 /**
  * Uma face impressa da folha.
  *
- * `panels` segue a mesma ordem de `slots`: a posicao i recebe a i-esima pagina
- * do zine na ordem de leitura. Sobra vazia quando o conteudo termina no meio da
- * face, para nao inventar pagina em branco numerada.
+ * `panels` segue a mesma ordem de `slots`: a posicao i recebe a pagina que a
+ * imposicao mandar para aquele slot. Fica null quando a pagina nao existe
+ * (conteudo acabou) ou quando o slot e reservado a uma pagina em branco.
  */
 export type ImposedFace = {
         width: number;
         height: number;
         slots: PanelSlot[];
         panels: (PanelPageLayout | null)[];
+        /**
+         * Rotacao de cada painel, em graus, no sentido da leitura do slot.
+         * O minizine usa 180 na fileira de baixo; o resto sai em 0.
+         */
+        rotations: number[];
         /** Verdadeiro so no verso: os paineis foram espelhados para o duplex. */
         mirrored: boolean;
 };
@@ -36,12 +46,15 @@ export type ImposedSheet = {
 };
 
 /**
- * Distribui as paginas dos poemas nas faces do template.
+ * Distribui as paginas dos poemas nas faces do template, na ordem de leitura.
  *
  * Cada poema vira uma ou mais paginas de painel (continuacao quando o texto
  * nao cabe) e a sequencia inteira e cortada em blocos do tamanho da face. Um
  * poema longo, portanto, atravessa faces; um poema curto divide a folha com o
  * proximo.
+ *
+ * Vale so para as dobras de leitura simples; minizine e cadernos tem imposicao
+ * propria em `imposeZine`.
  */
 export function imposePoems(
         template: ImpositionTemplate,
@@ -60,6 +73,7 @@ export function imposePoems(
                         height: template.sheet.height,
                         slots: template.slots,
                         panels: template.slots.map((_, index) => slice[index] ?? null),
+                        rotations: template.slots.map(() => 0),
                         mirrored: false,
                 });
         }
@@ -103,24 +117,56 @@ export function mirrorFace(face: ImposedFace): ImposedFace {
                 height: face.height,
                 slots: face.slots.map((slot) => mirrorSlot(sheet, slot)),
                 panels: [...face.panels],
+                rotations: [...face.rotations],
                 mirrored: true,
         };
 }
 
-/**
- * Agrupa as faces em folhas fisicas conforme o modo de impressao.
- *
- * No simplex cada face e uma folha. No duplex as faces andam em pares: a
- * primeira e a frente, a segunda vira o verso espelhado.
- */
-export function imposeSheets(
-        template: ImpositionTemplate,
-        poems: PageFields[],
-        fonts: PanelFonts,
-        mode: PrintMode = DEFAULT_PRINT_MODE
-): ImposedSheet[] {
-        const faces = imposePoems(template, poems, fonts);
+/** Modo de impressao que o template aceita: escolha do autor ou fixo. */
+export function effectivePrintMode(template: ImpositionTemplate, mode: PrintMode): PrintMode {
+        if (template.imposition === "minizine") {
+                return "simplex";
+        }
 
+        if (template.imposition === "booklet") {
+                return "duplex";
+        }
+
+        return mode;
+}
+
+/**
+ * Impoe o zine inteiro: capa e poemas na ordem em que o leitor os encontra.
+ *
+ * Nas dobras de leitura simples a capa e uma folha inteira e fica de fora da
+ * imposicao. No minizine e nos cadernos a capa e a pagina 1 do livrinho, entao
+ * ela entra na conta e e diagramada dentro de um painel.
+ */
+export function imposeZine(options: {
+        template: ImpositionTemplate;
+        poems: PageFields[];
+        fonts: PanelFonts;
+        mode: PrintMode;
+        /** Diagramacao da capa num painel; obrigatoria no minizine e nos cadernos. */
+        cover?: PanelPageLayout | null;
+}): ImposedSheet[] {
+        const { template, poems, fonts } = options;
+        const mode = effectivePrintMode(template, options.mode);
+
+        if (template.imposition === "sequence") {
+                return pairFaces(imposePoems(template, poems, fonts), mode);
+        }
+
+        const { width, height } = panelSize(template);
+        const poemPages = poems.flatMap((poem) => layoutPanel(poem, fonts, height, width));
+        const pages: (PanelPageLayout | null)[] = [options.cover ?? null, ...poemPages];
+
+        return template.imposition === "minizine"
+                ? imposeMinizine(template, pad(pages, MINIZINE_PAGE_COUNT))
+                : imposeBooklet(template, pad(pages, bookletPageCount(pages.length)));
+}
+
+function pairFaces(faces: ImposedFace[], mode: PrintMode): ImposedSheet[] {
         if (mode === "simplex") {
                 return faces.map((face, index) => ({
                         number: index + 1,
@@ -143,4 +189,107 @@ export function imposeSheets(
         }
 
         return sheets;
+}
+
+function emptyFace(template: ImpositionTemplate): ImposedFace {
+        return {
+                width: template.sheet.width,
+                height: template.sheet.height,
+                slots: template.slots,
+                panels: template.slots.map(() => null),
+                rotations: template.slots.map(() => 0),
+                mirrored: false,
+        };
+}
+
+/**
+ * Uma folha, uma frente: o minizine nao tem verso porque as 8 paginas saem
+ * todas no mesmo lado do papel.
+ */
+function imposeMinizine(
+        template: ImpositionTemplate,
+        pages: (PanelPageLayout | null)[]
+): ImposedSheet[] {
+        const front = emptyFace(template);
+
+        front.panels = template.slots.map((_, slot) => {
+                const page = minizineSlotPage(slot);
+                return page === null ? null : (pages[page - 1] ?? null);
+        });
+        front.rotations = template.slots.map((_, slot) =>
+                minizineSlotUpsideDown(slot) ? 180 : 0
+        );
+
+        return [{ number: 1, front, back: null }];
+}
+
+/**
+ * Cadernos: cada folha leva 4 paginas, duas por face. A folha i recebe
+ * (ultima, primeira) na frente e (segunda, penultima) no verso, de fora para
+ * dentro; e assim que a lombada fecha na ordem certa depois do grampo.
+ */
+function imposeBooklet(
+        template: ImpositionTemplate,
+        pages: (PanelPageLayout | null)[]
+): ImposedSheet[] {
+        const total = pages.length;
+        const sheets: ImposedSheet[] = [];
+
+        for (let index = 0; index < total / 4; index += 1) {
+                const front = emptyFace(template);
+                const back = emptyFace(template);
+
+                front.panels = [
+                        pages[total - 1 - index * 2] ?? null,
+                        pages[index * 2] ?? null,
+                ];
+                back.panels = [
+                        pages[index * 2 + 1] ?? null,
+                        pages[total - 2 - index * 2] ?? null,
+                ];
+
+                // Sem espelhar: o verso ja esta escrito como o leitor o ve, e
+                // quem inverte a folha e a impressora (virando na borda curta).
+                sheets.push({ number: index + 1, front, back });
+        }
+
+        return sheets;
+}
+
+/** Completa a lista com paginas em branco ate o tamanho exigido. */
+function pad(
+        pages: (PanelPageLayout | null)[],
+        size: number
+): (PanelPageLayout | null)[] {
+        const padded = pages.slice(0, size);
+
+        while (padded.length < size) {
+                padded.push(null);
+        }
+
+        return padded;
+}
+
+/** Cadernos exigem multiplo de 4 paginas; o minimo e um caderno. */
+function bookletPageCount(count: number): number {
+        return Math.max(4, Math.ceil(count / 4) * 4);
+}
+
+/**
+ * Agrupa as faces em folhas fisicas conforme o modo de impressao.
+ *
+ * Atalho para as dobras de leitura simples, sem capa. Minizine e cadernos
+ * precisam de `imposeZine`, que conhece a posicao da capa.
+ */
+export function imposeSheets(
+        template: ImpositionTemplate,
+        poems: PageFields[],
+        fonts: PanelFonts,
+        mode: PrintMode = DEFAULT_PRINT_MODE
+): ImposedSheet[] {
+        if (template.imposition !== "sequence") {
+                return imposeZine({ template, poems, fonts, mode });
+        }
+
+        return pairFaces(imposePoems(template, poems, fonts), mode);
 }

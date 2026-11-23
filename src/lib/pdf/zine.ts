@@ -1,7 +1,7 @@
 import { fontById } from "../fonts.ts";
 import { wrapText } from "../wrap-text.ts";
 import { embedZineFonts } from "./fonts.ts";
-import { imposeSheets } from "./imposition.ts";
+import { effectivePrintMode, imposeZine } from "./imposition.ts";
 import type { ImposedFace } from "./imposition.ts";
 import type { PDFPage } from "pdf-lib";
 import {
@@ -19,16 +19,22 @@ import {
         POEM_DIVIDER_COLOR,
         POEM_DIVIDER_THICKNESS,
 } from "./layout.ts";
+import { layoutPanel } from "./panel.ts";
 import type { PanelFonts, PanelRun } from "./panel.ts";
 import { panelFontsFrom } from "./panel-fonts.ts";
-import { templateFor } from "./templates.ts";
+import { panelSize, templateFor } from "./templates.ts";
+import type { ImpositionTemplate } from "./templates.ts";
 import type { ZinePdfInput } from "./types.ts";
 
+type Rgb = (r: number, g: number, b: number) => ReturnType<typeof import("pdf-lib").rgb>;
+
 /**
- * Gera o PDF do zine: capa e faces do template escolhido.
+ * Gera o PDF do zine.
  *
- * A capa ocupa uma folha inteira, na mesma orientacao da dobra. Cada face
- * seguinte recebe os paineis na ordem de leitura do template.
+ * Nas dobras de leitura simples a capa ocupa uma folha inteira e as faces
+ * seguintes recebem os paineis na ordem de leitura. No minizine e nos cadernos
+ * a capa e a pagina 1 do livrinho: entra na imposicao e e diagramada dentro de
+ * um painel, como as poesias.
  */
 export async function generateZinePdf(input: ZinePdfInput): Promise<Uint8Array> {
         const template = templateFor(input.format);
@@ -38,7 +44,7 @@ export async function generateZinePdf(input: ZinePdfInput): Promise<Uint8Array> 
         }
 
         // pdf-lib e fontkit entram so aqui: nada disso vai para o bundle inicial.
-        const [{ PDFDocument, StandardFonts, rgb }, fontkit] = await Promise.all([
+        const [{ PDFDocument, StandardFonts, degrees, rgb }, fontkit] = await Promise.all([
                 import("pdf-lib"),
                 import("@pdf-lib/fontkit").then((mod) => mod.default),
         ]);
@@ -56,10 +62,71 @@ export async function generateZinePdf(input: ZinePdfInput): Promise<Uint8Array> 
         const authorFonts = await embedZineFonts(pdfDoc, fontById(input.authorFont), standard);
 
         const { width, height } = template.sheet;
-        const contentWidth = width - PAGE_MARGIN * 2;
+        const fonts = panelFontsFrom(titleFonts);
+        const mode = effectivePrintMode(template, input.printMode);
+        const booklet = template.imposition !== "sequence";
 
-        // ---------- CAPA ----------
-        const coverPage = pdfDoc.addPage([width, height]);
+        if (!booklet) {
+                drawCover(pdfDoc.addPage([width, height]), input, titleFonts, authorFonts, rgb);
+
+                // No duplex a capa ocupa so a frente da primeira folha. Reservar
+                // o verso dela mantem a regra "toda face de verso e espelhada".
+                if (mode === "duplex") {
+                        pdfDoc.addPage([width, height]);
+                }
+        }
+
+        const cover = booklet ? coverPanel(template, input, fonts) : null;
+        const sheets = imposeZine({ template, poems: input.poems, fonts, mode, cover });
+
+        for (const sheet of sheets) {
+                drawFace(pdfDoc.addPage([width, height]), sheet.front, fonts, rgb, degrees);
+
+                if (sheet.back) {
+                        drawFace(pdfDoc.addPage([width, height]), sheet.back, fonts, rgb, degrees);
+                }
+        }
+
+        // O duplex le a pilha em pares: com numero impar de paginas a ultima
+        // frente ficaria sozinha e receberia a proxima folha no verso.
+        if (mode === "duplex" && !booklet && pdfDoc.getPageCount() % 2 === 1) {
+                pdfDoc.addPage([width, height]);
+        }
+
+        return pdfDoc.save();
+}
+
+/** Capa diagramada num painel do livrinho, no lugar da pagina 1. */
+function coverPanel(
+        template: ImpositionTemplate,
+        input: ZinePdfInput,
+        fonts: PanelFonts
+): ReturnType<typeof layoutPanel>[number] {
+        const panel = panelSize(template);
+
+        return layoutPanel(
+                {
+                        title: input.coverTitle,
+                        subtitle: input.authorName,
+                        date: input.date,
+                        body: "",
+                },
+                fonts,
+                panel.height,
+                panel.width
+        )[0];
+}
+
+/** Desenha a capa de folha inteira, centrada na vertical. */
+function drawCover(
+        page: PDFPage,
+        input: ZinePdfInput,
+        titleFonts: Awaited<ReturnType<typeof embedZineFonts>>,
+        authorFonts: Awaited<ReturnType<typeof embedZineFonts>>,
+        rgb: Rgb
+): void {
+        const { width, height } = page.getSize();
+        const contentWidth = width - PAGE_MARGIN * 2;
 
         const titleLines = wrapText(input.coverTitle, titleFonts.bold, COVER_TITLE_SIZE, contentWidth);
         const titleBlockHeight = titleLines.length * COVER_TITLE_LINE_HEIGHT;
@@ -81,7 +148,7 @@ export async function generateZinePdf(input: ZinePdfInput): Promise<Uint8Array> 
 
         for (const line of titleLines) {
                 const lineWidth = titleFonts.bold.widthOfTextAtSize(line, COVER_TITLE_SIZE);
-                coverPage.drawText(line, {
+                page.drawText(line, {
                         x: (width - lineWidth) / 2,
                         y: cursorY,
                         size: COVER_TITLE_SIZE,
@@ -91,7 +158,7 @@ export async function generateZinePdf(input: ZinePdfInput): Promise<Uint8Array> 
         }
 
         cursorY -= COVER_GAP_TITLE_TO_AUTHOR / 2;
-        coverPage.drawLine({
+        page.drawLine({
                 start: { x: (width - COVER_DIVIDER_WIDTH) / 2, y: cursorY },
                 end: { x: (width + COVER_DIVIDER_WIDTH) / 2, y: cursorY },
                 thickness: COVER_DIVIDER_THICKNESS,
@@ -101,7 +168,7 @@ export async function generateZinePdf(input: ZinePdfInput): Promise<Uint8Array> 
 
         if (temAutor) {
                 const authorWidth = authorFonts.regular.widthOfTextAtSize(input.authorName, COVER_AUTHOR_SIZE);
-                coverPage.drawText(input.authorName, {
+                page.drawText(input.authorName, {
                         x: (width - authorWidth) / 2,
                         y: cursorY,
                         size: COVER_AUTHOR_SIZE,
@@ -112,7 +179,7 @@ export async function generateZinePdf(input: ZinePdfInput): Promise<Uint8Array> 
 
         if (temData) {
                 const dateWidth = titleFonts.regular.widthOfTextAtSize(input.date, COVER_DATE_SIZE);
-                coverPage.drawText(input.date, {
+                page.drawText(input.date, {
                         x: (width - dateWidth) / 2,
                         y: cursorY,
                         size: COVER_DATE_SIZE,
@@ -120,41 +187,21 @@ export async function generateZinePdf(input: ZinePdfInput): Promise<Uint8Array> 
                         color: rgb(COVER_DATE_COLOR, COVER_DATE_COLOR, COVER_DATE_COLOR),
                 });
         }
-
-        // ---------- FACES DO ZINE ----------
-        const fonts = panelFontsFrom(titleFonts);
-        const duplex = input.printMode === "duplex";
-
-        // No duplex a capa ocupa so a frente da primeira folha. Reservar o verso
-        // dela mantem a regra "toda face de verso e espelhada": sem isso a
-        // primeira face cairia atras da capa sem passar pelo espelho.
-        if (duplex) {
-                pdfDoc.addPage([width, height]);
-        }
-
-        for (const sheet of imposeSheets(template, input.poems, fonts, input.printMode)) {
-                drawFace(pdfDoc.addPage([width, height]), sheet.front, fonts, rgb);
-
-                if (sheet.back) {
-                        drawFace(pdfDoc.addPage([width, height]), sheet.back, fonts, rgb);
-                }
-        }
-
-        // O duplex le a pilha em pares: com numero impar de paginas a ultima
-        // frente ficaria sozinha e receberia a proxima folha no verso.
-        if (duplex && pdfDoc.getPageCount() % 2 === 1) {
-                pdfDoc.addPage([width, height]);
-        }
-
-        return pdfDoc.save();
 }
 
-/** Desenha uma face: cada painel no seu slot, na ordem de leitura. */
+/**
+ * Desenha uma face: cada painel no seu slot, na ordem de leitura.
+ *
+ * O painel do minizine na fileira de baixo sai girado 180 graus, porque a folha
+ * gira meia volta ao ser dobrada. Girar em torno do centro do slot mantem o
+ * conteudo dentro do painel e faz o texto aparecer em pe para o leitor.
+ */
 function drawFace(
         page: PDFPage,
         face: ImposedFace,
         fonts: PanelFonts,
-        rgb: (r: number, g: number, b: number) => ReturnType<typeof import("pdf-lib").rgb>
+        rgb: Rgb,
+        degrees: (angle: number) => ReturnType<typeof import("pdf-lib").degrees>
 ): void {
         face.panels.forEach((layout, index) => {
                 if (!layout) {
@@ -162,15 +209,22 @@ function drawFace(
                 }
 
                 const slot = face.slots[index];
+                const angle = face.rotations[index] ?? 0;
+                const rotated = angle !== 0;
+                const centerX = slot.x + slot.width / 2;
+                const centerY = slot.y + slot.height / 2;
+                const place = (x: number, y: number) =>
+                        rotated ? { x: 2 * centerX - x, y: 2 * centerY - y } : { x, y };
+
                 const top = slot.y + slot.height;
 
                 for (const run of layout.runs) {
                         page.drawText(run.text, {
-                                x: slot.x,
-                                y: top - run.baseline,
+                                ...place(slot.x, top - run.baseline),
                                 size: run.size,
                                 font: fontOf(run, fonts),
                                 color: rgb(run.color, run.color, run.color),
+                                ...(rotated ? { rotate: degrees(angle) } : {}),
                         });
                 }
 
@@ -179,8 +233,8 @@ function drawFace(
                 if (layout.divider !== null) {
                         const dividerY = top - layout.divider;
                         page.drawLine({
-                                start: { x: slot.x, y: dividerY },
-                                end: { x: slot.x + slot.width, y: dividerY },
+                                start: place(slot.x, dividerY),
+                                end: place(slot.x + slot.width, dividerY),
                                 thickness: POEM_DIVIDER_THICKNESS,
                                 color: rgb(
                                         POEM_DIVIDER_COLOR,

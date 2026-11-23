@@ -17,11 +17,10 @@ globalThis.fetch = async (url) => {
         };
 };
 
-const { FORMAT_OPTIONS, formatFrom, isFormatAvailable, panelsPerFace } = await import(
-        "../src/domain/index.ts"
-);
+const { FORMAT_OPTIONS, formatFrom, panelsPerFace } = await import("../src/domain/index.ts");
 const { TEMPLATES, templateFor, panelSize } = await import("../src/lib/pdf/templates.ts");
 const { imposePoems } = await import("../src/lib/pdf/imposition.ts");
+const { layoutPanel } = await import("../src/lib/pdf/panel.ts");
 const { generateZinePdf } = await import("../src/lib/pdf/zine.ts");
 const { A4_PORTRAIT, A4_LANDSCAPE, PAGE_MARGIN, PANEL_GUTTER } = await import(
         "../src/lib/pdf/layout.ts"
@@ -114,16 +113,17 @@ test("T4 le em Z: esquerda para a direita, cima para baixo", () => {
 test("nenhum painel escapa da margem nem se sobrepoe", () => {
         for (const template of Object.values(TEMPLATES)) {
                 const { width, height } = template.sheet;
+                const margem = template.margin;
 
                 for (const slot of template.slots) {
-                        assert.ok(slot.x >= PAGE_MARGIN - 0.001, `${template.id}: x na margem`);
-                        assert.ok(slot.y >= PAGE_MARGIN - 0.001, `${template.id}: y na margem`);
+                        assert.ok(slot.x >= margem - 0.001, `${template.id}: x na margem`);
+                        assert.ok(slot.y >= margem - 0.001, `${template.id}: y na margem`);
                         assert.ok(
-                                slot.x + slot.width <= width - PAGE_MARGIN + 0.001,
+                                slot.x + slot.width <= width - margem + 0.001,
                                 `${template.id}: painel passa da margem direita`
                         );
                         assert.ok(
-                                slot.y + slot.height <= height - PAGE_MARGIN + 0.001,
+                                slot.y + slot.height <= height - margem + 0.001,
                                 `${template.id}: painel passa da margem superior`
                         );
                 }
@@ -225,12 +225,12 @@ test("cada dobra gera o PDF na orientacao e no numero de folhas certos", async (
 
 test("formato sem imposicao implementada e recusado", async () => {
         await assert.rejects(
-                () => generateZinePdf(capa({ format: "mini-zine", poems: poemas })),
+                () => generateZinePdf(capa({ format: "dobra-inexistente", poems: poemas })),
                 /sem imposicao/
         );
 });
 
-test("o seletor mostra as quatro dobras com a ordem de leitura", () => {
+test("o seletor mostra todas as dobras com a ordem de leitura", () => {
         const fonte = readFileSync(
                 join(raiz, "src/components/FormatSelector/index.tsx"),
                 "utf8"
@@ -241,11 +241,13 @@ test("o seletor mostra as quatro dobras com a ordem de leitura", () => {
                 "duas-colunas-vertical",
                 "duas-colunas-horizontal",
                 "quatro-retangulos",
+                "mini-zine",
+                "saddle-stitch",
         ]) {
                 assert.ok(fonte.includes(`"${id}"`), `o diagrama de ${id} deveria existir`);
         }
 
-        assert.ok(/>1</.test(fonte) && />4</.test(fonte), "a ordem de leitura precisa ser numerada");
+        assert.ok(/>1</.test(fonte) && />8</.test(fonte), "a ordem de leitura precisa ser numerada");
 });
 
 test("formatFrom traduz o formato antigo e cai no padrao", () => {
@@ -255,7 +257,7 @@ test("formatFrom traduz o formato antigo e cai no padrao", () => {
         assert.equal(formatFrom(undefined), "banner-a4");
 });
 
-test("as quatro dobras estao habilitadas com a contagem de paineis certa", () => {
+test("todas as dobras estao habilitadas com a contagem de paineis certa", () => {
         const disponiveis = FORMAT_OPTIONS.filter((option) => option.available);
 
         assert.deepEqual(
@@ -265,18 +267,20 @@ test("as quatro dobras estao habilitadas com a contagem de paineis certa", () =>
                         ["duas-colunas-vertical", 2],
                         ["duas-colunas-horizontal", 2],
                         ["quatro-retangulos", 4],
+                        ["mini-zine", 8],
+                        ["saddle-stitch", 2],
                 ]
         );
 
-        assert.equal(isFormatAvailable("mini-zine"), false);
         assert.equal(panelsPerFace("banner-a4"), 1);
         assert.equal(panelsPerFace("quatro-retangulos"), 4);
+        assert.equal(panelsPerFace("mini-zine"), 8);
 });
 
-test("templateFor devolve null para as dobras ainda nao implementadas", () => {
-        assert.equal(templateFor("mini-zine"), null);
-        assert.equal(templateFor("saddle-stitch"), null);
+test("templateFor devolve template para todas as dobras", () => {
         assert.ok(templateFor("banner-a4"));
+        assert.ok(templateFor("mini-zine"));
+        assert.ok(templateFor("saddle-stitch"));
 });
 
 // ---------- impressao frente e verso ----------
@@ -375,23 +379,24 @@ test("os paineis do verso continuam dentro da folha", () => {
                 const frente = imposePoems(template, poemas, fonts)[0];
                 const verso = mirrorFace(frente);
                 const { width, height } = template.sheet;
+                const margem = template.margin;
 
                 for (const slot of verso.slots) {
-                        assert.ok(slot.x >= PAGE_MARGIN - 0.001, `${template.id}: x fora da margem`);
-                        assert.ok(slot.y >= PAGE_MARGIN - 0.001, `${template.id}: y fora da margem`);
+                        assert.ok(slot.x >= margem - 0.001, `${template.id}: x fora da margem`);
+                        assert.ok(slot.y >= margem - 0.001, `${template.id}: y fora da margem`);
                         assert.ok(
-                                slot.x + slot.width <= width - PAGE_MARGIN + 0.001,
+                                slot.x + slot.width <= width - margem + 0.001,
                                 `${template.id}: passa da direita`
                         );
                         assert.ok(
-                                slot.y + slot.height <= height - PAGE_MARGIN + 0.001,
+                                slot.y + slot.height <= height - margem + 0.001,
                                 `${template.id}: passa do topo`
                         );
                 }
         }
 });
 
-test("o duplex gera o dobro de paginas de faces, sempre em par", async () => {
+test("o duplex gera paginas em par, menos no minizine que e so frente", async () => {
         for (const format of Object.keys(TEMPLATES)) {
                 const simplex = await PDFDocument.load(
                         await generateZinePdf(capa({ format, poems: poemas }))
@@ -399,6 +404,13 @@ test("o duplex gera o dobro de paginas de faces, sempre em par", async () => {
                 const duplex = await PDFDocument.load(
                         await generateZinePdf(capa({ format, poems: poemas, printMode: "duplex" }))
                 );
+
+                // O minizine imprime as 8 paginas no mesmo lado da folha: nao
+                // existe verso para espelhar, entao ele ignora o duplex.
+                if (format === "mini-zine") {
+                        assert.equal(duplex.getPageCount(), 1, "minizine e uma folha so");
+                        continue;
+                }
 
                 assert.equal(
                         duplex.getPageCount() % 2,
@@ -423,4 +435,257 @@ test("o PDF do duplex repete a fonte da capa e nao muda a orientacao", async () 
 
                 assert.ok(width < height, `pagina ${index} deveria continuar retrato`);
         }
+});
+
+// ---------- T5 (minizine) e T11 (fanzine grampeado) ----------
+
+const { imposeZine, effectivePrintMode } = await import("../src/lib/pdf/imposition.ts");
+const { MINIZINE_PAGE_COUNT, minizineSlotPage, minizineSlotUpsideDown } = await import(
+        "../src/lib/pdf/templates.ts"
+);
+
+/** Capa diagramada num painel, como o PDF faz nas dobras de livrinho. */
+function capaDePainel(template) {
+        const { width, height } = panelSize(template);
+
+        return layoutPanel(
+                { title: "Capa", subtitle: "Steve", date: "", body: "" },
+                fonts,
+                height,
+                width
+        )[0];
+}
+
+/**
+ * Pagina 1-based que o slot recebe, lida do proprio texto do painel.
+ *
+ * A capa e sempre a pagina 1, entao a poesia "Pi" e a pagina i+1.
+ */
+function paginaDoPainel(layout) {
+        const run = layout?.runs.find((r) => r.role === "title");
+
+        if (!run) {
+                return null;
+        }
+
+        return run.text === "Capa" ? 1 : Number(run.text.slice(1)) + 1;
+}
+
+test("T5 imprime as 8 paginas numa unica folha A4 deitada", async () => {
+        const template = TEMPLATES["mini-zine"];
+
+        assert.equal(template.slots.length, 8);
+        assert.equal(template.imposition, "minizine");
+        assert.equal(template.orientation, "landscape");
+        assert.equal(MINIZINE_PAGE_COUNT, 8);
+
+        const doc = await PDFDocument.load(
+                await generateZinePdf(capa({ format: "mini-zine", poems: poemas }))
+        );
+
+        assert.equal(doc.getPageCount(), 1, "o minizine inteiro cabe numa folha");
+
+        const { width, height } = doc.getPage(0).getSize();
+
+        assert.ok(width > height, "a folha do minizine e deitada");
+});
+
+test("T5 poe a capa como pagina 1 e numera o resto em ordem", () => {
+        const template = TEMPLATES["mini-zine"];
+        // Capa + 7 poesias = 8 paginas: o livrinho cheio.
+        const sete = Array.from({ length: 7 }, (_, i) => ({
+                title: `P${i + 1}`,
+                subtitle: "",
+                date: "",
+                body: `poesia ${i + 1}`,
+        }));
+        const [folha] = imposeZine({
+                template,
+                poems: sete,
+                fonts,
+                mode: "simplex",
+                cover: capaDePainel(template),
+        });
+
+        const paginas = folha.front.panels.map(paginaDoPainel);
+
+        assert.equal(paginas[0], 8, "slot 0 recebe a ultima pagina");
+        assert.equal(paginas[1], 1, "slot 1 recebe a capa");
+        assert.equal(paginas[2], 2);
+        assert.equal(paginas[3], 3);
+        assert.equal(paginas[4], 7);
+        assert.equal(paginas[7], 4, "a fileira de baixo termina na pagina 4");
+        assert.deepEqual(paginas, [8, 1, 2, 3, 7, 6, 5, 4]);
+});
+
+test("T5 le as paginas 1 a 8 em sequencia ao dobrar e cortar", () => {
+        // Modelo fisico: dobra a fileira de baixo para tras, corta no meio e
+        // empilha. A leitura resultante tem que ser 1..8 sem buraco nem repeticao.
+        const ordemNaFolha = TEMPLATES["mini-zine"].slots.map((_, slot) =>
+                minizineSlotPage(slot)
+        );
+        const topo = ordemNaFolha.slice(0, 4);
+        const base = ordemNaFolha.slice(4).reverse();
+        const leitura = [...topo, ...base];
+        const inicio = leitura.indexOf(1);
+        const sequencia = [...leitura.slice(inicio), ...leitura.slice(0, inicio)];
+
+        assert.deepEqual(sequencia, [1, 2, 3, 4, 5, 6, 7, 8]);
+});
+
+test("T5 gira 180 a fileira de baixo e mantem a de cima em pe", () => {
+        const template = TEMPLATES["mini-zine"];
+        const [folha] = imposeZine({ template, poems: poemas, fonts, mode: "simplex" });
+
+        assert.deepEqual(folha.front.rotations, [0, 0, 0, 0, 180, 180, 180, 180]);
+
+        for (let slot = 0; slot < 8; slot += 1) {
+                assert.equal(
+                        minizineSlotUpsideDown(slot),
+                        slot >= 4,
+                        `slot ${slot}: rotacao errada`
+                );
+        }
+});
+
+test("T5 ignora o duplex: nao existe verso para imprimir", () => {
+        assert.equal(effectivePrintMode(TEMPLATES["mini-zine"], "duplex"), "simplex");
+
+        const [folha] = imposeZine({
+                template: TEMPLATES["mini-zine"],
+                poems: poemas,
+                fonts,
+                mode: "duplex",
+        });
+
+        assert.equal(folha.back, null);
+});
+
+test("T5 completa com paginas em branco quando falta conteudo", () => {
+        const template = TEMPLATES["mini-zine"];
+        const [folha] = imposeZine({
+                template,
+                poems: [poemas[0]],
+                fonts,
+                mode: "simplex",
+                cover: capaDePainel(template),
+        });
+
+        const preenchidos = folha.front.panels.filter(Boolean);
+
+        assert.equal(preenchidos.length, 2, "capa e a primeira poesia");
+        assert.equal(folha.front.panels.filter((p) => p === null).length, 6);
+});
+
+test("T11 dobra em cadernos e exige multiplo de 4 paginas", async () => {
+        const template = TEMPLATES["saddle-stitch"];
+
+        assert.equal(template.imposition, "booklet");
+        assert.equal(template.slots.length, 2, "dois paineis por face");
+        assert.equal(effectivePrintMode(template, "simplex"), "duplex");
+
+        // Capa + 3 poesias = 4 paginas: um caderno de uma folha fisica, que
+        // carrega 4 paginas (duas na frente, duas no verso).
+        const umCaderno = imposeZine({
+                template,
+                poems: poemas,
+                fonts,
+                mode: "duplex",
+                cover: capaDePainel(template),
+        });
+
+        assert.equal(umCaderno.length, 1, "4 paginas cabem numa folha fisica");
+
+        for (const folha of umCaderno) {
+                assert.ok(folha.back, "caderno sempre tem verso");
+        }
+
+        const doc = await PDFDocument.load(
+                await generateZinePdf(capa({ format: "saddle-stitch", poems: poemas }))
+        );
+
+        // 4 paginas de conteudo = 1 folha fisica = 2 paginas no PDF, porque a
+        // frente e o verso da mesma folha sao paginas separadas do arquivo.
+        assert.equal(doc.getPageCount(), 2, "um caderno de 4 paginas usa 1 folha");
+        assert.equal(doc.getPageCount() % 2, 0, "cada folha entra com frente e verso");
+});
+
+test("T11 poe capa, ultima, segunda e penultima na ordem do grampo", () => {
+        const template = TEMPLATES["saddle-stitch"];
+        const tres = Array.from({ length: 3 }, (_, i) => ({
+                title: `P${i + 1}`,
+                subtitle: "",
+                date: "",
+                body: `poesia ${i + 1}`,
+        }));
+        const quatro = imposeZine({
+                template,
+                poems: tres,
+                fonts,
+                mode: "duplex",
+                cover: capaDePainel(template),
+        });
+
+        const [primeira] = quatro;
+
+        // Frente de fora para dentro: ultima pagina a esquerda, capa a direita.
+        // Verso: a segunda pagina cai atras da capa e a penultima atras da ultima.
+        assert.deepEqual(primeira.front.panels.map(paginaDoPainel), [4, 1]);
+        assert.deepEqual(primeira.back.panels.map(paginaDoPainel), [2, 3]);
+});
+
+test("T11 cresce em cadernos de 4 paginas conforme o conteudo", () => {
+        const template = TEMPLATES["saddle-stitch"];
+        const muitas = Array.from({ length: 9 }, (_, i) => ({
+                title: `P${i + 1}`,
+                subtitle: "",
+                date: "",
+                body: `poesia ${i + 1}`,
+        }));
+
+        // Capa + 9 poesias = 10 paginas -> 12 paginas -> 3 folhas fisicas.
+        const folhas = imposeZine({
+                template,
+                poems: muitas,
+                fonts,
+                mode: "duplex",
+                cover: capaDePainel(template),
+        });
+
+        assert.equal(folhas.length, 3);
+        assert.equal(folhas.length * 4, 12);
+});
+
+test("o minizine avisa quando o conteudo passa dos 7 paineis", async () => {
+        const { createDraft, draftIssues, setPoemField, MINIZINE_POEM_SLOTS } = await import(
+                "../src/domain/index.ts"
+        );
+
+        assert.equal(MINIZINE_POEM_SLOTS, 7);
+
+        let draft = createDraft();
+        draft = { ...draft, format: "mini-zine" };
+
+        const caber = draftIssues(draft).filter((i) => i.id === "minizine-overflow");
+        assert.equal(caber.length, 0, "uma poesia cabe no minizine");
+
+        // Enche o documento ate passar dos 7 paineis disponiveis.
+        const { addPage } = await import("../src/domain/zine.ts");
+        const poemas = draft.doc.pages.filter((p) => p.kind === "poem");
+
+        while (draft.doc.pages.filter((p) => p.kind === "poem").length <= 7) {
+                draft = { ...draft, doc: addPage(draft.doc) };
+        }
+
+        for (const page of draft.doc.pages.filter((p) => p.kind === "poem")) {
+                draft = { ...draft, doc: setPoemField(draft.doc, page.id, "body", "texto") };
+        }
+
+        const aviso = draftIssues(draft).find((i) => i.id === "minizine-overflow");
+
+        assert.ok(aviso, "o excedente precisa virar aviso");
+        assert.equal(aviso.severity, "warning");
+        assert.equal(aviso.step, "print");
+        assert.match(aviso.message, /7 poesias/);
+        assert.ok(poemas.length >= 1);
 });

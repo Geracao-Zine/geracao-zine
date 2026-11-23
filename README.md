@@ -142,10 +142,12 @@ As quatro dobras básicas têm imposição implementada. A ordem de leitura é s
 | T2 | Duas colunas vertical | A4 retrato | 2 | 1 → 2, esquerda para a direita |
 | T3 | Duas colunas horizontal | A4 paisagem | 2 | 1 → 2, cima para baixo |
 | T4 | Quatro retângulos | A4 retrato | 4 | 1 → 2 → 3 → 4, em Z |
+| T5 | Minizine de 8 páginas | A4 paisagem | 8 | 8 → 1 → 2 → 3 → 4 → 5 → 6 → 7, com a fileira de baixo girada 180° |
+| T11 | Fanzine grampeado | A4 paisagem | 2 | caderno: (última, primeira) na frente, (segunda, penúltima) no verso |
 
 A imposição distribui as páginas dos poemas nas faces do template. Um poema curto ocupa um painel e divide a folha com o próximo; um poema que não cabe num painel continua na face seguinte, identificado como continuação. Quando o conteúdo termina no meio de uma face, os painéis restantes ficam vazios — nenhuma página em branco é inventada.
 
-Os demais templates do catálogo aparecem no seletor como "Em breve" e estão detalhados no roadmap.
+No minizine a capa é a página 1 do livrinho: a folha é uma só, sai sempre em frente única e a fileira de baixo é impressa de cabeça para baixo para que o texto apareça em pé depois da dobra. No fanzine grampeado a capa também entra na contagem e o número de páginas cresce em múltiplos de 4, para a lombada fechar sem sobra.
 
 ## Convenções de código
 

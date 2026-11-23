@@ -22,6 +22,7 @@ export type {
 export {
 	DEFAULT_STEP,
 	DRAFT_VERSION,
+	MINIZINE_POEM_SLOTS,
 	STEPS,
 	canEnterStep,
 	createDraft,

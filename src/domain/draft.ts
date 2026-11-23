@@ -45,6 +45,9 @@ export const DEFAULT_STEP: ZineStep = "cover";
 
 export const DRAFT_VERSION = 1;
 
+/** Paineis do minizine depois da capa, que ocupa a pagina 1. */
+export const MINIZINE_POEM_SLOTS = 7;
+
 export type ZineDraft = {
 	version: number;
 	step: ZineStep;
@@ -257,6 +260,22 @@ export function draftIssues(draft: ZineDraft): DraftIssue[] {
 			message: "Nenhum texto escrito",
 			severity: "error",
 			step: "poems",
+		});
+	}
+
+	// O minizine e uma folha so: a capa ocupa a pagina 1 e sobram 7 paineis.
+	// Avisar aqui evita o autor descobrir so na impressao que o excedente saiu.
+	const excedente = poems.length - MINIZINE_POEM_SLOTS;
+
+	if (draft.format === "mini-zine" && excedente > 0) {
+		issues.push({
+			id: "minizine-overflow",
+			message:
+				excedente === 1
+					? "O minizine comporta 7 poesias: 1 ficara de fora"
+					: `O minizine comporta 7 poesias: ${excedente} ficarao de fora`,
+			severity: "warning",
+			step: "print",
 		});
 	}
 
