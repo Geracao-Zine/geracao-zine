@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { deflateSync } from "node:zlib";
-import { PDFDocument, StandardFonts } from "pdf-lib";
+import { deflateSync, inflateSync } from "node:zlib";
+import { PDFArray, PDFDocument, PDFRawStream, StandardFonts } from "pdf-lib";
 
 const { imageRect, imageClip } = await import("../src/lib/pdf/image-layout.ts");
 const { layoutPanel } = await import("../src/lib/pdf/panel.ts");
@@ -17,6 +17,7 @@ const {
 } = await import("../src/lib/image-store.ts");
 const { IMAGE_BAND_RATIO } = await import("../src/lib/pdf/layout.ts");
 const { layoutPreview } = await import("../src/lib/preview/index.ts");
+const { templateFor, panelSize } = await import("../src/lib/pdf/templates.ts");
 const { pageImageFrom } = await import("../src/domain/image.ts");
 
 const Tabela = new Uint32Array(256);
@@ -330,4 +331,71 @@ test("a escala absurda e limitada em vez de virar imagem gigante", () => {
         // sem o teto, um scale corrompido no JSON inflaria o PDF e a memoria
         assert.deepEqual(absurda, razoavel);
         assert.ok(absurda.width < 10000);
+});
+
+// --- 7.2: a matriz de desenho no content stream -----------------------------
+
+/** Descomprime o conteudo de uma pagina, como o leitor de PDF faria. */
+function conteudoDaPagina(doc, indice) {
+        const ref = doc.getPage(indice).node.Contents();
+        const refs = ref instanceof PDFArray ? ref.asArray() : [ref];
+
+        return refs
+                .map((item) => {
+                        const bruto = doc.context.lookup(item, PDFRawStream).contents;
+
+                        try {
+                                return inflateSync(bruto).toString("latin1");
+                        } catch {
+                                return new TextDecoder().decode(bruto);
+                        }
+                })
+                .join("\n");
+}
+
+test("o content stream desenha a imagem com a matriz que o modelo calculou", async () => {
+        resetImageStore();
+        const bytes = png(4, 2);
+        const assetId = putImage(bytes, "image/png");
+        const imagemDoPoema = imagem({ assetId, scale: 1 });
+
+        const saida = await generateZinePdf({
+                ...cenarioBase,
+                poems: [{ ...pagina, image: imagemDoPoema }],
+                images: new Map([[assetId, bytes]]),
+        });
+
+        const doc = await PDFDocument.load(saida);
+        const conteudo = conteudoDaPagina(doc, 1);
+
+        // O pdf-lib emite translacoes `1 0 0 1 x y cm` em volta do desenho, entao
+        // a matriz de escala nao e a ultima do fluxo: e a que casa com o modelo.
+        const matrizes = [...conteudo.matchAll(/([\d.]+) 0 0 ([\d.]+) 0 0 cm/g)].map((m) => ({
+                width: Number(m[1]),
+                height: Number(m[2]),
+        }));
+        assert.ok(matrizes.length > 0, "esperava a matriz de escala da imagem no conteudo");
+
+        // As dimensoes vem do template, as mesmas que o PDF usa na imposicao:
+        // reconstruir a conta aqui so testaria a minha copia, nao o codigo.
+        const template = templateFor(cenarioBase.format);
+        const tamanho = panelSize(template);
+        const [painel] = layoutPanel(pagina, fonts, tamanho.height, tamanho.width, 0, imagemDoPoema);
+        const esperado = painel.image;
+
+        const encontrada = matrizes.find(
+                (m) =>
+                        Math.abs(m.width - esperado.width) < 1e-6 &&
+                        Math.abs(m.height - esperado.height) < 1e-6
+        );
+
+        assert.ok(
+                encontrada,
+                `nenhuma matriz bateu com o modelo (${esperado.width}x${esperado.height}): ` +
+                        JSON.stringify(matrizes)
+        );
+
+        // O arquivo e 4x2 (2:1). Sem esticar, o desenho tem que manter 2:1.
+        const razao = encontrada.width / encontrada.height;
+        assert.ok(Math.abs(razao - 2) < 1e-6, `saiu deformada: ${encontrada.width}x${encontrada.height}`);
 });
