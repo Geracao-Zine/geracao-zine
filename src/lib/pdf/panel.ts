@@ -42,6 +42,7 @@ import {
 
 export type {
 	PanelElement,
+	PanelImageElement,
 	PanelLayout,
 	PanelRect,
 	PanelRole,
