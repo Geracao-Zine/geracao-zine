@@ -22,7 +22,7 @@ const {
 	serializeDraft,
 } = await import("../src/domain/index.ts");
 
-const { TEMPLATES } = await import("../src/lib/pdf/templates.ts");
+const { TEMPLATES, panelSize } = await import("../src/lib/pdf/templates.ts");
 const { markLines } = await import("../src/lib/pdf/marks.ts");
 const { layoutPanel } = await import("../src/lib/pdf/panel.ts");
 const { A4_CONTENT_WIDTH, PANEL_HEIGHT } = await import("../src/lib/pdf/layout.ts");
@@ -189,6 +189,37 @@ test("a margem de seguranca encolhe a caixa de texto do painel", async () => {
 		comMargem.runs.every((run) => run.baseline <= PANEL_HEIGHT - 80),
 		"nenhuma linha entra na faixa da margem"
 	);
+});
+
+test("a margem vale para o painel de todos os templates", async () => {
+	const pdfDoc = await PDFDocument.create();
+	const fonte = await pdfDoc.embedFont(StandardFonts.Helvetica);
+	const fonts = { title: fonte, subtitle: fonte, date: fonte, body: fonte };
+	const inset = 20;
+	const poema = {
+		title: "Titulo",
+		subtitle: "Subtitulo",
+		date: "19/11/2026",
+		body: "uma linha curta",
+	};
+
+	for (const template of Object.values(TEMPLATES)) {
+		const { width, height } = panelSize(template);
+		const [page] = layoutPanel(poema, fonts, height, width, inset);
+		const limiteY = height - inset * 2 + 1e-6;
+		const limiteX = width - inset * 2 + 0.01;
+
+		assert.equal(page.inset, inset, `${template.id}: inset`);
+		assert.ok(page.box.height <= limiteY, `${template.id}: caixa alta demais`);
+
+		for (const run of page.runs) {
+			assert.ok(run.baseline <= limiteY, `${template.id}: linha abaixo da margem`);
+			assert.ok(
+				fonte.widthOfTextAtSize(run.text, run.size) <= limiteX,
+				`${template.id}: linha mais larga que a margem`
+			);
+		}
+	}
 });
 
 test("a etapa de impressao oferece marcas e margem, e o PDF recebe as duas", () => {
