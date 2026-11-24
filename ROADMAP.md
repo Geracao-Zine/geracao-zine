@@ -265,9 +265,9 @@ Para pedir uma segunda tentativa em uma issue já processada, remova e reaplique
 | 3 — Bugs | #10, #11, #12, #13, #14, #15, #16 | #10, #11, #12, #13, #14, #15 e #16 entregues |
 | 4 — Otimização | #17, #18 | #17 entregue; #18 fechada (o problema não existia) |
 | 5 — Padronização | #19, #20, #21 | fase concluída: #19, #20 e #21 entregues |
-| 6 — Fluxo e diagramação | #22 a #29 | #22, #23 e #24 entregues; #25 armada (`openhands`); #26 a #29 bloqueadas |
+| 6 — Fluxo e diagramação | #22 a #29 | fase concluída: #22 a #29 entregues |
 
-Fechadas: #3 (lint), #4 (versão do Node), #5 (dependências e audit), #6 (`jspdf` removido), #21 (constantes de diagramação), #19 (regras de lint), #9 (deploy em VPS), #7 (Dockerfile multi-stage), #8 (docker-compose e `.env.example`), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas), #16 (navbar e fonte do body).
+Fechadas: #3 (lint), #4 (versão do Node), #5 (dependências e audit), #6 (`jspdf` removido), #21 (constantes de diagramação), #19 (regras de lint), #9 (deploy em VPS), #7 (Dockerfile multi-stage), #8 (docker-compose e `.env.example`), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas), #16 (navbar e fonte do body), #22 (fluxo em etapas), #23 (modelo de página), #24 (auto-ajuste de fonte), #25 (templates T1 a T4), #26 (minizine e grampeado), #27 (trifold, Z, acordeão, gatefold e 16 páginas), #28 (frente e verso espelhado), #29 (marcas e margem de segurança).
 
 ### Fila de execução
 

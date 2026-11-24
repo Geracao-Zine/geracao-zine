@@ -10,6 +10,8 @@ import { SAFETY_MARGIN_OPTIONS } from "@/domain";
 type Props = {
 	format: ZineFormat;
 	printMode: PrintMode;
+	/** Verdadeiro quando a dobra obriga simplex ou duplex. */
+	printModeLocked: boolean;
 	marks: boolean;
 	/** Margem de seguranca em milimetros. */
 	safetyMargin: number;
@@ -26,6 +28,7 @@ type Props = {
 export default function PrintStep({
 	format,
 	printMode,
+	printModeLocked,
 	marks,
 	safetyMargin,
 	issues,
@@ -70,7 +73,11 @@ export default function PrintStep({
 
 			<section className="space-y-4">
 				<h2 className="font-semibold">Como vai imprimir</h2>
-				<PrintModeSelector value={printMode} onChange={onPrintModeChange} />
+				<PrintModeSelector
+					value={printMode}
+					locked={printModeLocked}
+					onChange={onPrintModeChange}
+				/>
 			</section>
 
 			<section className="space-y-4">

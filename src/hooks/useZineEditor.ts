@@ -39,7 +39,7 @@ import {
 } from "@/lib/draft-storage";
 import { downloadBlob } from "@/lib/download";
 import type { ZinePdfInput } from "@/lib/pdf";
-import { effectivePrintMode, generateZinePdf, mmToPt, templateFor } from "@/lib/pdf";
+import { forcedPrintMode, generateZinePdf, mmToPt, templateFor } from "@/lib/pdf";
 
 export type ZineEditor = {
 	/** Falso enquanto o rascunho salvo ainda nao foi lido do navegador. */
@@ -61,7 +61,10 @@ export type ZineEditor = {
 	formattedDate: string;
 	format: ZineFormat;
 	setFormat: (format: ZineFormat) => void;
+	/** Modo efetivo do PDF; nas dobras fixas ignora a escolha do autor. */
 	printMode: PrintMode;
+	/** Verdadeiro quando a dobra obriga simplex ou duplex. */
+	printModeLocked: boolean;
 	setPrintMode: (mode: PrintMode) => void;
 	/** Marcas de corte e dobra no PDF. */
 	marks: boolean;
@@ -137,6 +140,9 @@ export function useZineEditor(
 	const formattedDate = useMemo(() => formatIsoDate(cover.date), [cover.date]);
 	const issues = useMemo(() => draftIssues(draft), [draft]);
 	const diagrammable = useMemo(() => isDraftDiagrammable(draft), [draft]);
+	const template = templateFor(draft.format);
+	const forcedMode = template ? forcedPrintMode(template) : null;
+	const printMode = forcedMode ?? draft.printMode;
 
 	const setCoverField = (field: keyof Cover, value: string): void => {
 		update((current) => ({
@@ -238,7 +244,7 @@ export function useZineEditor(
 			authorFont: cover.authorFont,
 			date: formattedDate,
 			format: draft.format,
-			printMode: draft.printMode,
+			printMode,
 			marks: draft.marks,
 			safetyMarginMm: draft.safetyMargin,
 			poems: poems.map((poem) => ({
@@ -250,12 +256,7 @@ export function useZineEditor(
 		};
 
 		const bytes = await generateZinePdf(input);
-		const template = templateFor(draft.format);
-		const mode = template
-			? effectivePrintMode(template, draft.printMode)
-			: draft.printMode;
-
-		downloadBlob(bytes, `zine-${draft.format}-${mode}.pdf`);
+		downloadBlob(bytes, `zine-${draft.format}-${printMode}.pdf`);
 	};
 
 	const reset = (): void => {
@@ -280,7 +281,8 @@ export function useZineEditor(
 		formattedDate,
 		format: draft.format,
 		setFormat,
-		printMode: draft.printMode,
+		printMode,
+		printModeLocked: forcedMode !== null,
 		setPrintMode,
 		marks: draft.marks,
 		setMarks,

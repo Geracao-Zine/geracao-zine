@@ -127,19 +127,28 @@ export function mirrorFace(face: ImposedFace): ImposedFace {
         };
 }
 
-/** Modo de impressao que o template aceita: escolha do autor ou fixo. */
-export function effectivePrintMode(template: ImpositionTemplate, mode: PrintMode): PrintMode {
-        // Folha unica vira livrinho por corte: so tem um lado impresso.
+/**
+ * Modo que a imposicao obriga para o template, ou null quando o autor escolhe.
+ *
+ * A folha unica vira livrinho por corte e so tem um lado impresso. Cadernos e
+ * dobras de leitura precisam dos dois lados para a pagina seguinte cair no
+ * lugar certo depois de virar o papel.
+ */
+export function forcedPrintMode(template: ImpositionTemplate): PrintMode | null {
         if (template.imposition === "minizine") {
                 return "simplex";
         }
 
-        // Cadernos, tríptico, sanfona e folha unica precisam dos dois lados.
         if (template.imposition === "booklet" || template.imposition === "spread") {
                 return "duplex";
         }
 
-        return mode;
+        return null;
+}
+
+/** Modo de impressao que o template aceita: escolha do autor ou fixo. */
+export function effectivePrintMode(template: ImpositionTemplate, mode: PrintMode): PrintMode {
+        return forcedPrintMode(template) ?? mode;
 }
 
 /**
