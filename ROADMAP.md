@@ -207,6 +207,8 @@ Cada dobra é um template com: quantidade de painéis por face, ordem de leitura
 - [ ] 6.4.3 PDF em A4 real (595×842 pt) ou paisagem quando a dobra exigir, sem reescalonamento na impressão.
 - [ ] 6.4.4 Nome do arquivo gerado a partir do título e da data.
 - [ ] 6.4.5 Instruções de dobra e montagem incluídas como página final opcional do PDF.
+- [ ] 6.4.6 Opção de numerar as páginas no PDF, com campo para marcar ou desmarcar na etapa de impressão.
+- [ ] 6.4.7 Opção de girar a folha por tipo de dobra (vertical/horizontal), para imprimir na orientação oposta sem refazer a imposição.
 
 **Conclusão:** o autor completa o fluxo em etapas, escolhe qualquer dobra do catálogo, recebe um PDF que, impresso e dobrado, sai na ordem correta e com o texto sempre dentro da caixa.
 
