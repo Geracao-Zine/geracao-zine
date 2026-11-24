@@ -2,6 +2,7 @@
 
 import type { JSX } from "react";
 import { useEffect, useId, useMemo, useState } from "react";
+import PageCanvas from "@/components/PageCanvas";
 import type { PageImage, ZineFormat } from "@/domain";
 import { useImageUrl } from "@/hooks/useImageUrl";
 import type { FontId } from "@/lib/fonts";
@@ -27,6 +28,8 @@ type Props = {
 	safetyMargin: number;
 	/** Imagem desta sessao; os bytes existem apenas no navegador. */
 	image?: PageImage | null;
+	/** Habilita o canvas de selecao, arraste e redimensionamento. */
+	editable?: boolean;
 };
 
 // As fontes vivem em globals.css apontando para os mesmos TTF que o PDF embute.
@@ -55,6 +58,7 @@ export default function PoemPreview({
 	format,
 	safetyMargin,
 	image = null,
+	editable = false,
 }: Props): JSX.Element {
 	// A fonte carregada vem junto com o id: quando o autor troca de fonte, o
 	// id deixa de bater e o preview volta ao estado de carregamento sem
@@ -82,6 +86,12 @@ export default function PoemPreview({
 	}, [font]);
 
 	const fonts = loaded?.id === font ? loaded.fonts : null;
+	const [editState, setEditState] = useState<{
+		source: PanelLayout[];
+		pages: PanelLayout[];
+	} | null>(null);
+	const [selected, setSelected] = useState<number | null>(null);
+	const [editing, setEditing] = useState(false);
 
 	const painel = useMemo(() => previewPanelFor(format), [format]);
 	const imageUrl = useImageUrl(image?.assetId ?? null);
@@ -100,6 +110,7 @@ export default function PoemPreview({
 				: [],
 		[fonts, painel, safetyMargin, title, subtitle, date, body, image]
 	);
+	const shown = editState?.source === pages ? editState.pages : pages;
 
 	if (!fonts) {
 		return (
@@ -109,79 +120,115 @@ export default function PoemPreview({
 
 	return (
 		<div className="space-y-4">
-			{pages.map((page, index) => (
-				<figure key={index} className="space-y-1">
-					<svg
-						viewBox={`0 0 ${painel.width} ${painel.height}`}
-						role="img"
-						aria-label={`Pré-visualização da página ${index + 1}`}
-						className="w-full rounded-lg border border-zinc-300 bg-white"
+			{editable ? (
+				<div className="flex justify-end">
+					<button
+						type="button"
+						onClick={() => {
+							setEditState({ source: pages, pages });
+							setEditing((current) => !current);
+						}}
+						className="rounded-full border border-zinc-300 px-4 py-1 text-sm font-semibold hover:border-[var(--purple)] cursor-pointer dark:border-zinc-700"
 					>
-                                                {panelDrawables(page).map((item, itemIndex) => {
-                                                        if (item.kind === "image") {
-                                                                if (!imageUrl) {
-                                                                        return null;
-                                                                }
+						{editing ? "Concluir ajustes" : "Ajustar posições"}
+					</button>
+				</div>
+			) : null}
 
-                                                                const recorte = `recorte-${recorteId}-${index}-${itemIndex}`;
+			{shown.map((page, index) => (
+				<figure key={index} className="space-y-1">
+					{editing ? (
+						<PageCanvas
+							layout={page}
+							selected={selected}
+							onSelect={setSelected}
+							onChange={(next) =>
+								setEditState((current) => {
+									const base = current?.source === pages ? current.pages : pages;
 
-                                                                return (
-                                                                        <g key={`image-${itemIndex}`}>
-                                                                                <defs>
-                                                                                        {/* Mesma faixa que o PDF recorta: ampliar na tela mostra o
-                                                                                                mesmo enquadramento que sai na impressao. */}
-                                                                                        <clipPath id={recorte}>
-                                                                                                <rect
-                                                                                                        x={item.clipX}
-                                                                                                        y={item.clipY}
-                                                                                                        width={item.clipWidth}
-                                                                                                        height={item.clipHeight}
-                                                                                                />
-                                                                                        </clipPath>
-                                                                                </defs>
-                                                                                <image
-                                                                                        href={imageUrl}
-                                                                                        x={item.x}
-                                                                                        y={item.y}
-                                                                                        width={item.width}
-                                                                                        height={item.height}
-                                                                                        preserveAspectRatio="none"
-                                                                                        clipPath={`url(#${recorte})`}
-                                                                                />
-                                                                        </g>
-                                                                );
-                                                        }
+									return {
+										source: pages,
+										pages: base.map((item, itemIndex) =>
+											itemIndex === index ? next : item
+										),
+									};
+								})
+							}
+							resolveImage={() => imageUrl}
+						/>
+					) : (
+						<svg
+							viewBox={`0 0 ${painel.width} ${painel.height}`}
+							role="img"
+							aria-label={`Pré-visualização da página ${index + 1}`}
+							className="w-full rounded-lg border border-zinc-300 bg-white"
+						>
+	                                                {panelDrawables(page).map((item, itemIndex) => {
+	                                                        if (item.kind === "image") {
+	                                                                if (!imageUrl) {
+	                                                                        return null;
+	                                                                }
 
-                                                        if (item.kind === "rule") {
-                                                                return (
-                                                                        <line
-                                                                                key={`rule-${itemIndex}`}
-                                                                                x1={item.x1}
-                                                                                x2={item.x2}
-                                                                                y1={item.y1}
-                                                                                y2={item.y2}
-                                                                                stroke={gray(item.color)}
-                                                                                strokeWidth={item.thickness}
-                                                                        />
-                                                                );
-                                                        }
+	                                                                const recorte = `recorte-${recorteId}-${index}-${itemIndex}`;
 
-                                                        return (
-                                                                <text
-                                                                        key={`text-${itemIndex}`}
-                                                                        x={item.x}
-                                                                        y={item.y}
-                                                                        fontFamily={FAMILY[item.font ?? font]}
-                                                                        fontWeight={item.role === "title" ? 700 : 400}
-                                                                        fontSize={item.size}
-                                                                        fill={gray(item.color)}
-                                                                        xmlSpace="preserve"
-                                                                >
-                                                                        {item.text}
-                                                                </text>
-                                                        );
-                                                })}
-                                        </svg>
+	                                                                return (
+	                                                                        <g key={`image-${itemIndex}`}>
+	                                                                                <defs>
+	                                                                                        {/* Mesma faixa que o PDF recorta: ampliar na tela mostra o
+	                                                                                                mesmo enquadramento que sai na impressao. */}
+	                                                                                        <clipPath id={recorte}>
+	                                                                                                <rect
+	                                                                                                        x={item.clipX}
+	                                                                                                        y={item.clipY}
+	                                                                                                        width={item.clipWidth}
+	                                                                                                        height={item.clipHeight}
+	                                                                                                />
+	                                                                                        </clipPath>
+	                                                                                </defs>
+	                                                                                <image
+	                                                                                        href={imageUrl}
+	                                                                                        x={item.x}
+	                                                                                        y={item.y}
+	                                                                                        width={item.width}
+	                                                                                        height={item.height}
+	                                                                                        preserveAspectRatio="none"
+	                                                                                        clipPath={`url(#${recorte})`}
+	                                                                                />
+	                                                                        </g>
+	                                                                );
+	                                                        }
+
+	                                                        if (item.kind === "rule") {
+	                                                                return (
+	                                                                        <line
+	                                                                                key={`rule-${itemIndex}`}
+	                                                                                x1={item.x1}
+	                                                                                x2={item.x2}
+	                                                                                y1={item.y1}
+	                                                                                y2={item.y2}
+	                                                                                stroke={gray(item.color)}
+	                                                                                strokeWidth={item.thickness}
+	                                                                        />
+	                                                                );
+	                                                        }
+
+	                                                        return (
+	                                                                <text
+	                                                                        key={`text-${itemIndex}`}
+	                                                                        x={item.x}
+	                                                                        y={item.y}
+	                                                                        fontFamily={FAMILY[item.font ?? font]}
+	                                                                        fontWeight={item.role === "title" ? 700 : 400}
+	                                                                        fontSize={item.size}
+	                                                                        fill={gray(item.color)}
+	                                                                        xmlSpace="preserve"
+	                                                                >
+	                                                                        {item.text}
+	                                                                </text>
+	                                                        );
+	                                                })}
+	                                        </svg>
+					)}
 					<figcaption className="text-center text-xs text-zinc-400">
 						{index === 0 ? "Página 1" : `Continuação ${index}`}
 					</figcaption>
