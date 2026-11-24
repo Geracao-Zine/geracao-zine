@@ -111,6 +111,7 @@ export default function ZineWizard({
 							<PrintStep
 								format={editor.format}
 								printMode={editor.printMode}
+								printModeLocked={editor.printModeLocked}
 								marks={editor.marks}
 								safetyMargin={editor.safetyMargin}
 								issues={editor.issues}

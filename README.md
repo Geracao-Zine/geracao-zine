@@ -113,7 +113,7 @@ O objetivo do fluxo é pedir pouca informação por vez, permitindo que o autor 
 1. **Capa e autoria** — título do zine, nome do autor e escolha de fontes.
 2. **Poesias** — cadastro gradual: cada poesia tem título, subtítulo, data e texto, todos opcionais exceto o texto. O autor adiciona, edita, reordena e remove quando quiser.
 3. **Revisão** — conferência do conteúdo e das pendências antes de diagramar.
-4. **Dobra e impressão** — escolha do modelo de dobra, opção de apenas frente ou frente e verso, marcas de corte e dobra, margem de segurança e download do PDF.
+4. **Dobra e impressão** — escolha do modelo de dobra, opção de apenas frente ou frente e verso, marcas de corte e dobra, margem de segurança e download do PDF. Nas dobras que exigem um modo fixo, o seletor mostra o modo efetivo e fica travado: o minizine sai só frente; cadernos e dobras de leitura saem frente e verso.
 
 O rascunho é salvo no navegador (`localStorage`, chave `geracao-zine:draft`) a cada alteração, junto com a etapa atual. Recarregar a página, trocar de etapa ou abrir o link antigo `/Editor?coverTitle=...` não perde o que já foi escrito: um rascunho salvo sempre tem prioridade sobre os parâmetros da URL.
 

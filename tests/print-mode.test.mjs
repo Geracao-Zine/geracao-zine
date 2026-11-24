@@ -90,3 +90,33 @@ test("o seletor desenha os dois modos e marca o escolhido", () => {
         assert.match(fonte, /PRINT_MODES\.map/, "o seletor deve listar os modos do dominio");
         assert.match(fonte, /aria-pressed=\{selected\}/, "o modo atual precisa ficar acessivel");
 });
+
+const { forcedPrintMode } = await import("../src/lib/pdf/imposition.ts");
+const { TEMPLATES } = await import("../src/lib/pdf/templates.ts");
+
+test("cada dobra declara o modo que a imposicao obriga", () => {
+        assert.equal(forcedPrintMode(TEMPLATES["banner-a4"]), null);
+        assert.equal(forcedPrintMode(TEMPLATES["trifold"]), "duplex");
+        assert.equal(forcedPrintMode(TEMPLATES["saddle-stitch"]), "duplex");
+        assert.equal(forcedPrintMode(TEMPLATES["folio-unico"]), "duplex");
+        assert.equal(forcedPrintMode(TEMPLATES["mini-zine"]), "simplex");
+        assert.equal(forcedPrintMode(TEMPLATES["mini-zine-16"]), "simplex");
+});
+
+test("o seletor trava quando a dobra obriga um modo", () => {
+        const seletor = ler("src/components/PrintModeSelector/index.tsx");
+        assert.match(seletor, /locked = false/);
+        assert.match(seletor, /disabled=\{locked\}/);
+        assert.match(seletor, /O PDF já sai assim/);
+
+        const passo = ler("src/components/ZineWizard/steps/PrintStep.tsx");
+        assert.match(passo, /printModeLocked/);
+        assert.match(passo, /locked=\{printModeLocked\}/);
+
+        const wizard = ler("src/components/ZineWizard/index.tsx");
+        assert.match(wizard, /printModeLocked=\{editor\.printModeLocked\}/);
+
+        const hook = ler("src/hooks/useZineEditor.ts");
+        assert.match(hook, /forcedPrintMode/);
+        assert.match(hook, /printModeLocked/);
+});

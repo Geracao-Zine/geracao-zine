@@ -1,6 +1,7 @@
 export { generateZinePdf } from "./zine.ts";
 export {
 	effectivePrintMode,
+	forcedPrintMode,
 	imposePoems,
 	imposeSheets,
 	mirrorFace,
