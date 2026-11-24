@@ -14,6 +14,8 @@ import type {
 	ZineStep,
 } from "@/domain";
 import {
+	EMPTY_IMAGE_OFFSET,
+	EMPTY_IMAGE_SCALE,
 	STEPS,
 	addPage,
 	canEnterStep,
@@ -38,6 +40,9 @@ import {
 	saveDraft,
 } from "@/lib/draft-storage";
 import { downloadBlob } from "@/lib/download";
+import { naturalSize } from "@/lib/image-file";
+import { imageBytesFor, putImage } from "@/lib/image-store";
+import type { PageImage } from "@/domain";
 import type { ZinePdfInput } from "@/lib/pdf";
 import { forcedPrintMode, generateZinePdf, mmToPt, templateFor } from "@/lib/pdf";
 
@@ -75,6 +80,10 @@ export type ZineEditor = {
 	/** A mesma margem em pontos, para o preview medir igual ao PDF. */
 	safetyMarginPt: number;
 	changeField: (id: string, field: PageField, value: string) => void;
+	/** Imagem de cada poema, so em memoria: nao vai para o rascunho. */
+	images: Record<string, PageImage>;
+	setPoemImage: (id: string, file: File) => Promise<void>;
+	clearPoemImage: (id: string) => void;
 	addPoem: () => void;
 	removePoem: (id: string) => void;
 	movePoem: (id: string, direction: -1 | 1) => void;
@@ -102,6 +111,9 @@ export function useZineEditor(
 		return seedCover ? { ...base, cover: seedCover } : base;
 	});
 	const [ready, setReady] = useState(false);
+	// Imagens vivem fora do rascunho: nao sao serializadas e somem ao
+	// recarregar. O rascunho guarda so o que e texto.
+	const [images, setImages] = useState<Record<string, PageImage>>({});
 	const storage = useRef<ReturnType<typeof browserStorage> | null>(null);
 
 	useEffect(() => {
@@ -199,6 +211,45 @@ export function useZineEditor(
 		});
 	};
 
+	/**
+	 * Le o arquivo para a memoria da sessao e associa a imagem ao poema.
+	 *
+	 * O tamanho natural e lido do proprio arquivo, porque o layout precisa
+	 * dele para encaixar sem esticar. Arquivo invalido nao mexe no estado.
+	 */
+	const setPoemImage = async (id: string, file: File): Promise<void> => {
+		const bytes = new Uint8Array(await file.arrayBuffer());
+		const tamanho = naturalSize(bytes);
+
+		if (!tamanho) {
+			alert("Não foi possível ler a imagem. Use PNG ou JPEG.");
+			return;
+		}
+
+		const assetId = putImage(bytes, file.type);
+
+		setImages((prev) => ({
+			...prev,
+			[id]: {
+				assetId,
+				naturalWidth: tamanho.width,
+				naturalHeight: tamanho.height,
+				scale: EMPTY_IMAGE_SCALE,
+				offsetX: EMPTY_IMAGE_OFFSET,
+				offsetY: EMPTY_IMAGE_OFFSET,
+			},
+		}));
+	};
+
+	const clearPoemImage = (id: string): void => {
+		setImages((prev) => {
+			const next = { ...prev };
+			delete next[id];
+
+			return next;
+		});
+	};
+
 	const changeField = (id: string, field: PageField, value: string): void => {
 		update((current) => ({
 			...current,
@@ -252,7 +303,9 @@ export function useZineEditor(
 				subtitle: poem.subtitle,
 				date: formatIsoDate(poem.date),
 				body: poem.body,
+				image: images[poem.id] ?? null,
 			})),
+			images: imageBytesFor(images),
 		};
 
 		const bytes = await generateZinePdf(input);
@@ -290,6 +343,9 @@ export function useZineEditor(
 		setSafetyMargin,
 		safetyMarginPt: mmToPt(draft.safetyMargin),
 		changeField,
+		images,
+		setPoemImage,
+		clearPoemImage,
 		addPoem,
 		removePoem,
 		movePoem,

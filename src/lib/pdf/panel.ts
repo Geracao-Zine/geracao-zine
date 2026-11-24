@@ -1,10 +1,14 @@
 import type { PDFFont } from "pdf-lib";
+import type { PageImage } from "../../domain/image.ts";
 import type { PageFields } from "../../domain/page.ts";
 import { wrapText } from "../wrap-text.ts";
 import { fitBody } from "./fit-body.ts";
 import type { BodyMetrics } from "./fit-body.ts";
+import { imageRect } from "./image-layout.ts";
+import type { ImageBox } from "./image-layout.ts";
 import type {
 	PanelElement,
+	PanelImageElement,
 	PanelLayout,
 	PanelRole,
 	PanelRuleElement,
@@ -12,6 +16,7 @@ import type {
 } from "./panel-elements.ts";
 import {
 	A4_CONTENT_WIDTH,
+	IMAGE_BAND_RATIO,
 	PANEL_HEIGHT,
 	POEM_BLANK_LINE_RATIO,
 	POEM_BODY_COLOR,
@@ -25,6 +30,7 @@ import {
 	POEM_DIVIDER_THICKNESS,
 	POEM_GAP_AFTER_DATE,
 	POEM_GAP_AFTER_HEADER,
+	POEM_GAP_AFTER_IMAGE,
 	POEM_GAP_AFTER_SUBTITLE,
 	POEM_GAP_AFTER_TITLE,
 	POEM_LINE_HEIGHT_RATIO,
@@ -83,7 +89,23 @@ export type PanelPageLayout = {
 	bodySize: number;
 	/** Distancia da borda do painel ate a caixa de conteudo, em pontos. */
 	inset: number;
+	/**
+	 * Retangulo da imagem, medido do canto superior esquerdo do painel, ou
+	 * null quando a pagina nao tem imagem. Preview e PDF desenham daqui,
+	 * para a tela nao divergir da impressao. O `assetId` aponta os bytes no
+	 * store em memoria.
+	 */
+	image: PanelImage | null;
+	/**
+	 * Caixa onde a imagem pode aparecer: o painel menos a margem, com a
+	 * altura da faixa reservada. O recorte usa esta caixa, senao a imagem
+	 * ampliada invadiria o texto.
+	 */
+	imageBox: ImageBox | null;
 };
+
+	/** Retangulo de desenho da imagem mais o `assetId` que resolve os bytes. */
+	export type PanelImage = { x: number; y: number; width: number; height: number; assetId: string };
 
 type Block = {
 	role: PanelRole;
@@ -123,32 +145,67 @@ export function layoutPanelElements(
 	fonts: PanelFonts,
 	panelHeight: number = PANEL_HEIGHT,
 	width: number = A4_CONTENT_WIDTH,
-	inset = 0
+	inset = 0,
+	image: PageImage | null = null
 ): PanelLayout[] {
 	const contentWidth = Math.max(1, width - inset * 2);
 	const contentHeight = Math.max(1, panelHeight - inset * 2);
+	// A imagem reserva uma faixa no topo e o texto fica com o resto. Sem
+	// imagem a faixa nao existe e o layout e exatamente o de antes.
+	const imageBox: ImageBox = { width: contentWidth, height: contentHeight * IMAGE_BAND_RATIO };
+	const band = imageBand(image, imageBox);
+	const textTop = band ? band.height + POEM_GAP_AFTER_IMAGE : 0;
+	const textHeight = contentHeight - textTop;
 	const header = headerBlocks(page, fonts, contentWidth);
 	const placed = placeHeader(header);
-	const metrics = bodyMetrics(page.body, fonts.body, contentWidth, contentHeight - placed.cursor);
+	const metrics = bodyMetrics(page.body, fonts.body, contentWidth, textHeight - placed.cursor);
 	const layouts: PanelLayout[] = [];
 	let remaining = metrics.lines;
 	let blocks = header;
 
+	let first = true;
+
 	do {
+		// A imagem pertence ao painel, nao a continuacao: aparece uma vez,
+		// na primeira pagina, e as continuacoes usam a altura inteira.
+		const offset = first ? textTop : 0;
+		const pageHeight = first ? textHeight : contentHeight;
 		const pageHeader = placeHeader(blocks);
-		const body = fitBodyLines(remaining, pageHeader.cursor, contentHeight, metrics);
+		const body = fitBodyLines(remaining, pageHeader.cursor, pageHeight, metrics);
 		const divider = pageHeader.runs.length > 0
 			? pageHeader.cursor - POEM_GAP_AFTER_HEADER / 2
 			: null;
 		const elements: PanelElement[] = [];
 		let z = 0;
 
+		// A imagem sai primeiro: se as duas areas encostarem, o texto fica por
+		// cima, como no preview.
+		if (first && band) {
+			elements.push({
+				type: "image",
+				rect: {
+					x: inset + band.x,
+					y: inset + band.y,
+					width: band.width,
+					height: band.height,
+				},
+				clip: {
+					x: inset,
+					y: inset,
+					width: imageBox.width,
+					height: imageBox.height,
+				},
+				content: { assetId: band.assetId },
+				z: z++,
+			});
+		}
+
 		if (divider !== null) {
 			elements.push({
 				type: "rule",
 				rect: {
 					x: inset,
-					y: inset + divider - POEM_DIVIDER_THICKNESS / 2,
+					y: inset + offset + divider - POEM_DIVIDER_THICKNESS / 2,
 					width: contentWidth,
 					height: POEM_DIVIDER_THICKNESS,
 				},
@@ -165,7 +222,7 @@ export function layoutPanelElements(
 				type: "text",
 				rect: {
 					x: inset,
-					y: inset + block.top,
+					y: inset + offset + block.top,
 					width: contentWidth,
 					height: block.height,
 				},
@@ -175,7 +232,7 @@ export function layoutPanelElements(
 					color: block.color,
 					lines: block.lines.map((line) => ({
 						text: line.text,
-						baseline: line.baseline + inset,
+						baseline: line.baseline + inset + offset,
 					})),
 				},
 				z: z++,
@@ -186,9 +243,9 @@ export function layoutPanelElements(
 			type: "text",
 			rect: {
 				x: inset,
-				y: inset + pageHeader.cursor,
+				y: inset + offset + pageHeader.cursor,
 				width: contentWidth,
-				height: contentHeight - pageHeader.cursor,
+				height: pageHeight - pageHeader.cursor,
 			},
 			content: {
 				role: "body",
@@ -196,15 +253,15 @@ export function layoutPanelElements(
 				color: POEM_BODY_COLOR,
 				lines: body.lines.map((line) => ({
 					text: line.text,
-					baseline: line.baseline + inset,
+					baseline: line.baseline + inset + offset,
 				})),
 			},
 			z: z++,
 		});
-
 		layouts.push({ width, height: panelHeight, elements });
 		remaining = body.overflow;
 		blocks = continuationBlocks();
+		first = false;
 	} while (remaining.length > 0);
 
 	return layouts;
@@ -248,6 +305,10 @@ export function toPanelPageLayout(layout: PanelLayout, inset = 0): PanelPageLayo
 		(element): element is PanelRuleElement => element.type === "rule"
 	);
 
+	const imagem = ordered.find(
+		(element): element is PanelImageElement => element.type === "image"
+	);
+
 	return {
 		runs,
 		box: { top: body.rect.y - inset, height: body.rect.height },
@@ -260,6 +321,18 @@ export function toPanelPageLayout(layout: PanelLayout, inset = 0): PanelPageLayo
 		divider: rule ? rule.rect.y - inset + rule.rect.height / 2 : null,
 		bodySize: body.content.size,
 		inset,
+		image: imagem
+			? {
+				x: imagem.rect.x - inset,
+				y: imagem.rect.y - inset,
+				width: imagem.rect.width,
+				height: imagem.rect.height,
+				assetId: imagem.content.assetId,
+			}
+			: null,
+		imageBox: imagem
+			? { width: imagem.clip.width, height: imagem.clip.height }
+			: null,
 	};
 }
 
@@ -273,11 +346,30 @@ export function layoutPanel(
 	fonts: PanelFonts,
 	panelHeight: number = PANEL_HEIGHT,
 	width: number = A4_CONTENT_WIDTH,
-	inset = 0
+	inset = 0,
+	image: PageImage | null = null
 ): PanelPageLayout[] {
-	return layoutPanelElements(page, fonts, panelHeight, width, inset).map((layout) =>
+	return layoutPanelElements(page, fonts, panelHeight, width, inset, image).map((layout) =>
 		toPanelPageLayout(layout, inset)
 	);
+}
+
+/**
+ * Faixa reservada para a imagem no topo do painel, ou null quando nao ha
+ * imagem desenhavel.
+ *
+ * A altura vem do painel, nao do tamanho do arquivo: assim o texto comeca no
+ * mesmo lugar com ou sem imagem, e o autor nao ve o corpo da fonte mudar ao
+ * trocar de foto.
+ */
+function imageBand(image: PageImage | null, box: ImageBox): PanelImage | null {
+	if (!image) {
+		return null;
+	}
+
+	const rect = imageRect(image, box);
+
+	return rect ? { ...rect, assetId: image.assetId } : null;
 }
 
 function bodyMetrics(

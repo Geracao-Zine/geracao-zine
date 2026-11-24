@@ -50,7 +50,17 @@ export type PanelRuleElement = {
         z: number;
 };
 
-export type PanelElement = PanelTextElement | PanelRuleElement;
+export type PanelImageElement = {
+        type: "image";
+        rect: PanelRect;
+        /** Faixa reservada no topo do painel: o desenho nunca passa daqui. */
+        clip: PanelRect;
+        content: { assetId: string };
+        /** Ordem de empilhamento: valores menores sao desenhados primeiro. */
+        z: number;
+};
+
+export type PanelElement = PanelTextElement | PanelRuleElement | PanelImageElement;
 
 export type PanelLayout = {
         width: number;

@@ -1,5 +1,6 @@
 import type { JSX } from "react";
-import type { PageField } from "@/domain";
+import type { PageField, PageImage } from "@/domain";
+import { useImageUrl } from "@/hooks/useImageUrl";
 
 type Props = {
 	id: string;
@@ -11,6 +12,10 @@ type Props = {
 	canMoveUp: boolean;
 	canMoveDown: boolean;
 	onChange: (id: string, field: PageField, value: string) => void;
+	/** Imagem do painel, ou null quando a pagina e so texto. */
+	image: PageImage | null;
+	onImageChange: (id: string, file: File) => void;
+	onImageClear: (id: string) => void;
 	onMove: (id: string, direction: -1 | 1) => void;
 	onRemove: (id: string) => void;
 };
@@ -29,7 +34,12 @@ export default function PoemCard({
 	onChange,
 	onMove,
 	onRemove,
+	image,
+	onImageChange,
+	onImageClear,
 }: Props): JSX.Element {
+	const thumbnail = useImageUrl(image?.assetId ?? null);
+
 	return (
 		<article className="bg-white dark:bg-zinc-900 shadow-xl rounded-2xl aspect-[3/4] border border-zinc-200 dark:border-zinc-800 flex flex-col p-6 relative">
 			<div className="absolute top-3 right-3 flex items-center gap-1">
@@ -107,7 +117,52 @@ export default function PoemCard({
 				className={`flex-1 resize-none text-sm leading-relaxed ${FIELD_CLASS}`}
 			/>
 
-			<div className="text-center text-xs text-zinc-400 mt-4">{position}</div>
+			<div className="flex items-center gap-2 mt-3">
+			<label
+				htmlFor={`poem-image-${id}`}
+				className="text-xs text-zinc-500 hover:text-purple-600 transition cursor-pointer"
+			>
+				{image ? "Trocar imagem" : "Adicionar imagem"}
+			</label>
+			<input
+				id={`poem-image-${id}`}
+				type="file"
+				accept="image/png,image/jpeg"
+				className="sr-only"
+				onChange={(e) => {
+					const file = e.target.files?.[0];
+
+					if (file) {
+						onImageChange(id, file);
+					}
+
+					// Limpa a selecao para o mesmo arquivo poder ser escolhido de novo.
+					e.target.value = "";
+				}}
+			/>
+
+			{/* Miniatura decorativa: os bytes sao um blob local e o `next/image`
+			    nao teria o que otimizar, so um carregador a mais. */}
+			{image && thumbnail ? (
+				<>
+				<div
+					aria-hidden="true"
+					className="h-8 w-8 rounded border border-zinc-200 dark:border-zinc-700 bg-cover bg-center"
+					style={{ backgroundImage: `url(${thumbnail})` }}
+				/>
+				<button
+					type="button"
+					onClick={() => onImageClear(id)}
+					aria-label={`Remover a imagem da página ${position}`}
+					className="text-xs text-zinc-400 hover:text-red-500 transition cursor-pointer"
+				>
+					Remover imagem
+				</button>
+				</>
+			) : null}
+		</div>
+
+		<div className="text-center text-xs text-zinc-400 mt-4">{position}</div>
 		</article>
 	);
 }

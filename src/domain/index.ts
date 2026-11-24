@@ -1,4 +1,11 @@
 export type { PageField, PageFields } from "./page.ts";
+export type { PageImage } from "./image.ts";
+export {
+	EMPTY_IMAGE_OFFSET,
+	EMPTY_IMAGE_SCALE,
+	hasDrawableSize,
+	pageImageFrom,
+} from "./image.ts";
 export { EMPTY_PAGE_FIELDS, pageFieldsFrom } from "./page.ts";
 export type { CoverPage, PoemPage, ZinePage, ZineDoc } from "./zine.ts";
 export {

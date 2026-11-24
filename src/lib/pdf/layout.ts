@@ -99,3 +99,16 @@ export const PT_PER_MM = 72 / 25.4;
 export function mmToPt(mm: number): number {
         return mm * PT_PER_MM;
 }
+
+// Imagem no painel: o recorte acompanha a margem de seguranca, entao a imagem
+// nunca e cortada pela guilhotina nem invade a area do texto.
+// Ampliacao maxima sobre o encaixe que cabe no painel. Passar disso so
+// acrescenta pixel borrado na impressao, sem ganhar enquadramento.
+export const IMAGE_MAX_SCALE = 8;
+
+// Faixa da imagem no topo do painel, como fracao da altura util. O texto ocupa
+// o resto, com o mesmo corpo em todas as paginas, entao a imagem nao muda a
+// fonte escolhida pela bissecao.
+export const IMAGE_BAND_RATIO = 0.4;
+// Folga entre a imagem e o cabecalho, para o titulo nao encostar na imagem.
+export const POEM_GAP_AFTER_IMAGE = 14;

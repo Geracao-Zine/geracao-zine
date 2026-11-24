@@ -86,6 +86,9 @@ export default function ZineWizard({
 								onAdd={editor.addPoem}
 								onMove={editor.movePoem}
 								onRemove={askRemove}
+								images={editor.images}
+								onImageChange={editor.setPoemImage}
+								onImageClear={editor.clearPoemImage}
 							/>
 						) : null}
 
@@ -104,6 +107,9 @@ export default function ZineWizard({
 								onMove={editor.movePoem}
 								onRemove={askRemove}
 								onGoTo={editor.goToStep}
+								images={editor.images}
+								onImageChange={editor.setPoemImage}
+								onImageClear={editor.clearPoemImage}
 							/>
 						) : null}
 
