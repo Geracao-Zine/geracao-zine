@@ -25,5 +25,41 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  zines Zine[]
+
   @@map("users")
+}
+
+/// Quem pode ver um zine.
+///
+/// O padrao e `private`: publicar e uma acao explicita do autor, nunca o
+/// resultado de esquecer de escolher.
+enum ZineVisibility {
+  private
+  public
+}
+
+/// Zine guardado na conta.
+///
+/// `content` recebe o mesmo JSON do rascunho de `localStorage`, entao o
+/// editor nao precisa de duas representacoes. `contentVersion` acompanha
+/// `DRAFT_VERSION`: sem ele, um JSON antigo so pode ser interpretado
+/// adivinhando a forma, e migrar depois exige inspecionar cada linha.
+model Zine {
+  id             String         @id @default(uuid()) @db.Uuid
+  ownerId        String         @db.Uuid
+  title          String
+  visibility     ZineVisibility @default(private)
+  content        Json
+  contentVersion Int            @default(1)
+  /// Identificador curto da URL publica. Nulo enquanto o zine e privado.
+  slug           String?        @unique
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([visibility, updatedAt])
+  @@map("zines")
 }
