@@ -1,5 +1,6 @@
 import type { PageFields } from "./page.ts";
 import { EMPTY_PAGE_FIELDS } from "./page.ts";
+import type { TextBlock } from "./text-block.ts";
 
 export type CoverPage = {
 	id: string;
@@ -13,6 +14,8 @@ export type CoverPage = {
 export type PoemPage = PageFields & {
 	id: string;
 	kind: "poem";
+	/** Blocos posicionados; ausentes usam o layout algoritmico. */
+	blocks?: TextBlock[];
 };
 
 export type ZinePage = CoverPage | PoemPage;

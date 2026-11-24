@@ -7,7 +7,11 @@
  * consumindo `PanelPageLayout`, que e derivado dela.
  */
 
+import type { FontId } from "../fonts.ts";
+
 export type PanelRole = "title" | "subtitle" | "date" | "body" | "label";
+
+export type TextAlign = "left" | "center" | "right";
 
 export type PanelRect = {
         x: number;
@@ -26,6 +30,9 @@ export type PanelTextContent = {
         role: PanelRole;
         size: number;
         color: number;
+        align: TextAlign;
+        /** Fonte do bloco; ausente no layout algoritmico, que resolve pelo papel. */
+        font?: FontId;
         lines: PanelTextLine[];
 };
 
