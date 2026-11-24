@@ -131,7 +131,7 @@ test("o tipo posicionado aceita elementos sem PageFields", () => {
                                         size: 12,
                                         color: 0,
                                         align: "left",
-                                        lines: [{ text: "linha", baseline: 12 }],
+                                        lines: [{ text: "linha", x: 0, baseline: 12 }],
                                 },
                                 z: 1,
                         },

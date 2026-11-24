@@ -14,6 +14,7 @@ import type {
 	PanelRuleElement,
 	PanelTextElement,
 } from "./panel-elements.ts";
+import { orderedPanelElements } from "./panel-elements.ts";
 import {
 	A4_CONTENT_WIDTH,
 	IMAGE_BAND_RATIO,
@@ -235,6 +236,7 @@ export function layoutPanelElements(
 					align: "left",
 					lines: block.lines.map((line) => ({
 						text: line.text,
+						x: inset,
 						baseline: line.baseline + inset + offset,
 					})),
 				},
@@ -257,12 +259,13 @@ export function layoutPanelElements(
 				align: "left",
 				lines: body.lines.map((line) => ({
 					text: line.text,
+					x: inset,
 					baseline: line.baseline + inset + offset,
 				})),
 			},
 			z: z++,
 		});
-		layouts.push({ width, height: panelHeight, elements });
+		layouts.push({ width, height: panelHeight, inset, elements });
 		remaining = body.overflow;
 		blocks = continuationBlocks();
 		first = false;
@@ -272,8 +275,11 @@ export function layoutPanelElements(
 }
 
 /** Converte a representacao posicionada para o contrato do preview e do PDF. */
-export function toPanelPageLayout(layout: PanelLayout, inset = 0): PanelPageLayout {
-	const ordered = [...layout.elements].sort((a, b) => a.z - b.z);
+export function toPanelPageLayout(
+	layout: PanelLayout,
+	inset = layout.inset ?? 0
+): PanelPageLayout {
+	const ordered = orderedPanelElements(layout);
 	const runs: PanelRun[] = [];
 
 	for (const element of ordered) {

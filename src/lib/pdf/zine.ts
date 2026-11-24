@@ -11,13 +11,13 @@ import {
         MARK_OFFSET,
         MARK_OFFSET_RATIO,
         MARK_THICKNESS,
-        POEM_DIVIDER_COLOR,
-        POEM_DIVIDER_THICKNESS,
         mmToPt,
 } from "./layout.ts";
 import { markLines } from "./marks.ts";
-import { layoutPanel } from "./panel.ts";
-import type { PanelFonts, PanelPageLayout, PanelRun } from "./panel.ts";
+import { layoutPanelElements } from "./panel.ts";
+import type { PanelFonts, PanelLayout } from "./panel.ts";
+import { panelDrawables } from "./panel-render.ts";
+import type { PanelTextDrawable } from "./panel-render.ts";
 import { panelFontsFrom } from "./panel-fonts.ts";
 import { panelSize, templateFor } from "./templates.ts";
 import type { ImpositionTemplate } from "./templates.ts";
@@ -96,7 +96,7 @@ export async function generateZinePdf(input: ZinePdfInput): Promise<Uint8Array> 
         const inset = mmToPt(input.safetyMarginMm ?? 0);
         const cover = coverPanel(template, input, coverFonts, inset);
         const sheets = imposeZine({ template, poems: input.poems, fonts, mode, cover, inset });
-        const fontsFor = (layout: PanelPageLayout): PanelFonts =>
+        const fontsFor = (layout: PanelLayout): PanelFonts =>
                 layout === cover ? coverFonts : fonts;
         const images = await embedImages(pdfDoc, sheets, input.images);
 
@@ -188,10 +188,10 @@ function coverPanel(
         input: ZinePdfInput,
         fonts: PanelFonts,
         inset: number
-): PanelPageLayout {
+): PanelLayout {
         const panel = panelSize(template);
 
-        return layoutPanel(
+        return layoutPanelElements(
                 {
                         title: input.coverTitle,
                         subtitle: input.authorName,
@@ -215,13 +215,13 @@ function coverPanel(
 function drawFace(
         page: PDFPage,
         face: ImposedFace,
-        fontsFor: (layout: PanelPageLayout) => PanelFonts,
+        fontsFor: (layout: PanelLayout) => PanelFonts,
         rgb: Rgb,
         degrees: (angle: number) => ReturnType<typeof import("pdf-lib").degrees>,
         images: ReadonlyMap<string, PDFImage>,
         imageOperators: ImageOperators
 ): void {
-        face.panels.forEach((layout, index) => {
+        face.layouts.forEach((layout, index) => {
                 if (!layout) {
                         return;
                 }
@@ -232,53 +232,58 @@ function drawFace(
                 const rotated = angle !== 0;
                 const centerX = slot.x + slot.width / 2;
                 const centerY = slot.y + slot.height / 2;
+                const inset = layout.inset ?? 0;
+                // A ordem das somas preserva os mesmos pontos do contrato antigo
+                // para os paineis diagramados pelo motor.
+                const pageX = (x: number) => slot.x + inset + (x - inset);
+                const pageY = (y: number) => slot.y + slot.height - inset - (y - inset);
                 const place = (x: number, y: number) =>
                         rotated ? { x: 2 * centerX - x, y: 2 * centerY - y } : { x, y };
 
-                const left = slot.x + layout.inset;
-                const top = slot.y + slot.height - layout.inset;
-                const contentWidth = slot.width - layout.inset * 2;
+                for (const item of panelDrawables(layout)) {
+                        if (item.kind === "image") {
+                                const embedded = images.get(item.assetId);
 
-                // A imagem sai antes do texto: se as duas areas encostarem, o texto
-                // continua legivel por cima em vez de sumir atras da foto.
-                const embedded = layout.image ? images.get(layout.image.assetId) : undefined;
+                                if (!embedded) {
+                                        continue;
+                                }
 
-                if (layout.image && layout.imageBox && embedded) {
-                        drawPanelImage(
-                                page,
-                                embedded,
-                                layout.image,
-                                layout.imageBox,
-                                left,
-                                top,
-                                imageOperators,
-                                angle
-                        );
-                }
+                                drawPanelImage(
+                                        page,
+                                        embedded,
+                                        {
+                                                x: item.x - inset,
+                                                y: item.y - inset,
+                                                width: item.width,
+                                                height: item.height,
+                                        },
+                                        { width: item.clipWidth, height: item.clipHeight },
+                                        slot.x + inset,
+                                        slot.y + slot.height - inset,
+                                        imageOperators,
+                                        angle
+                                );
+                                continue;
+                        }
 
-                for (const run of layout.runs) {
-                        page.drawText(run.text, {
-                                ...place(left, top - run.baseline),
-                                size: run.size,
-                                font: fontOf(run, fonts),
-                                color: rgb(run.color, run.color, run.color),
+                        if (item.kind === "rule") {
+                                const y = pageY(item.y1);
+
+                                page.drawLine({
+                                        start: place(pageX(item.x1), y),
+                                        end: place(pageX(item.x2), y),
+                                        thickness: item.thickness,
+                                        color: rgb(item.color, item.color, item.color),
+                                });
+                                continue;
+                        }
+
+                        page.drawText(item.text, {
+                                ...place(pageX(item.x), pageY(item.y)),
+                                size: item.size,
+                                font: fontOf(item, fonts),
+                                color: rgb(item.color, item.color, item.color),
                                 ...(rotated ? { rotate: degrees(angle) } : {}),
-                        });
-                }
-
-                // Divisoria entre o cabecalho e a caixa do texto. Sem cabecalho
-                // nao ha o que separar.
-                if (layout.divider !== null) {
-                        const dividerY = top - layout.divider;
-                        page.drawLine({
-                                start: place(left, dividerY),
-                                end: place(left + contentWidth, dividerY),
-                                thickness: POEM_DIVIDER_THICKNESS,
-                                color: rgb(
-                                        POEM_DIVIDER_COLOR,
-                                        POEM_DIVIDER_COLOR,
-                                        POEM_DIVIDER_COLOR
-                                ),
                         });
                 }
         });
@@ -352,14 +357,14 @@ export function drawMarks(page: PDFPage, template: ImpositionTemplate, rgb: Rgb)
         }
 }
 
-function fontOf(run: PanelRun, fonts: PanelFonts): PanelFonts["body"] {
-        if (run.role === "title") {
+function fontOf(item: PanelTextDrawable, fonts: PanelFonts): PanelFonts["body"] {
+        if (item.role === "title") {
                 return fonts.title;
         }
 
-        if (run.role === "body") {
+        if (item.role === "body") {
                 return fonts.body;
         }
 
-        return run.role === "date" || run.role === "label" ? fonts.date : fonts.subtitle;
+        return item.role === "date" || item.role === "label" ? fonts.date : fonts.subtitle;
 }

@@ -20,9 +20,12 @@ export type PanelRect = {
         height: number;
 };
 
-/** Uma linha de texto posicionada pela linha de base, medida a partir do topo do painel. */
+/** Uma linha de texto posicionada pela esquerda e pela linha de base. */
 export type PanelTextLine = {
         text: string;
+        /** Coordenada absoluta da esquerda da linha dentro do painel. */
+        x: number;
+        /** Coordenada absoluta da linha de base, medida a partir do topo do painel. */
         baseline: number;
 };
 
@@ -72,5 +75,12 @@ export type PanelElement = PanelTextElement | PanelRuleElement | PanelImageEleme
 export type PanelLayout = {
         width: number;
         height: number;
+        /** Margem de seguranca aplicada aos elementos; ausente equivale a zero. */
+        inset?: number;
         elements: PanelElement[];
 };
+
+/** Elementos na ordem de empilhamento: menores desenhados primeiro. */
+export function orderedPanelElements(layout: PanelLayout): PanelElement[] {
+        return [...layout.elements].sort((a, b) => a.z - b.z);
+}

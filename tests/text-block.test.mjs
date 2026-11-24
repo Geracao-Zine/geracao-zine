@@ -124,6 +124,8 @@ test("o layout do bloco reaproveita wrapText e mantem o estilo", () => {
         assert.equal(elemento.type, "text");
         assert.deepEqual(elemento.rect, { x: 40, y: 30, width: 100, height: 50 });
         assert.equal(elemento.z, 3);
+
+
         assert.equal(elemento.content.role, "body");
         assert.equal(elemento.content.size, bloco.size);
         assert.equal(elemento.content.color, bloco.color);
@@ -134,6 +136,23 @@ test("o layout do bloco reaproveita wrapText e mantem o estilo", () => {
                 wrapText(texto, regular, bloco.size, 100)
         );
         assert.ok(elemento.content.lines.every((line) => line.baseline >= 30));
+});
+
+test("o alinhamento do bloco posiciona cada linha", () => {
+        const texto = "curto";
+        const base = { ...bloco, text: texto, x: 40, y: 30, width: 100, height: 50 };
+        const largura = regular.widthOfTextAtSize(texto, bloco.size);
+        const left = layoutTextBlock({ ...base, align: "left" }, regular, 300, 200);
+        const center = layoutTextBlock({ ...base, align: "center" }, regular, 300, 200);
+        const right = layoutTextBlock({ ...base, align: "right" }, regular, 300, 200);
+
+        assert.equal(left.content.lines[0].x, 40);
+        assert.ok(
+                Math.abs(center.content.lines[0].x - (40 + (100 - largura) / 2)) < 1e-9
+        );
+        assert.ok(
+                Math.abs(right.content.lines[0].x - (40 + 100 - largura)) < 1e-9
+        );
 });
 
 test("bloco de titulo usa o papel de titulo", () => {

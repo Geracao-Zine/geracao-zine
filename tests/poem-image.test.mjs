@@ -4,7 +4,7 @@ import { deflateSync, inflateSync } from "node:zlib";
 import { PDFArray, PDFDocument, PDFRawStream, StandardFonts } from "pdf-lib";
 
 const { imageRect, imageClip } = await import("../src/lib/pdf/image-layout.ts");
-const { layoutPanel } = await import("../src/lib/pdf/panel.ts");
+const { layoutPanel, toPanelPageLayout } = await import("../src/lib/pdf/panel.ts");
 const { generateZinePdf } = await import("../src/lib/pdf/zine.ts");
 const { naturalSize } = await import("../src/lib/image-file.ts");
 const {
@@ -173,7 +173,9 @@ test("o preview mede a imagem na mesma caixa que o PDF", () => {
         const painel = { width: 300, height: 600 };
 
         const doPdf = layoutPanel(pagina, fonts, painel.height, painel.width, 12, imagem())[0];
-        const doPreview = layoutPreview(pagina, fonts, painel, 12, imagem())[0];
+        const doPreview = toPanelPageLayout(
+                layoutPreview(pagina, fonts, painel, 12, imagem())[0]
+        );
 
         assert.deepEqual(doPreview.image, doPdf.image);
         assert.deepEqual(doPreview.imageBox, doPdf.imageBox);
