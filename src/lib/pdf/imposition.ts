@@ -1,8 +1,10 @@
 import type { PageFields } from "../../domain/page.ts";
 import type { PrintMode } from "../../domain/print.ts";
 import { DEFAULT_PRINT_MODE } from "../../domain/print.ts";
-import { layoutPanel } from "./panel.ts";
+import { layoutPanelElements, toPanelPageLayout } from "./panel.ts";
 import type { PanelFonts, PanelPageLayout } from "./panel.ts";
+import type { PanelElement, PanelLayout } from "./panel-elements.ts";
+import { POEM_DIVIDER_COLOR, POEM_DIVIDER_THICKNESS } from "./layout.ts";
 import {
         panelSize,
         sheetPlanPage,
@@ -23,6 +25,8 @@ export type ImposedFace = {
         height: number;
         slots: PanelSlot[];
         panels: (PanelPageLayout | null)[];
+        /** A mesma pagina como elementos posicionados, consumida pelos renderizadores. */
+        layouts: (PanelLayout | null)[];
         /**
          * Rotacao de cada painel, em graus, no sentido da leitura do slot.
          * O minizine usa 180 na fileira de baixo; o resto sai em 0.
@@ -45,6 +49,136 @@ export type ImposedSheet = {
         back: ImposedFace | null;
 };
 
+type CoverPanel = PanelLayout | PanelPageLayout;
+
+function isPanelLayout(value: CoverPanel): value is PanelLayout {
+        return "elements" in value;
+}
+
+/**
+ * Adapta uma capa no contrato antigo para elementos posicionados.
+ *
+ * A capa de testes e de chamadas antigas chega como `PanelPageLayout`; o PDF
+ * novo desenha `PanelLayout`. Cada linha vira um elemento de texto na mesma
+ * coordenada, e a divisoria vira uma regra.
+ */
+function panelLayoutFromPage(
+        page: PanelPageLayout,
+        width: number,
+        height: number
+): PanelLayout {
+        const elements: PanelElement[] = [];
+        let z = 0;
+
+        if (page.image && page.imageBox) {
+                elements.push({
+                        type: "image",
+                        rect: {
+                                x: page.inset + page.image.x,
+                                y: page.inset + page.image.y,
+                                width: page.image.width,
+                                height: page.image.height,
+                        },
+                        clip: {
+                                x: page.inset,
+                                y: page.inset,
+                                width: page.imageBox.width,
+                                height: page.imageBox.height,
+                        },
+                        content: { assetId: page.image.assetId },
+                        z: z++,
+                });
+        }
+
+        if (page.divider !== null) {
+                elements.push({
+                        type: "rule",
+                        rect: {
+                                x: page.inset,
+                                y: page.inset + page.divider - POEM_DIVIDER_THICKNESS / 2,
+                                width: width - page.inset * 2,
+                                height: POEM_DIVIDER_THICKNESS,
+                        },
+                        content: {
+                                color: POEM_DIVIDER_COLOR,
+                                thickness: POEM_DIVIDER_THICKNESS,
+                        },
+                        z: z++,
+                });
+        }
+
+        for (const run of page.runs) {
+                elements.push({
+                        type: "text",
+                        rect: {
+                                x: page.inset,
+                                y: page.inset + run.baseline - run.size,
+                                width: width - page.inset * 2,
+                                height: run.size,
+                        },
+                        content: {
+                                role: run.role,
+                                size: run.size,
+                                color: run.color,
+                                align: "left",
+                                lines: [
+                                        {
+                                                text: run.text,
+                                                x: page.inset,
+                                                baseline: page.inset + run.baseline,
+                                        },
+                                ],
+                        },
+                        z: z++,
+                });
+        }
+
+        // O contrato antigo sempre expoe uma caixa de corpo, mesmo quando a
+        // capa nao tem corpo; a conversao de volta depende dela.
+        elements.push({
+                type: "text",
+                rect: {
+                        x: page.inset,
+                        y: page.inset + page.box.top,
+                        width: width - page.inset * 2,
+                        height: page.box.height,
+                },
+                content: {
+                        role: "body",
+                        size: page.bodySize,
+                        color: 0,
+                        align: "left",
+                        lines: [],
+                },
+                z: z++,
+        });
+
+        return { width, height, inset: page.inset, elements };
+}
+
+function coverAsLayout(cover: CoverPanel, width: number, height: number): PanelLayout {
+        return isPanelLayout(cover) ? cover : panelLayoutFromPage(cover, width, height);
+}
+
+function faceFromLayouts(
+        template: ImpositionTemplate,
+        layouts: (PanelLayout | null)[],
+        rotations: number[] = template.slots.map(() => 0),
+        mirrored = false
+): ImposedFace {
+        return {
+                width: template.sheet.width,
+                height: template.sheet.height,
+                slots: template.slots,
+                layouts,
+                panels: layouts.map((layout) =>
+                        layout ? toPanelPageLayout(layout) : null
+                ),
+                rotations,
+                mirrored,
+        };
+}
+
 /**
  * Distribui as paginas nas faces do template, na ordem de leitura.
  *
@@ -61,29 +195,34 @@ export function imposePoems(
         template: ImpositionTemplate,
         poems: PdfPoemWithImage[],
         fonts: PanelFonts,
-        cover?: PanelPageLayout | null,
+        cover?: CoverPanel | null,
         inset = 0
 ): ImposedFace[] {
         const { width, height } = panelSize(template);
-        const pages = [
-                ...(cover === undefined ? [] : [cover]),
+        const coverLayout =
+                cover === undefined || cover === null
+                        ? cover
+                        : coverAsLayout(cover, width, height);
+        const pages: (PanelLayout | null)[] = [
+                ...(coverLayout === undefined ? [] : [coverLayout]),
                 ...poems.flatMap((poem) =>
-                        layoutPanel(poem, fonts, height, width, inset, poem.image ?? null)
+                        layoutPanelElements(
+                                poem,
+                                fonts,
+                                height,
+                                width,
+                                inset,
+                                poem.image ?? null
+                        )
                 ),
         ];
         const faces: ImposedFace[] = [];
 
         for (let start = 0; start < pages.length; start += template.slots.length) {
                 const slice = pages.slice(start, start + template.slots.length);
+                const layouts = template.slots.map((_, index) => slice[index] ?? null);
 
-                faces.push({
-                        width: template.sheet.width,
-                        height: template.sheet.height,
-                        slots: template.slots,
-                        panels: template.slots.map((_, index) => slice[index] ?? null),
-                        rotations: template.slots.map(() => 0),
-                        mirrored: false,
-                });
+                faces.push(faceFromLayouts(template, layouts));
         }
 
         return faces;
@@ -125,6 +264,7 @@ export function mirrorFace(face: ImposedFace): ImposedFace {
                 height: face.height,
                 slots: face.slots.map((slot) => mirrorSlot(sheet, slot)),
                 panels: [...face.panels],
+                layouts: [...face.layouts],
                 rotations: [...face.rotations],
                 mirrored: true,
         };
@@ -167,7 +307,7 @@ export function imposeZine(options: {
         fonts: PanelFonts;
         mode: PrintMode;
         /** Diagramacao da capa num painel; ausente reserva a pagina 1 em branco. */
-        cover?: PanelPageLayout | null;
+        cover?: CoverPanel | null;
         /** Margem de seguranca dentro de cada painel, em pontos. */
         inset?: number;
 }): ImposedSheet[] {
@@ -181,9 +321,19 @@ export function imposeZine(options: {
 
         const { width, height } = panelSize(template);
         const poemPages = poems.flatMap((poem) =>
-                layoutPanel(poem, fonts, height, width, inset, poem.image ?? null)
+                layoutPanelElements(
+                        poem,
+                        fonts,
+                        height,
+                        width,
+                        inset,
+                        poem.image ?? null
+                )
         );
-        const pages: (PanelPageLayout | null)[] = [options.cover ?? null, ...poemPages];
+        const coverLayout = options.cover
+                ? coverAsLayout(options.cover, width, height)
+                : null;
+        const pages: (PanelLayout | null)[] = [coverLayout, ...poemPages];
 
         if (template.imposition === "minizine") {
                 const count = template.sheetPlan?.pageCount ?? pages.length;
@@ -223,17 +373,6 @@ function pairFaces(faces: ImposedFace[], mode: PrintMode): ImposedSheet[] {
         return sheets;
 }
 
-function emptyFace(template: ImpositionTemplate): ImposedFace {
-        return {
-                width: template.sheet.width,
-                height: template.sheet.height,
-                slots: template.slots,
-                panels: template.slots.map(() => null),
-                rotations: template.slots.map(() => 0),
-                mirrored: false,
-        };
-}
-
 /**
  * Folha unica que vira livrinho por corte e dobra: o minizine e o de 16 paginas.
  *
@@ -242,17 +381,16 @@ function emptyFace(template: ImpositionTemplate): ImposedFace {
  */
 function imposeSheetPlan(
         template: ImpositionTemplate,
-        pages: (PanelPageLayout | null)[]
+        pages: (PanelLayout | null)[]
 ): ImposedSheet[] {
-        const front = emptyFace(template);
-
-        front.panels = template.slots.map((_, slot) => {
+        const layouts = template.slots.map((_, slot) => {
                 const page = sheetPlanPage(template, slot);
                 return page === 0 ? null : (pages[page - 1] ?? null);
         });
-        front.rotations = template.slots.map((_, slot) =>
+        const rotations = template.slots.map((_, slot) =>
                 sheetPlanUpsideDown(template, slot) ? 180 : 0
         );
+        const front = faceFromLayouts(template, layouts, rotations);
 
         return [{ number: 1, front, back: null }];
 }
@@ -267,17 +405,21 @@ function imposeSheetPlan(
  */
 function imposeSpreadPlan(
         template: ImpositionTemplate,
-        pages: (PanelPageLayout | null)[]
+        pages: (PanelLayout | null)[]
 ): ImposedSheet[] {
         const plan = template.spreadPlan;
-        const front = emptyFace(template);
-        const back = emptyFace(template);
 
-        const pick = (page: number): PanelPageLayout | null =>
+        const pick = (page: number): PanelLayout | null =>
                 page === 0 ? null : (pages[page - 1] ?? null);
 
-        front.panels = template.slots.map((_, slot) => pick(plan?.front[slot] ?? 0));
-        back.panels = template.slots.map((_, slot) => pick(plan?.back[slot] ?? 0));
+        const front = faceFromLayouts(
+                template,
+                template.slots.map((_, slot) => pick(plan?.front[slot] ?? 0))
+        );
+        const back = faceFromLayouts(
+                template,
+                template.slots.map((_, slot) => pick(plan?.back[slot] ?? 0))
+        );
 
         return [{ number: 1, front, back }];
 }
@@ -289,23 +431,20 @@ function imposeSpreadPlan(
  */
 function imposeBooklet(
         template: ImpositionTemplate,
-        pages: (PanelPageLayout | null)[]
+        pages: (PanelLayout | null)[]
 ): ImposedSheet[] {
         const total = pages.length;
         const sheets: ImposedSheet[] = [];
 
         for (let index = 0; index < total / 4; index += 1) {
-                const front = emptyFace(template);
-                const back = emptyFace(template);
-
-                front.panels = [
+                const front = faceFromLayouts(template, [
                         pages[total - 1 - index * 2] ?? null,
                         pages[index * 2] ?? null,
-                ];
-                back.panels = [
+                ]);
+                const back = faceFromLayouts(template, [
                         pages[index * 2 + 1] ?? null,
                         pages[total - 2 - index * 2] ?? null,
-                ];
+                ]);
 
                 // Sem espelhar: o verso ja esta escrito como o leitor o ve, e
                 // quem inverte a folha e a impressora (virando na borda curta).
@@ -317,9 +456,9 @@ function imposeBooklet(
 
 /** Completa a lista com paginas em branco ate o tamanho exigido. */
 function pad(
-        pages: (PanelPageLayout | null)[],
+        pages: (PanelLayout | null)[],
         size: number
-): (PanelPageLayout | null)[] {
+): (PanelLayout | null)[] {
         const padded = pages.slice(0, size);
 
         while (padded.length < size) {

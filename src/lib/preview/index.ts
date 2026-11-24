@@ -4,6 +4,7 @@ import type { ZineFormat } from "../../domain/format.ts";
 import type { FontId } from "../fonts.ts";
 import { fontById } from "../fonts.ts";
 import type { PanelFonts, PanelPageLayout } from "../pdf/panel.ts";
+import type { PanelLayout } from "../pdf/panel-elements.ts";
 import { panelFontsFrom } from "../pdf/panel-fonts.ts";
 import { panelSize, templateFor } from "../pdf/templates.ts";
 import {
@@ -12,9 +13,12 @@ import {
 	POEM_DIVIDER_COLOR,
 	POEM_DIVIDER_THICKNESS,
 } from "../pdf/layout.ts";
-import { layoutPanel } from "../pdf/panel.ts";
+import { layoutPanelElements } from "../pdf/panel.ts";
+import { panelDrawables } from "../pdf/panel-render.ts";
 
-export type { PanelFonts, PanelPageLayout };
+export type { PanelFonts, PanelLayout, PanelPageLayout };
+export { orderedPanelElements } from "../pdf/panel-elements.ts";
+export { panelDrawables };
 
 // O preview desenha na mesma grade do PDF, em pontos tipograficos: o SVG so
 // reescala o viewBox, entao nenhuma medida precisa ser recalculada na tela.
@@ -85,8 +89,15 @@ export function layoutPreview(
 	panel: PanelSize = { width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT },
 	inset = 0,
 	image: PageImage | null = null
-): PanelPageLayout[] {
-	return layoutPanel(page, fonts, panel.height, panel.width, inset, image);
+): PanelLayout[] {
+	return layoutPanelElements(
+		page,
+		fonts,
+		panel.height,
+		panel.width,
+		inset,
+		image
+	);
 }
 
 export type PanelSize = { width: number; height: number };

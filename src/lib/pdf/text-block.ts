@@ -26,6 +26,20 @@ export function textBlockRect(
         };
 }
 
+function lineX(text: string, font: PDFFont, block: TextBlock, rect: PanelRect): number {
+        const textWidth = font.widthOfTextAtSize(text, block.size);
+
+        if (block.align === "center") {
+                return rect.x + (rect.width - textWidth) / 2;
+        }
+
+        if (block.align === "right") {
+                return rect.x + rect.width - textWidth;
+        }
+
+        return rect.x;
+}
+
 /**
  * Diagrama um bloco de texto no painel, quebrando as linhas com `wrapText`.
  *
@@ -54,6 +68,7 @@ export function layoutTextBlock(
                         font: block.font,
                         lines: lines.map((text, index) => ({
                                 text,
+                                x: lineX(text, font, block, rect),
                                 baseline: rect.y + block.size + index * lineHeight,
                         })),
                 },

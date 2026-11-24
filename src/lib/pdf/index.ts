@@ -9,6 +9,13 @@ export {
 } from "./imposition.ts";
 export type { ImposedFace, ImposedSheet } from "./imposition.ts";
 export { layoutPanel, layoutPanelElements, toPanelPageLayout } from "./panel.ts";
+export { orderedPanelElements } from "./panel-elements.ts";
+export { panelDrawables } from "./panel-render.ts";
+export type {
+	PanelDrawable,
+	PanelRuleDrawable,
+	PanelTextDrawable,
+} from "./panel-render.ts";
 export type {
 	PanelBox,
 	PanelElement,
