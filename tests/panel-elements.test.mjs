@@ -130,6 +130,7 @@ test("o tipo posicionado aceita elementos sem PageFields", () => {
                                         role: "body",
                                         size: 12,
                                         color: 0,
+                                        align: "left",
                                         lines: [{ text: "linha", baseline: 12 }],
                                 },
                                 z: 1,
