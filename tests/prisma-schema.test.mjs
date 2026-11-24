@@ -80,3 +80,68 @@ test("a senha do banco nao aparece em arquivo versionado", async () => {
   const exemplo = await ler(".env.example");
   assert.doesNotMatch(exemplo, /postgres(ql)?:\/\/[^"]*:([^z"][^@]*)@/);
 });
+
+// --- Fase 8.1: model Zine ---------------------------------------------------
+
+const blocoZine = schema.slice(schema.indexOf("model Zine"), schema.indexOf("@@map(\"zines\")"));
+
+test("o model Zine cobre os campos exigidos pela conta", () => {
+  for (const campo of ["id", "ownerId", "title", "visibility", "content", "slug", "createdAt", "updatedAt"]) {
+    assert.match(blocoZine, new RegExp(`^\\s*${campo}\\s+`, "m"), `falta o campo ${campo}`);
+  }
+});
+
+test("id e ownerId sao uuid, e o dono e uma FK para User", () => {
+  assert.match(blocoZine, /id\s+String\s+@id\s+@default\(uuid\(\)\)\s+@db\.Uuid/);
+  assert.match(blocoZine, /ownerId\s+String\s+@db\.Uuid/);
+  assert.match(blocoZine, /owner\s+User\s+@relation\(fields:\s*\[ownerId\],\s*references:\s*\[id\]/);
+});
+
+test("apagar o dono nao deixa zine orfao", () => {
+  // sem onDelete o banco recusa apagar o usuario e a conta fica impossivel de remover
+  assert.match(blocoZine, /onDelete:\s*Cascade/);
+});
+
+test("visibility e enum com private como padrao", () => {
+  const enumZine = schema.slice(schema.indexOf("enum ZineVisibility"), schema.indexOf("model Zine"));
+
+  assert.match(enumZine, /^\s*private\s*$/m);
+  assert.match(enumZine, /^\s*public\s*$/m);
+  assert.match(blocoZine, /visibility\s+ZineVisibility\s+@default\(private\)/);
+});
+
+test("o conteudo e JSON e carrega a versao do formato desde o inicio", () => {
+  // versionar depois exigiria adivinhar a forma de cada linha ja gravada
+  assert.match(blocoZine, /content\s+Json/);
+  assert.match(blocoZine, /contentVersion\s+Int\s+@default\(1\)/);
+});
+
+test("o slug e unico e opcional, porque zine privado nao tem URL publica", () => {
+  assert.match(blocoZine, /slug\s+String\?\s+@unique/);
+});
+
+test("ha indice para a lista do dono e para a listagem publica", () => {
+  assert.match(blocoZine, /@@index\(\[ownerId\]\)/);
+  // a biblioteca publica filtra por visibility e ordena por updatedAt
+  assert.match(blocoZine, /@@index\(\[visibility,\s*updatedAt\]\)/);
+});
+
+test("User declara o lado inverso da relacao", () => {
+  const blocoUser = schema.slice(schema.indexOf("model User"), schema.indexOf("enum ZineVisibility"));
+
+  assert.match(blocoUser, /zines\s+Zine\[\]/);
+});
+
+test("a migration do model Zine cria a tabela, o enum e os indices", async () => {
+  const sql = await ler("prisma/migrations/20261124185810_add_zine_model/migration.sql");
+
+  assert.match(sql, /CREATE TYPE "ZineVisibility" AS ENUM \('private', 'public'\)/);
+  assert.match(sql, /CREATE TABLE "zines"/);
+  assert.match(sql, /"visibility" "ZineVisibility" NOT NULL DEFAULT 'private'/);
+  assert.match(sql, /"content" JSONB NOT NULL/);
+  assert.match(sql, /"contentVersion" INTEGER NOT NULL DEFAULT 1/);
+  assert.match(sql, /CREATE UNIQUE INDEX "zines_slug_key"/);
+  assert.match(sql, /CREATE INDEX "zines_ownerId_idx"/);
+  assert.match(sql, /CREATE INDEX "zines_visibility_updatedAt_idx"/);
+  assert.match(sql, /ON DELETE CASCADE/);
+});
