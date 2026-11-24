@@ -3,6 +3,13 @@ import type { PageFields } from "../../domain/page.ts";
 import { wrapText } from "../wrap-text.ts";
 import { fitBody } from "./fit-body.ts";
 import type { BodyMetrics } from "./fit-body.ts";
+import type {
+	PanelElement,
+	PanelLayout,
+	PanelRole,
+	PanelRuleElement,
+	PanelTextElement,
+} from "./panel-elements.ts";
 import {
 	A4_CONTENT_WIDTH,
 	PANEL_HEIGHT,
@@ -14,6 +21,8 @@ import {
 	POEM_DATE_COLOR,
 	POEM_DATE_LINE_HEIGHT,
 	POEM_DATE_SIZE,
+	POEM_DIVIDER_COLOR,
+	POEM_DIVIDER_THICKNESS,
 	POEM_GAP_AFTER_DATE,
 	POEM_GAP_AFTER_HEADER,
 	POEM_GAP_AFTER_SUBTITLE,
@@ -25,7 +34,17 @@ import {
 	POEM_TITLE_SIZE,
 } from "./layout.ts";
 
-export type PanelRole = "title" | "subtitle" | "date" | "body" | "label";
+export type {
+	PanelElement,
+	PanelLayout,
+	PanelRect,
+	PanelRole,
+	PanelRuleContent,
+	PanelRuleElement,
+	PanelTextContent,
+	PanelTextElement,
+	PanelTextLine,
+} from "./panel-elements.ts";
 
 export type PanelFonts = {
 	title: PDFFont;
@@ -75,14 +94,179 @@ type Block = {
 	lines: string[];
 };
 
+type RelativeLine = {
+	text: string;
+	/** Distancia do topo da caixa de conteudo ate a linha de base. */
+	baseline: number;
+};
+
+type PlacedBlock = {
+	role: PanelRole;
+	size: number;
+	color: number;
+	top: number;
+	height: number;
+	lines: RelativeLine[];
+};
+
 /**
- * Diagrama uma pagina do zine numa area fixa.
+ * Diagrama uma pagina do zine como elementos posicionados.
  *
  * Titulo, subtitulo e data so entram quando tem conteudo: um campo vazio nao
  * reserva altura e a caixa do texto comeca mais acima. O texto principal usa o
  * maior corpo que cabe na caixa (bissecao entre o minimo legivel e o maximo),
  * com entrelinha proporcional; se nem o minimo couber, segue em pagina de
  * continuacao identificada, sem perder linha.
+ */
+export function layoutPanelElements(
+	page: PageFields,
+	fonts: PanelFonts,
+	panelHeight: number = PANEL_HEIGHT,
+	width: number = A4_CONTENT_WIDTH,
+	inset = 0
+): PanelLayout[] {
+	const contentWidth = Math.max(1, width - inset * 2);
+	const contentHeight = Math.max(1, panelHeight - inset * 2);
+	const header = headerBlocks(page, fonts, contentWidth);
+	const placed = placeHeader(header);
+	const metrics = bodyMetrics(page.body, fonts.body, contentWidth, contentHeight - placed.cursor);
+	const layouts: PanelLayout[] = [];
+	let remaining = metrics.lines;
+	let blocks = header;
+
+	do {
+		const pageHeader = placeHeader(blocks);
+		const body = fitBodyLines(remaining, pageHeader.cursor, contentHeight, metrics);
+		const divider = pageHeader.runs.length > 0
+			? pageHeader.cursor - POEM_GAP_AFTER_HEADER / 2
+			: null;
+		const elements: PanelElement[] = [];
+		let z = 0;
+
+		if (divider !== null) {
+			elements.push({
+				type: "rule",
+				rect: {
+					x: inset,
+					y: inset + divider - POEM_DIVIDER_THICKNESS / 2,
+					width: contentWidth,
+					height: POEM_DIVIDER_THICKNESS,
+				},
+				content: {
+					color: POEM_DIVIDER_COLOR,
+					thickness: POEM_DIVIDER_THICKNESS,
+				},
+				z: z++,
+			});
+		}
+
+		for (const block of pageHeader.blocks) {
+			elements.push({
+				type: "text",
+				rect: {
+					x: inset,
+					y: inset + block.top,
+					width: contentWidth,
+					height: block.height,
+				},
+				content: {
+					role: block.role,
+					size: block.size,
+					color: block.color,
+					lines: block.lines.map((line) => ({
+						text: line.text,
+						baseline: line.baseline + inset,
+					})),
+				},
+				z: z++,
+			});
+		}
+
+		elements.push({
+			type: "text",
+			rect: {
+				x: inset,
+				y: inset + pageHeader.cursor,
+				width: contentWidth,
+				height: contentHeight - pageHeader.cursor,
+			},
+			content: {
+				role: "body",
+				size: metrics.size,
+				color: POEM_BODY_COLOR,
+				lines: body.lines.map((line) => ({
+					text: line.text,
+					baseline: line.baseline + inset,
+				})),
+			},
+			z: z++,
+		});
+
+		layouts.push({ width, height: panelHeight, elements });
+		remaining = body.overflow;
+		blocks = continuationBlocks();
+	} while (remaining.length > 0);
+
+	return layouts;
+}
+
+/** Converte a representacao posicionada para o contrato do preview e do PDF. */
+export function toPanelPageLayout(layout: PanelLayout, inset = 0): PanelPageLayout {
+	const ordered = [...layout.elements].sort((a, b) => a.z - b.z);
+	const runs: PanelRun[] = [];
+
+	for (const element of ordered) {
+		if (element.type !== "text") {
+			continue;
+		}
+
+		for (const line of element.content.lines) {
+			if (line.text === "") {
+				continue;
+			}
+
+			runs.push({
+				role: element.content.role,
+				text: line.text,
+				size: element.content.size,
+				baseline: line.baseline - inset,
+				color: element.content.color,
+			});
+		}
+	}
+
+	const body = ordered.find(
+		(element): element is PanelTextElement =>
+			element.type === "text" && element.content.role === "body"
+	);
+
+	if (!body) {
+		throw new Error("PanelLayout sem elemento de corpo");
+	}
+
+	const rule = ordered.find(
+		(element): element is PanelRuleElement => element.type === "rule"
+	);
+
+	return {
+		runs,
+		box: { top: body.rect.y - inset, height: body.rect.height },
+		header: ordered.some(
+			(element) =>
+				element.type === "text" &&
+				element.content.role !== "body" &&
+				element.content.lines.length > 0
+		),
+		divider: rule ? rule.rect.y - inset + rule.rect.height / 2 : null,
+		bodySize: body.content.size,
+		inset,
+	};
+}
+
+/**
+ * Diagrama uma pagina e devolve o contrato historico consumido pelo preview e
+ * pelo PDF. A representacao posicionada fica disponivel em
+ * `layoutPanelElements`.
  */
 export function layoutPanel(
 	page: PageFields,
@@ -91,35 +275,9 @@ export function layoutPanel(
 	width: number = A4_CONTENT_WIDTH,
 	inset = 0
 ): PanelPageLayout[] {
-	const contentWidth = Math.max(1, width - inset * 2);
-	const contentHeight = Math.max(1, panelHeight - inset * 2);
-	const header = headerBlocks(page, fonts, contentWidth);
-	const placed = placeHeader(header);
-	const metrics = bodyMetrics(page.body, fonts.body, contentWidth, contentHeight - placed.cursor);
-	const pages: PanelPageLayout[] = [];
-	let remaining = metrics.lines;
-	let blocks = header;
-
-	do {
-		const pageHeader = placeHeader(blocks);
-		const body = fitBodyLines(remaining, pageHeader.cursor, contentHeight, metrics);
-
-		pages.push({
-			runs: [...pageHeader.runs, ...body.runs],
-			box: { top: pageHeader.cursor, height: contentHeight - pageHeader.cursor },
-			header: pageHeader.runs.length > 0,
-			divider: pageHeader.runs.length > 0
-				? pageHeader.cursor - POEM_GAP_AFTER_HEADER / 2
-				: null,
-			bodySize: metrics.size,
-			inset,
-		});
-
-		remaining = body.overflow;
-		blocks = continuationBlocks();
-	} while (remaining.length > 0);
-
-	return pages;
+	return layoutPanelElements(page, fonts, panelHeight, width, inset).map((layout) =>
+		toPanelPageLayout(layout, inset)
+	);
 }
 
 function bodyMetrics(
@@ -196,26 +354,44 @@ function continuationBlocks(): Block[] {
 	];
 }
 
-function placeHeader(blocks: Block[]): { runs: PanelRun[]; cursor: number } {
+function placeHeader(blocks: Block[]): {
+	runs: PanelRun[];
+	cursor: number;
+	blocks: PlacedBlock[];
+} {
 	const runs: PanelRun[] = [];
+	const placed: PlacedBlock[] = [];
 	let cursor = 0;
 
 	for (const block of blocks) {
+		const top = cursor;
+		const lines: RelativeLine[] = [];
+
 		for (const line of block.lines) {
+			const baseline = cursor + block.size;
 			runs.push({
 				role: block.role,
 				text: line,
 				size: block.size,
-				baseline: cursor + block.size,
+				baseline,
 				color: block.color,
 			});
+			lines.push({ text: line, baseline });
 			cursor += block.lineHeight;
 		}
 
+		placed.push({
+			role: block.role,
+			size: block.size,
+			color: block.color,
+			top,
+			height: cursor - top,
+			lines,
+		});
 		cursor += block.gapAfter;
 	}
 
-	return { runs, cursor };
+	return { runs, cursor, blocks: placed };
 }
 
 function fitBodyLines(
@@ -223,8 +399,9 @@ function fitBodyLines(
 	cursor: number,
 	panelHeight: number,
 	metrics: BodyMetrics
-): { runs: PanelRun[]; overflow: string[] } {
+): { runs: PanelRun[]; lines: RelativeLine[]; overflow: string[] } {
 	const runs: PanelRun[] = [];
+	const placed: RelativeLine[] = [];
 	let y = cursor;
 
 	for (let index = 0; index < lines.length; index += 1) {
@@ -246,10 +423,11 @@ function fitBodyLines(
 					});
 				}
 
-				return { runs, overflow: lines.slice(index + 1) };
+				placed.push({ text: line, baseline: y + metrics.size });
+				return { runs, lines: placed, overflow: lines.slice(index + 1) };
 			}
 
-			return { runs, overflow: lines.slice(index) };
+			return { runs, lines: placed, overflow: lines.slice(index) };
 		}
 
 		if (line !== "") {
@@ -262,8 +440,9 @@ function fitBodyLines(
 			});
 		}
 
+		placed.push({ text: line, baseline: y + metrics.size });
 		y += advance;
 	}
 
-	return { runs, overflow: [] };
+	return { runs, lines: placed, overflow: [] };
 }
