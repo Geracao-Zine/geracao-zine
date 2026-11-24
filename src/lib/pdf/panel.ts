@@ -51,6 +51,7 @@ export type {
 	PanelTextContent,
 	PanelTextElement,
 	PanelTextLine,
+	TextAlign,
 } from "./panel-elements.ts";
 
 export type PanelFonts = {
@@ -231,6 +232,7 @@ export function layoutPanelElements(
 					role: block.role,
 					size: block.size,
 					color: block.color,
+					align: "left",
 					lines: block.lines.map((line) => ({
 						text: line.text,
 						baseline: line.baseline + inset + offset,
@@ -252,6 +254,7 @@ export function layoutPanelElements(
 				role: "body",
 				size: metrics.size,
 				color: POEM_BODY_COLOR,
+				align: "left",
 				lines: body.lines.map((line) => ({
 					text: line.text,
 					baseline: line.baseline + inset + offset,

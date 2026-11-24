@@ -7,6 +7,20 @@ export {
 	pageImageFrom,
 } from "./image.ts";
 export { EMPTY_PAGE_FIELDS, pageFieldsFrom } from "./page.ts";
+export type { TextAlign, TextBlock, TextBlockKind } from "./text-block.ts";
+export {
+        DEFAULT_TEXT_BLOCK_COLOR,
+        DEFAULT_TEXT_BLOCK_HEIGHT,
+        DEFAULT_TEXT_BLOCK_SIZE,
+        DEFAULT_TEXT_BLOCK_WIDTH,
+        MAX_TEXT_BLOCK_SIZE,
+        MIN_TEXT_BLOCK_SIZE,
+        createTextBlock,
+        isTextAlign,
+        isTextBlockKind,
+        textBlockFrom,
+        textBlocksFrom,
+} from "./text-block.ts";
 export type { CoverPage, PoemPage, ZinePage, ZineDoc } from "./zine.ts";
 export {
 	COVER_PAGE_ID,

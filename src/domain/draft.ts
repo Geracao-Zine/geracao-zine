@@ -14,6 +14,7 @@ import {
 import type { PageFields } from "./page.ts";
 import { pageFieldsFrom } from "./page.ts";
 import type { PoemPage, ZineDoc } from "./zine.ts";
+import { textBlocksFrom } from "./text-block.ts";
 import { COVER_PAGE_ID, createDoc, poemPages } from "./zine.ts";
 import { resolveFontId } from "../lib/fonts.ts";
 
@@ -188,8 +189,14 @@ function parseDoc(source: Record<string, unknown>, fallback: ZineDoc): ZineDoc {
 		}
 
 		const fields: PageFields = pageFieldsFrom(page);
+		const blocks = textBlocksFrom(page.blocks);
+		const poem: PoemPage = { id, kind: "poem", ...fields };
 
-		poems.push({ id, kind: "poem", ...fields });
+		if (blocks.length > 0) {
+			poem.blocks = blocks;
+		}
+
+		poems.push(poem);
 
 		const numero = Number(id.replace(/^page-/, ""));
 		if (Number.isFinite(numero) && numero > highest) {

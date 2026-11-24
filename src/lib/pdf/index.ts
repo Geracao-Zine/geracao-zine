@@ -25,7 +25,9 @@ export type {
 	PanelTextContent,
 	PanelTextElement,
 	PanelTextLine,
+	TextAlign,
 } from "./panel.ts";
+export { layoutTextBlock, textBlockRect } from "./text-block.ts";
 export { TEMPLATES, isTemplateId, panelSize, templateFor } from "./templates.ts";
 export type { ImpositionTemplate, PanelSlot, SheetSize, TemplateId } from "./templates.ts";
 export { A4, A4_CONTENT_WIDTH } from "./types.ts";
