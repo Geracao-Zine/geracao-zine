@@ -2,7 +2,7 @@
 
 import type { JSX } from "react";
 import IssueList from "@/components/IssueList";
-import type { DraftIssue, PageField, PoemPage, ZineDoc } from "@/domain";
+import type { DraftIssue, PageField, PageImage, PoemPage, ZineDoc } from "@/domain";
 import PoemGrid from "./PoemGrid";
 
 type Props = {
@@ -13,6 +13,9 @@ type Props = {
 	onAdd: () => void;
 	onMove: (id: string, direction: -1 | 1) => void;
 	onRemove: (id: string) => void;
+	images: Record<string, PageImage>;
+	onImageChange: (id: string, file: File) => void;
+	onImageClear: (id: string) => void;
 };
 
 export default function PoemsStep({
@@ -23,6 +26,9 @@ export default function PoemsStep({
 	onAdd,
 	onMove,
 	onRemove,
+	images,
+	onImageChange,
+	onImageClear,
 }: Props): JSX.Element {
 	return (
 		<div className="space-y-8">
@@ -38,6 +44,9 @@ export default function PoemsStep({
 				onAdd={onAdd}
 				onMove={onMove}
 				onRemove={onRemove}
+				images={images}
+				onImageChange={onImageChange}
+				onImageClear={onImageClear}
 			/>
 		</div>
 	);

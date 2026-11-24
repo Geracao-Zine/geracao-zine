@@ -1,3 +1,4 @@
+import type { PageImage } from "../../domain/image.ts";
 import type { PageFields } from "../../domain/page.ts";
 import type { ZineFormat } from "../../domain/format.ts";
 import type { FontId } from "../fonts.ts";
@@ -82,9 +83,10 @@ export function layoutPreview(
 	page: PageFields,
 	fonts: PanelFonts,
 	panel: PanelSize = { width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT },
-	inset = 0
+	inset = 0,
+	image: PageImage | null = null
 ): PanelPageLayout[] {
-	return layoutPanel(page, fonts, panel.height, panel.width, inset);
+	return layoutPanel(page, fonts, panel.height, panel.width, inset, image);
 }
 
 export type PanelSize = { width: number; height: number };

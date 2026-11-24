@@ -9,6 +9,7 @@ import {
         sheetPlanUpsideDown,
 } from "./templates.ts";
 import type { ImpositionTemplate, PanelSlot, SheetSize } from "./templates.ts";
+import type { PdfPoemWithImage } from "./types.ts";
 
 /**
  * Uma face impressa da folha.
@@ -58,7 +59,7 @@ export type ImposedSheet = {
  */
 export function imposePoems(
         template: ImpositionTemplate,
-        poems: PageFields[],
+        poems: PdfPoemWithImage[],
         fonts: PanelFonts,
         cover?: PanelPageLayout | null,
         inset = 0
@@ -66,7 +67,9 @@ export function imposePoems(
         const { width, height } = panelSize(template);
         const pages = [
                 ...(cover === undefined ? [] : [cover]),
-                ...poems.flatMap((poem) => layoutPanel(poem, fonts, height, width, inset)),
+                ...poems.flatMap((poem) =>
+                        layoutPanel(poem, fonts, height, width, inset, poem.image ?? null)
+                ),
         ];
         const faces: ImposedFace[] = [];
 
@@ -160,7 +163,7 @@ export function effectivePrintMode(template: ImpositionTemplate, mode: PrintMode
  */
 export function imposeZine(options: {
         template: ImpositionTemplate;
-        poems: PageFields[];
+        poems: PdfPoemWithImage[];
         fonts: PanelFonts;
         mode: PrintMode;
         /** Diagramacao da capa num painel; ausente reserva a pagina 1 em branco. */
@@ -177,7 +180,9 @@ export function imposeZine(options: {
         }
 
         const { width, height } = panelSize(template);
-        const poemPages = poems.flatMap((poem) => layoutPanel(poem, fonts, height, width, inset));
+        const poemPages = poems.flatMap((poem) =>
+                layoutPanel(poem, fonts, height, width, inset, poem.image ?? null)
+        );
         const pages: (PanelPageLayout | null)[] = [options.cover ?? null, ...poemPages];
 
         if (template.imposition === "minizine") {

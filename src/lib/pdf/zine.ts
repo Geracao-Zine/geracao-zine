@@ -1,8 +1,8 @@
 import { fontById } from "../fonts.ts";
 import { embedZineFonts } from "./fonts.ts";
 import { effectivePrintMode, imposeZine } from "./imposition.ts";
-import type { ImposedFace } from "./imposition.ts";
-import type { PDFPage } from "pdf-lib";
+import type { ImposedFace, ImposedSheet } from "./imposition.ts";
+import type { PDFDocument, PDFImage, PDFPage } from "pdf-lib";
 import {
         MARK_COLOR,
         MARK_DASH_ARRAY,
@@ -22,6 +22,8 @@ import { panelFontsFrom } from "./panel-fonts.ts";
 import { panelSize, templateFor } from "./templates.ts";
 import type { ImpositionTemplate } from "./templates.ts";
 import type { ZinePdfInput } from "./types.ts";
+import { drawPanelImage } from "./image-draw.ts";
+import type { ImageOperators } from "./image-draw.ts";
 
 type Rgb = (r: number, g: number, b: number) => ReturnType<typeof import("pdf-lib").rgb>;
 
@@ -40,10 +42,39 @@ export async function generateZinePdf(input: ZinePdfInput): Promise<Uint8Array> 
         }
 
         // pdf-lib e fontkit entram so aqui: nada disso vai para o bundle inicial.
-        const [{ PDFDocument, StandardFonts, degrees, rgb }, fontkit] = await Promise.all([
+        const [
+                {
+                        PDFDocument,
+                        StandardFonts,
+                        clip,
+                        closePath,
+                        degrees,
+                        endPath,
+                        lineTo,
+                        moveTo,
+                        popGraphicsState,
+                        pushGraphicsState,
+                        rgb,
+                        rotateRadians,
+                        translate,
+                },
+                fontkit,
+        ] = await Promise.all([
                 import("pdf-lib"),
                 import("@pdf-lib/fontkit").then((mod) => mod.default),
         ]);
+
+        const imageOperators = {
+                pushGraphicsState,
+                popGraphicsState,
+                moveTo,
+                lineTo,
+                closePath,
+                clip,
+                endPath,
+                translate,
+                rotateRadians,
+        };
 
         const pdfDoc = await PDFDocument.create();
         pdfDoc.registerFontkit(fontkit);
@@ -67,10 +98,11 @@ export async function generateZinePdf(input: ZinePdfInput): Promise<Uint8Array> 
         const sheets = imposeZine({ template, poems: input.poems, fonts, mode, cover, inset });
         const fontsFor = (layout: PanelPageLayout): PanelFonts =>
                 layout === cover ? coverFonts : fonts;
+        const images = await embedImages(pdfDoc, sheets, input.images);
 
         for (const sheet of sheets) {
                 const front = pdfDoc.addPage([width, height]);
-                drawFace(front, sheet.front, fontsFor, rgb, degrees);
+                drawFace(front, sheet.front, fontsFor, rgb, degrees, images, imageOperators);
 
                 if (input.marks) {
                         drawMarks(front, template, rgb);
@@ -78,7 +110,7 @@ export async function generateZinePdf(input: ZinePdfInput): Promise<Uint8Array> 
 
                 if (sheet.back) {
                         const back = pdfDoc.addPage([width, height]);
-                        drawFace(back, sheet.back, fontsFor, rgb, degrees);
+                        drawFace(back, sheet.back, fontsFor, rgb, degrees, images, imageOperators);
 
                         if (input.marks) {
                                 drawMarks(back, template, rgb);
@@ -93,6 +125,61 @@ export async function generateZinePdf(input: ZinePdfInput): Promise<Uint8Array> 
         }
 
         return pdfDoc.save();
+}
+
+/**
+ * Embute uma vez cada imagem usada nas faces.
+ *
+ * A mesma imagem pode aparecer em mais de um painel depois da imposicao
+ * (frente e verso, minizine), e o `pdf-lib` cobraria o custo de embutir de
+ * novo a cada chamada. Sem os bytes — o caso de uma pagina recarregada — a
+ * imagem e simplesmente ignorada.
+ */
+async function embedImages(
+        pdfDoc: PDFDocument,
+        sheets: ImposedSheet[],
+        bytes: ReadonlyMap<string, Uint8Array> | undefined
+): Promise<Map<string, PDFImage>> {
+        const embedded = new Map<string, PDFImage>();
+
+        if (!bytes) {
+                return embedded;
+        }
+
+        const usados = new Set<string>();
+
+        for (const sheet of sheets) {
+                for (const face of [sheet.front, sheet.back]) {
+                        for (const panel of face?.panels ?? []) {
+                                if (panel?.image) {
+                                        usados.add(panel.image.assetId);
+                                }
+                        }
+                }
+        }
+
+        for (const assetId of usados) {
+                const data = bytes.get(assetId);
+
+                if (!data) {
+                        continue;
+                }
+
+                embedded.set(assetId, await embedOne(pdfDoc, data));
+        }
+
+        return embedded;
+}
+
+/** PNG e JPEG sao os formatos que o `pdf-lib` embute sem conversao. */
+async function embedOne(pdfDoc: PDFDocument, data: Uint8Array): Promise<PDFImage> {
+        // O formato vem dos bytes, nao do nome do arquivo nem do MIME informado:
+        // um arquivo renomeado nao pode virar erro na hora de imprimir.
+        if (data[0] === 0x89 && data[1] === 0x50) {
+                return pdfDoc.embedPng(data);
+        }
+
+        return pdfDoc.embedJpg(data);
 }
 
 /** Capa diagramada num painel, no lugar da pagina 1 da dobra. */
@@ -130,7 +217,9 @@ function drawFace(
         face: ImposedFace,
         fontsFor: (layout: PanelPageLayout) => PanelFonts,
         rgb: Rgb,
-        degrees: (angle: number) => ReturnType<typeof import("pdf-lib").degrees>
+        degrees: (angle: number) => ReturnType<typeof import("pdf-lib").degrees>,
+        images: ReadonlyMap<string, PDFImage>,
+        imageOperators: ImageOperators
 ): void {
         face.panels.forEach((layout, index) => {
                 if (!layout) {
@@ -149,6 +238,23 @@ function drawFace(
                 const left = slot.x + layout.inset;
                 const top = slot.y + slot.height - layout.inset;
                 const contentWidth = slot.width - layout.inset * 2;
+
+                // A imagem sai antes do texto: se as duas areas encostarem, o texto
+                // continua legivel por cima em vez de sumir atras da foto.
+                const embedded = layout.image ? images.get(layout.image.assetId) : undefined;
+
+                if (layout.image && layout.imageBox && embedded) {
+                        drawPanelImage(
+                                page,
+                                embedded,
+                                layout.image,
+                                layout.imageBox,
+                                left,
+                                top,
+                                imageOperators,
+                                angle
+                        );
+                }
 
                 for (const run of layout.runs) {
                         page.drawText(run.text, {

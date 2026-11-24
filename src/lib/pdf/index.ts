@@ -12,6 +12,8 @@ export { layoutPanel, layoutPanelElements, toPanelPageLayout } from "./panel.ts"
 export type {
 	PanelBox,
 	PanelElement,
+	PanelImage,
+	PanelImageElement,
 	PanelFonts,
 	PanelLayout,
 	PanelPageLayout,

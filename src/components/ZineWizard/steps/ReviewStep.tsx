@@ -9,6 +9,7 @@ import type {
 	Cover,
 	DraftIssue,
 	PageField,
+	PageImage,
 	PoemPage,
 	ZineDoc,
 	ZineFormat,
@@ -31,6 +32,9 @@ type Props = {
 	onMove: (id: string, direction: -1 | 1) => void;
 	onRemove: (id: string) => void;
 	onGoTo: (step: ZineStep) => void;
+	images: Record<string, PageImage>;
+	onImageChange: (id: string, file: File) => void;
+	onImageClear: (id: string) => void;
 };
 
 export default function ReviewStep({
@@ -47,6 +51,9 @@ export default function ReviewStep({
 	onMove,
 	onRemove,
 	onGoTo,
+	images,
+	onImageChange,
+	onImageClear,
 }: Props): JSX.Element {
 	return (
 		<div className="space-y-10">
@@ -92,6 +99,9 @@ export default function ReviewStep({
 					onAdd={onAdd}
 					onMove={onMove}
 					onRemove={onRemove}
+					images={images}
+					onImageChange={onImageChange}
+					onImageClear={onImageClear}
 				/>
 			</section>
 
@@ -112,6 +122,7 @@ export default function ReviewStep({
 							font={cover.titleFont}
 							format={format}
 							safetyMargin={safetyMargin}
+							image={images[poem.id] ?? null}
 						/>
 					))}
 				</div>
