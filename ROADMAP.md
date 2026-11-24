@@ -362,11 +362,11 @@ Para pedir uma segunda tentativa em uma issue já processada, remova e reaplique
 | 4 — Otimização | #17, #18 | #17 entregue; #18 fechada (o problema não existia) |
 | 5 — Padronização | #19, #20, #21 | fase concluída: #19, #20 e #21 entregues |
 | 6 — Fluxo e diagramação | #22 a #29 | fase concluída: #22 a #29 entregues |
-| 7 — Imagem | #46 a #54 | aberta: #46 armada; #47 a #54 bloqueadas |
-| 8 — Conta e biblioteca | #45, #55 a #63 | aberta: #45 armada; #55 a #63 bloqueadas |
-| 9 — Layout livre | #44, #64 a #75 | aberta: #44 armada; #64 a #75 bloqueadas |
+| 7 — Imagem | #46 a #54 | #46 e #47 entregues; #48 a #54 bloqueadas |
+| 8 — Conta e biblioteca | #45, #55 a #63 | #45 entregue; #55 em revisão (PR #83); #56 a #63 bloqueadas |
+| 9 — Layout livre | #44, #64 a #75 | #44 e #64 entregues; #65 a #75 bloqueadas |
 
-Fechadas: #3 (lint), #4 (versão do Node), #5 (dependências e audit), #6 (`jspdf` removido), #7 (Dockerfile multi-stage), #8 (docker-compose e `.env.example`), #9 (deploy em VPS), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #16 (navbar e fonte do body), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #19 (regras de lint), #20 (camadas), #21 (constantes de diagramação), #22 (fluxo em etapas), #23 (modelo de página), #24 (auto-ajuste de fonte), #25 (templates T1 a T4), #26 (minizine e grampeado), #27 (trifold, Z, acordeão, gatefold e 16 páginas), #28 (frente e verso espelhado), #29 (marcas e margem de segurança).
+Fechadas: #3 (lint), #4 (versão do Node), #5 (dependências e audit), #6 (`jspdf` removido), #7 (Dockerfile multi-stage), #8 (docker-compose e `.env.example`), #9 (deploy em VPS), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #16 (navbar e fonte do body), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #19 (regras de lint), #20 (camadas), #21 (constantes de diagramação), #22 (fluxo em etapas), #23 (modelo de página), #24 (auto-ajuste de fonte), #25 (templates T1 a T4), #26 (minizine e grampeado), #27 (trifold, Z, acordeão, gatefold e 16 páginas), #28 (frente e verso espelhado), #29 (marcas e margem de segurança), #44 (representação de página posicionada), #45 (modelo `Zine`), #46 (modelo de imagem), #47 (imagem no PDF), #64 (blocos de texto posicionáveis).
 
 ### Fila de execução
 
