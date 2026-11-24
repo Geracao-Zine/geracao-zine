@@ -95,6 +95,7 @@ export default function ZineWizard({
 								formattedDate={editor.formattedDate}
 								doc={editor.doc}
 								format={editor.format}
+								safetyMargin={editor.safetyMarginPt}
 								poems={editor.poems}
 								issues={editor.issues}
 								diagrammable={editor.diagrammable}
@@ -110,10 +111,14 @@ export default function ZineWizard({
 							<PrintStep
 								format={editor.format}
 								printMode={editor.printMode}
+								marks={editor.marks}
+								safetyMargin={editor.safetyMargin}
 								issues={editor.issues}
 								diagrammable={editor.diagrammable}
 								onFormatChange={editor.setFormat}
 								onPrintModeChange={editor.setPrintMode}
+								onMarksChange={editor.setMarks}
+								onSafetyMarginChange={editor.setSafetyMargin}
 								onDownload={editor.download}
 								onGoTo={editor.goToStep}
 							/>

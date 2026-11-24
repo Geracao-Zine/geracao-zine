@@ -60,12 +60,13 @@ export function imposePoems(
         template: ImpositionTemplate,
         poems: PageFields[],
         fonts: PanelFonts,
-        cover?: PanelPageLayout | null
+        cover?: PanelPageLayout | null,
+        inset = 0
 ): ImposedFace[] {
         const { width, height } = panelSize(template);
         const pages = [
                 ...(cover === undefined ? [] : [cover]),
-                ...poems.flatMap((poem) => layoutPanel(poem, fonts, height, width)),
+                ...poems.flatMap((poem) => layoutPanel(poem, fonts, height, width, inset)),
         ];
         const faces: ImposedFace[] = [];
 
@@ -155,16 +156,19 @@ export function imposeZine(options: {
         mode: PrintMode;
         /** Diagramacao da capa num painel; ausente reserva a pagina 1 em branco. */
         cover?: PanelPageLayout | null;
+        /** Margem de seguranca dentro de cada painel, em pontos. */
+        inset?: number;
 }): ImposedSheet[] {
         const { template, poems, fonts } = options;
+        const inset = options.inset ?? 0;
         const mode = effectivePrintMode(template, options.mode);
 
         if (template.imposition === "sequence") {
-                return pairFaces(imposePoems(template, poems, fonts, options.cover ?? null), mode);
+                return pairFaces(imposePoems(template, poems, fonts, options.cover ?? null, inset), mode);
         }
 
         const { width, height } = panelSize(template);
-        const poemPages = poems.flatMap((poem) => layoutPanel(poem, fonts, height, width));
+        const poemPages = poems.flatMap((poem) => layoutPanel(poem, fonts, height, width, inset));
         const pages: (PanelPageLayout | null)[] = [options.cover ?? null, ...poemPages];
 
         if (template.imposition === "minizine") {

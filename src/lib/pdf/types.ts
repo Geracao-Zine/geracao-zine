@@ -16,6 +16,10 @@ export type ZinePdfInput = {
         format: ZineFormat;
         /** So frente ou frente e verso; no duplex o verso sai espelhado. */
         printMode: PrintMode;
+        /** Marcas de corte e dobra nas bordas; ausente nao desenha. */
+        marks?: boolean;
+        /** Margem de seguranca dentro de cada painel, em milimetros. */
+        safetyMarginMm?: number;
         poems: PdfPoem[];
 };
 

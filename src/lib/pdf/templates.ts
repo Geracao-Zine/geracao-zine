@@ -90,6 +90,27 @@ export type SpreadPlan = {
         back: number[];
 };
 
+/**
+ * Onde a folha dobra e onde ela e cortada, no meio das folgas.
+ *
+ * Cada indice aponta para a divisa entre duas colunas (0 e a divisa entre a
+ * primeira e a segunda) ou entre duas fileiras. O gatefold nao dobra no centro;
+ * o minizine corta no centro e dobra nas laterais.
+ */
+export type MarkPlan = {
+        foldColumns: number[];
+        cutColumns: number[];
+        foldRows: number[];
+        cutRows: number[];
+};
+
+const EMPTY_MARK_PLAN: MarkPlan = {
+        foldColumns: [],
+        cutColumns: [],
+        foldRows: [],
+        cutRows: [],
+};
+
 export type ImpositionTemplate = {
         id: TemplateId;
         orientation: FormatOrientation;
@@ -110,6 +131,8 @@ export type ImpositionTemplate = {
         sheetPlan?: SheetPlan;
         /** Presente nas dobras de frente e verso com paginas fixas. */
         spreadPlan?: SpreadPlan;
+        /** Dobras e cortes que recebem marca na impressao. */
+        markPlan: MarkPlan;
 };
 
 type TemplateOptions = {
@@ -118,6 +141,7 @@ type TemplateOptions = {
         imposition?: ImpositionKind;
         sheetPlan?: SheetPlan;
         spreadPlan?: SpreadPlan;
+        markPlan?: Partial<MarkPlan>;
 };
 
 function buildTemplate(
@@ -157,6 +181,7 @@ function buildTemplate(
                 imposition: options.imposition ?? "sequence",
                 margin,
                 gutter,
+                markPlan: { ...EMPTY_MARK_PLAN, ...options.markPlan },
                 ...(options.sheetPlan ? { sheetPlan: options.sheetPlan } : {}),
                 ...(options.spreadPlan ? { spreadPlan: options.spreadPlan } : {}),
         };
@@ -169,21 +194,24 @@ export const TEMPLATES: Record<TemplateId, ImpositionTemplate> = {
                 A4_PORTRAIT,
                 "portrait",
                 2,
-                1
+                1,
+                { markPlan: { foldColumns: [0] } }
         ),
         "duas-colunas-horizontal": buildTemplate(
                 "duas-colunas-horizontal",
                 A4_LANDSCAPE,
                 "landscape",
                 1,
-                2
+                2,
+                { markPlan: { foldRows: [0] } }
         ),
         "quatro-retangulos": buildTemplate(
                 "quatro-retangulos",
                 A4_PORTRAIT,
                 "portrait",
                 2,
-                2
+                2,
+                { markPlan: { foldColumns: [0], foldRows: [0] } }
         ),
         // Minizine: A4 deitada, 4 colunas por 2 fileiras, como manda a dobra
         // classica (3 dobras verticais e 1 horizontal). Assim cada painel fica
@@ -194,6 +222,7 @@ export const TEMPLATES: Record<TemplateId, ImpositionTemplate> = {
                 gutter: MINIZINE_GUTTER,
                 imposition: "minizine",
                 sheetPlan: MINIZINE_PLAN,
+                markPlan: { foldColumns: [0, 2], cutColumns: [1], foldRows: [0] },
         }),
         // Cadernos: folha deitada dobrada na lombada, dois paineis por face. A
         // margem da lombada e maior para o grampo nao encostar no texto.
@@ -201,6 +230,7 @@ export const TEMPLATES: Record<TemplateId, ImpositionTemplate> = {
                 margin: BOOKLET_MARGIN,
                 gutter: BOOKLET_GUTTER,
                 imposition: "booklet",
+                markPlan: { foldColumns: [0] },
         }),
         // Tríptico e dobra em Z: tres colunas numa folha deitada, uma dobra a
         // mais que as duas colunas simples.
@@ -209,12 +239,14 @@ export const TEMPLATES: Record<TemplateId, ImpositionTemplate> = {
                 gutter: TRIFOLD_GUTTER,
                 imposition: "spread",
                 spreadPlan: TRIFOLD_PLAN,
+                markPlan: { foldColumns: [0, 1] },
         }),
         "z-fold": buildTemplate("z-fold", A4_LANDSCAPE, "landscape", 3, 1, {
                 margin: TRIFOLD_MARGIN,
                 gutter: TRIFOLD_GUTTER,
                 imposition: "spread",
                 spreadPlan: ZFOLD_PLAN,
+                markPlan: { foldColumns: [0, 1] },
         }),
         // Acordeao: quatro tiras. A folga menor compensa as tres dobras.
         accordion: buildTemplate("accordion", A4_LANDSCAPE, "landscape", 4, 1, {
@@ -222,12 +254,15 @@ export const TEMPLATES: Record<TemplateId, ImpositionTemplate> = {
                 gutter: ACCORDION_GUTTER,
                 imposition: "spread",
                 spreadPlan: ACCORDION_PLAN,
+                markPlan: { foldColumns: [0, 1, 2] },
         }),
         gatefold: buildTemplate("gatefold", A4_LANDSCAPE, "landscape", 4, 1, {
                 margin: GATEFOLD_MARGIN,
                 gutter: GATEFOLD_GUTTER,
                 imposition: "spread",
                 spreadPlan: GATEFOLD_PLAN,
+                // As portas dobram nas laterais; o centro e o encontro delas.
+                markPlan: { foldColumns: [0, 2] },
         }),
         // Folha unica: um painel por face, duas paginas. Reusa a grade do
         // banner, mas com imposicao de frente e verso.
@@ -242,6 +277,12 @@ export const TEMPLATES: Record<TemplateId, ImpositionTemplate> = {
                 gutter: MINIZINE16_GUTTER,
                 imposition: "minizine",
                 sheetPlan: MINIZINE16_PLAN,
+                markPlan: {
+                        foldColumns: [0, 2],
+                        cutColumns: [1],
+                        foldRows: [0, 2],
+                        cutRows: [1],
+                },
         }),
 };
 

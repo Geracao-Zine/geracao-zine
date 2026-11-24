@@ -27,6 +27,7 @@ import {
 	poemPages,
 	removePage,
 	setPoemField,
+	safetyMarginFrom,
 	stepIndex,
 	stepStatus,
 } from "@/domain";
@@ -38,7 +39,7 @@ import {
 } from "@/lib/draft-storage";
 import { downloadBlob } from "@/lib/download";
 import type { ZinePdfInput } from "@/lib/pdf";
-import { effectivePrintMode, generateZinePdf, templateFor } from "@/lib/pdf";
+import { effectivePrintMode, generateZinePdf, mmToPt, templateFor } from "@/lib/pdf";
 
 export type ZineEditor = {
 	/** Falso enquanto o rascunho salvo ainda nao foi lido do navegador. */
@@ -62,6 +63,14 @@ export type ZineEditor = {
 	setFormat: (format: ZineFormat) => void;
 	printMode: PrintMode;
 	setPrintMode: (mode: PrintMode) => void;
+	/** Marcas de corte e dobra no PDF. */
+	marks: boolean;
+	setMarks: (marks: boolean) => void;
+	/** Margem de seguranca dentro dos paineis, em milimetros. */
+	safetyMargin: number;
+	setSafetyMargin: (mm: number) => void;
+	/** A mesma margem em pontos, para o preview medir igual ao PDF. */
+	safetyMarginPt: number;
 	changeField: (id: string, field: PageField, value: string) => void;
 	addPoem: () => void;
 	removePoem: (id: string) => void;
@@ -148,6 +157,14 @@ export function useZineEditor(
 		update((current) => ({ ...current, printMode }));
 	};
 
+	const setMarks = (marks: boolean): void => {
+		update((current) => ({ ...current, marks }));
+	};
+
+	const setSafetyMargin = (safetyMargin: number): void => {
+		update((current) => ({ ...current, safetyMargin: safetyMarginFrom(safetyMargin) }));
+	};
+
 	const goToStep = (step: ZineStep): void => {
 		update((current) =>
 			canEnterStep(current, step) ? { ...current, step } : current
@@ -222,6 +239,8 @@ export function useZineEditor(
 			date: formattedDate,
 			format: draft.format,
 			printMode: draft.printMode,
+			marks: draft.marks,
+			safetyMarginMm: draft.safetyMargin,
 			poems: poems.map((poem) => ({
 				title: poem.title,
 				subtitle: poem.subtitle,
@@ -263,6 +282,11 @@ export function useZineEditor(
 		setFormat,
 		printMode: draft.printMode,
 		setPrintMode,
+		marks: draft.marks,
+		setMarks,
+		safetyMargin: draft.safetyMargin,
+		setSafetyMargin,
+		safetyMarginPt: mmToPt(draft.safetyMargin),
 		changeField,
 		addPoem,
 		removePoem,

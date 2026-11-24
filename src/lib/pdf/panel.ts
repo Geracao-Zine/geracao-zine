@@ -62,6 +62,8 @@ export type PanelPageLayout = {
 	divider: number | null;
 	/** Corpo escolhido para o texto principal, igual em todas as paginas. */
 	bodySize: number;
+	/** Distancia da borda do painel ate a caixa de conteudo, em pontos. */
+	inset: number;
 };
 
 type Block = {
@@ -86,27 +88,31 @@ export function layoutPanel(
 	page: PageFields,
 	fonts: PanelFonts,
 	panelHeight: number = PANEL_HEIGHT,
-	width: number = A4_CONTENT_WIDTH
+	width: number = A4_CONTENT_WIDTH,
+	inset = 0
 ): PanelPageLayout[] {
-	const header = headerBlocks(page, fonts, width);
+	const contentWidth = Math.max(1, width - inset * 2);
+	const contentHeight = Math.max(1, panelHeight - inset * 2);
+	const header = headerBlocks(page, fonts, contentWidth);
 	const placed = placeHeader(header);
-	const metrics = bodyMetrics(page.body, fonts.body, width, panelHeight - placed.cursor);
+	const metrics = bodyMetrics(page.body, fonts.body, contentWidth, contentHeight - placed.cursor);
 	const pages: PanelPageLayout[] = [];
 	let remaining = metrics.lines;
 	let blocks = header;
 
 	do {
 		const pageHeader = placeHeader(blocks);
-		const body = fitBodyLines(remaining, pageHeader.cursor, panelHeight, metrics);
+		const body = fitBodyLines(remaining, pageHeader.cursor, contentHeight, metrics);
 
 		pages.push({
 			runs: [...pageHeader.runs, ...body.runs],
-			box: { top: pageHeader.cursor, height: panelHeight - pageHeader.cursor },
+			box: { top: pageHeader.cursor, height: contentHeight - pageHeader.cursor },
 			header: pageHeader.runs.length > 0,
 			divider: pageHeader.runs.length > 0
 				? pageHeader.cursor - POEM_GAP_AFTER_HEADER / 2
 				: null,
 			bodySize: metrics.size,
+			inset,
 		});
 
 		remaining = body.overflow;

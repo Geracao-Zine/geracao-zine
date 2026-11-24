@@ -32,6 +32,7 @@ O projeto está em desenvolvimento ativo. O roadmap completo, com fases, tarefas
 
 - Site institucional (`/`), cadastro (`/Create`) e editor (`/Editor`) com pré-visualização.
 - Geração de PDF com imposição para as 12 dobras do catálogo, com a capa como página 1, título, autor e data.
+- Marcas de corte e dobra opcionais e margem de segurança configurável, com o texto sempre fora da faixa de corte.
 - Build de produção e verificação de tipos passando.
 
 **Em desenvolvimento**
@@ -112,7 +113,7 @@ O objetivo do fluxo é pedir pouca informação por vez, permitindo que o autor 
 1. **Capa e autoria** — título do zine, nome do autor e escolha de fontes.
 2. **Poesias** — cadastro gradual: cada poesia tem título, subtítulo, data e texto, todos opcionais exceto o texto. O autor adiciona, edita, reordena e remove quando quiser.
 3. **Revisão** — conferência do conteúdo e das pendências antes de diagramar.
-4. **Dobra e impressão** — escolha do modelo de dobra, opção de apenas frente ou frente e verso, e download do PDF.
+4. **Dobra e impressão** — escolha do modelo de dobra, opção de apenas frente ou frente e verso, marcas de corte e dobra, margem de segurança e download do PDF.
 
 O rascunho é salvo no navegador (`localStorage`, chave `geracao-zine:draft`) a cada alteração, junto com a etapa atual. Recarregar a página, trocar de etapa ou abrir o link antigo `/Editor?coverTitle=...` não perde o que já foi escrito: um rascunho salvo sempre tem prioridade sobre os parâmetros da URL.
 
@@ -155,6 +156,15 @@ A imposição distribui as páginas dos poemas nas faces do template. Um poema c
 Em todas as dobras a capa é a página 1 do zine: ela entra na imposição como os demais painéis e ocupa o primeiro slot da primeira face, em vez de sair numa folha separada. No minizine e no livrinho de 16 a folha é uma só, sai sempre em frente única e as fileiras de baixo vão giradas 180° para o texto aparecer em pé depois da dobra. O livrinho de 16 é o minizine com uma fileira a mais: o corte horizontal separa dois cadernos de 8 páginas, um sobre o outro. No fanzine grampeado o número de páginas cresce em múltiplos de 4, para a lombada fechar sem sobra.
 
 Nas dobras de frente e verso (T6, T7, T8, T9 e T10) as demais páginas entram em posições fixas. O verso já sai escrito como o leitor o encontra depois de virar a folha — quem inverte o papel é a impressora. Como essas dobras têm número fixo de painéis, a etapa de dobra avisa quando o conteúdo passa da capacidade: 5 poesias no tríptico e na dobra em Z, 7 no acordeão e no gatefold, 1 na folha única e 15 no livrinho de 16.
+
+### Marcas de corte e dobra
+
+A etapa de dobra traz duas opções de acabamento:
+
+- **Marcas de corte e dobra** — ligadas por padrão. Cada canto da folha recebe um L discreto, e cada dobra ou corte ganha um risco curto na borda: tracejado para dobrar, contínuo para cortar. As marcas ficam sempre fora dos painéis, inclusive no verso.
+- **Margem de segurança** — 0, 3, 5, 8 ou 10 mm. O texto é medido e desenhado dentro de uma caixa reduzida por essa margem, então uma guilhotina ou uma dobra torta não corta letra. O preview da revisão usa a mesma medida do PDF.
+
+Cada template declara onde dobra e onde corta: o gatefold dobra nas portas e o minizine corta no centro. A margem entra na diagramação, não no desenho — o corpo da fonte é escolhido para caber na caixa já reduzida. Assim o texto nunca chega à faixa de corte, mesmo quando o poema ocupa várias páginas.
 
 ## Convenções de código
 
