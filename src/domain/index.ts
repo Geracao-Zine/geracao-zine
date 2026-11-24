@@ -56,10 +56,15 @@ export {
 } from "./cover.ts";
 export type { PrintMode, PrintModeOption } from "./print.ts";
 export {
+	DEFAULT_MARKS,
 	DEFAULT_PRINT_MODE,
+	DEFAULT_SAFETY_MARGIN_MM,
 	PRINT_MODES,
+	SAFETY_MARGIN_OPTIONS,
 	isPrintMode,
+	marksFrom,
 	printModeFrom,
 	printModeOption,
+	safetyMarginFrom,
 } from "./print.ts";
 export { formatIsoDate, isIsoDate } from "./date.ts";

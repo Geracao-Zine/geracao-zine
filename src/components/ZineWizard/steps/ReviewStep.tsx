@@ -21,6 +21,8 @@ type Props = {
 	formattedDate: string;
 	doc: ZineDoc;
 	format: ZineFormat;
+	/** Margem de seguranca do PDF, em pontos. */
+	safetyMargin: number;
 	poems: PoemPage[];
 	issues: DraftIssue[];
 	diagrammable: boolean;
@@ -36,6 +38,7 @@ export default function ReviewStep({
 	formattedDate,
 	doc,
 	format,
+	safetyMargin,
 	poems,
 	issues,
 	diagrammable,
@@ -108,6 +111,7 @@ export default function ReviewStep({
 							body={poem.body}
 							font={cover.titleFont}
 							format={format}
+							safetyMargin={safetyMargin}
 						/>
 					))}
 				</div>

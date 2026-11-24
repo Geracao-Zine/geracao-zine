@@ -3,7 +3,14 @@ import { isCoverComplete } from "./cover.ts";
 import type { ZineFormat } from "./format.ts";
 import { DEFAULT_FORMAT, formatFrom, poemCapacity } from "./format.ts";
 import type { PrintMode } from "./print.ts";
-import { DEFAULT_PRINT_MODE, printModeFrom } from "./print.ts";
+import {
+	DEFAULT_MARKS,
+	DEFAULT_PRINT_MODE,
+	DEFAULT_SAFETY_MARGIN_MM,
+	marksFrom,
+	printModeFrom,
+	safetyMarginFrom,
+} from "./print.ts";
 import type { PageFields } from "./page.ts";
 import { pageFieldsFrom } from "./page.ts";
 import type { PoemPage, ZineDoc } from "./zine.ts";
@@ -55,6 +62,10 @@ export type ZineDraft = {
 	doc: ZineDoc;
 	format: ZineFormat;
 	printMode: PrintMode;
+	/** Marcas de corte e dobra nas bordas da folha. */
+	marks: boolean;
+	/** Margem de seguranca dentro de cada painel, em milimetros. */
+	safetyMargin: number;
 };
 
 export type DraftIssue = {
@@ -80,6 +91,8 @@ export function createDraft(): ZineDraft {
 		doc: createDoc(),
 		format: DEFAULT_FORMAT,
 		printMode: DEFAULT_PRINT_MODE,
+		marks: DEFAULT_MARKS,
+		safetyMargin: DEFAULT_SAFETY_MARGIN_MM,
 	};
 }
 
@@ -136,6 +149,8 @@ export function parseDraft(raw: string | null): ZineDraft | null {
 		step: isZineStep(source.step) ? source.step : DEFAULT_STEP,
 		format: formatFrom(source.format),
 		printMode: printModeFrom(source.printMode),
+		marks: marksFrom(source.marks),
+		safetyMargin: safetyMarginFrom(source.safetyMargin),
 		cover: {
 			title: text(coverSource.title),
 			author: text(coverSource.author),

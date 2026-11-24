@@ -79,3 +79,23 @@ export const POEM_BLANK_LINE_HEIGHT = POEM_LINE_HEIGHT * POEM_BLANK_LINE_RATIO;
 
 // Texto que nao cabe na caixa segue em pagina de continuacao identificada.
 export const POEM_CONTINUATION_LABEL = "continuação";
+
+// Marcas de corte e dobra: curtos, finos e cinza para nao competir com o texto.
+// A dobra sai tracejada; o corte, continuo. O comprimento cabe na menor margem
+// do catalogo (22 pt) sem invadir o painel.
+export const MARK_LENGTH = 14;
+export const MARK_OFFSET = 18;
+export const MARK_THICKNESS = 0.4;
+export const MARK_COLOR = 0.6;
+export const MARK_DASH_ARRAY = [3, 3];
+// Os cantos recuam proporcionalmente a margem para caber tambem na menor
+// margem do catalogo, sem invadir o painel.
+export const MARK_OFFSET_RATIO = 0.6;
+export const MARK_LENGTH_RATIO = 0.35;
+
+// A margem de seguranca e escolhida em milimetros e desenhada em pontos.
+export const PT_PER_MM = 72 / 25.4;
+
+export function mmToPt(mm: number): number {
+        return mm * PT_PER_MM;
+}

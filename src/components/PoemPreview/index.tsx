@@ -23,6 +23,8 @@ type Props = {
 	font: FontId;
 	/** Dobra escolhida: define o tamanho do painel medido no preview. */
 	format: ZineFormat;
+	/** Margem de seguranca do PDF, em pontos: o preview mede na mesma caixa. */
+	safetyMargin: number;
 };
 
 // As fontes vivem em globals.css apontando para os mesmos TTF que o PDF embute.
@@ -49,6 +51,7 @@ export default function PoemPreview({
 	body,
 	font,
 	format,
+	safetyMargin,
 }: Props): JSX.Element {
 	// A fonte carregada vem junto com o id: quando o autor troca de fonte, o
 	// id deixa de bater e o preview volta ao estado de carregamento sem
@@ -82,9 +85,9 @@ export default function PoemPreview({
 	const pages = useMemo<PanelPageLayout[]>(
 		() =>
 			fonts
-				? layoutPreview({ title, subtitle, date, body }, fonts, painel)
+				? layoutPreview({ title, subtitle, date, body }, fonts, painel, safetyMargin)
 				: [],
-		[fonts, painel, title, subtitle, date, body]
+		[fonts, painel, safetyMargin, title, subtitle, date, body]
 	);
 
 	if (!fonts) {
@@ -105,10 +108,10 @@ export default function PoemPreview({
 					>
 						{page.divider === null ? null : (
 							<line
-								x1={0}
-								x2={painel.width}
-								y1={page.divider}
-								y2={page.divider}
+								x1={page.inset}
+								x2={painel.width - page.inset}
+								y1={page.inset + page.divider}
+								y2={page.inset + page.divider}
 								stroke={PREVIEW_DIVIDER_COLOR}
 								strokeWidth={PREVIEW_DIVIDER_THICKNESS}
 							/>
@@ -117,8 +120,8 @@ export default function PoemPreview({
 						{page.runs.map((run, runIndex) => (
 							<text
 								key={runIndex}
-								x={0}
-								y={run.baseline}
+								x={page.inset}
+								y={page.inset + run.baseline}
 								fontFamily={FAMILY[font]}
 								fontWeight={run.role === "title" ? 700 : 400}
 								fontSize={run.size}

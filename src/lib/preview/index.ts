@@ -81,9 +81,10 @@ export function loadPanelFonts(id: FontId): Promise<PanelFonts> {
 export function layoutPreview(
 	page: PageFields,
 	fonts: PanelFonts,
-	panel: PanelSize = { width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT }
+	panel: PanelSize = { width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT },
+	inset = 0
 ): PanelPageLayout[] {
-	return layoutPanel(page, fonts, panel.height, panel.width);
+	return layoutPanel(page, fonts, panel.height, panel.width, inset);
 }
 
 export type PanelSize = { width: number; height: number };

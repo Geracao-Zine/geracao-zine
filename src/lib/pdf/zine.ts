@@ -3,7 +3,19 @@ import { embedZineFonts } from "./fonts.ts";
 import { effectivePrintMode, imposeZine } from "./imposition.ts";
 import type { ImposedFace } from "./imposition.ts";
 import type { PDFPage } from "pdf-lib";
-import { POEM_DIVIDER_COLOR, POEM_DIVIDER_THICKNESS } from "./layout.ts";
+import {
+        MARK_COLOR,
+        MARK_DASH_ARRAY,
+        MARK_LENGTH,
+        MARK_LENGTH_RATIO,
+        MARK_OFFSET,
+        MARK_OFFSET_RATIO,
+        MARK_THICKNESS,
+        POEM_DIVIDER_COLOR,
+        POEM_DIVIDER_THICKNESS,
+        mmToPt,
+} from "./layout.ts";
+import { markLines } from "./marks.ts";
 import { layoutPanel } from "./panel.ts";
 import type { PanelFonts, PanelPageLayout, PanelRun } from "./panel.ts";
 import { panelFontsFrom } from "./panel-fonts.ts";
@@ -50,16 +62,27 @@ export async function generateZinePdf(input: ZinePdfInput): Promise<Uint8Array> 
         // O autor da capa usa a fonte escolhida para ele, nao a do titulo.
         const coverFonts: PanelFonts = { ...fonts, subtitle: authorFonts.regular };
         const mode = effectivePrintMode(template, input.printMode);
-        const cover = coverPanel(template, input, coverFonts);
-        const sheets = imposeZine({ template, poems: input.poems, fonts, mode, cover });
+        const inset = mmToPt(input.safetyMarginMm ?? 0);
+        const cover = coverPanel(template, input, coverFonts, inset);
+        const sheets = imposeZine({ template, poems: input.poems, fonts, mode, cover, inset });
         const fontsFor = (layout: PanelPageLayout): PanelFonts =>
                 layout === cover ? coverFonts : fonts;
 
         for (const sheet of sheets) {
-                drawFace(pdfDoc.addPage([width, height]), sheet.front, fontsFor, rgb, degrees);
+                const front = pdfDoc.addPage([width, height]);
+                drawFace(front, sheet.front, fontsFor, rgb, degrees);
+
+                if (input.marks) {
+                        drawMarks(front, template, rgb);
+                }
 
                 if (sheet.back) {
-                        drawFace(pdfDoc.addPage([width, height]), sheet.back, fontsFor, rgb, degrees);
+                        const back = pdfDoc.addPage([width, height]);
+                        drawFace(back, sheet.back, fontsFor, rgb, degrees);
+
+                        if (input.marks) {
+                                drawMarks(back, template, rgb);
+                        }
                 }
         }
 
@@ -76,7 +99,8 @@ export async function generateZinePdf(input: ZinePdfInput): Promise<Uint8Array> 
 function coverPanel(
         template: ImpositionTemplate,
         input: ZinePdfInput,
-        fonts: PanelFonts
+        fonts: PanelFonts,
+        inset: number
 ): PanelPageLayout {
         const panel = panelSize(template);
 
@@ -89,7 +113,8 @@ function coverPanel(
                 },
                 fonts,
                 panel.height,
-                panel.width
+                panel.width,
+                inset
         )[0];
 }
 
@@ -121,11 +146,13 @@ function drawFace(
                 const place = (x: number, y: number) =>
                         rotated ? { x: 2 * centerX - x, y: 2 * centerY - y } : { x, y };
 
-                const top = slot.y + slot.height;
+                const left = slot.x + layout.inset;
+                const top = slot.y + slot.height - layout.inset;
+                const contentWidth = slot.width - layout.inset * 2;
 
                 for (const run of layout.runs) {
                         page.drawText(run.text, {
-                                ...place(slot.x, top - run.baseline),
+                                ...place(left, top - run.baseline),
                                 size: run.size,
                                 font: fontOf(run, fonts),
                                 color: rgb(run.color, run.color, run.color),
@@ -138,8 +165,8 @@ function drawFace(
                 if (layout.divider !== null) {
                         const dividerY = top - layout.divider;
                         page.drawLine({
-                                start: place(slot.x, dividerY),
-                                end: place(slot.x + slot.width, dividerY),
+                                start: place(left, dividerY),
+                                end: place(left + contentWidth, dividerY),
                                 thickness: POEM_DIVIDER_THICKNESS,
                                 color: rgb(
                                         POEM_DIVIDER_COLOR,
@@ -149,6 +176,74 @@ function drawFace(
                         });
                 }
         });
+}
+
+/**
+ * Desenha as marcas de corte e dobra nas bordas da folha.
+ *
+ * As marcas ficam fora dos paineis: os cantos ganham um L discreto e cada dobra
+ * ou corte vira um risco curto na borda, tracejado para dobra e continuo para
+ * corte. Desenhar dos dois lados mantem o alinhamento depois de virar a folha.
+ */
+export function drawMarks(page: PDFPage, template: ImpositionTemplate, rgb: Rgb): void {
+        const { width, height } = template.sheet;
+        const color = rgb(MARK_COLOR, MARK_COLOR, MARK_COLOR);
+        const offset = Math.min(MARK_OFFSET, template.margin * MARK_OFFSET_RATIO);
+        const length = Math.min(MARK_LENGTH, template.margin * MARK_LENGTH_RATIO);
+        const corners = [
+                { x: offset, y: height - offset, dx: 1, dy: -1 },
+                { x: width - offset, y: height - offset, dx: -1, dy: -1 },
+                { x: offset, y: offset, dx: 1, dy: 1 },
+                { x: width - offset, y: offset, dx: -1, dy: 1 },
+        ];
+
+        for (const corner of corners) {
+                page.drawLine({
+                        start: { x: corner.x, y: corner.y },
+                        end: { x: corner.x + corner.dx * length, y: corner.y },
+                        thickness: MARK_THICKNESS,
+                        color,
+                });
+                page.drawLine({
+                        start: { x: corner.x, y: corner.y },
+                        end: { x: corner.x, y: corner.y + corner.dy * length },
+                        thickness: MARK_THICKNESS,
+                        color,
+                });
+        }
+
+        for (const line of markLines(template)) {
+                const dashArray = line.kind === "fold" ? MARK_DASH_ARRAY : undefined;
+                const style = {
+                        thickness: MARK_THICKNESS,
+                        color,
+                        ...(dashArray ? { dashArray } : {}),
+                };
+
+                if (line.axis === "vertical") {
+                        page.drawLine({
+                                ...style,
+                                start: { x: line.at, y: height },
+                                end: { x: line.at, y: height - MARK_LENGTH },
+                        });
+                        page.drawLine({
+                                ...style,
+                                start: { x: line.at, y: 0 },
+                                end: { x: line.at, y: MARK_LENGTH },
+                        });
+                } else {
+                        page.drawLine({
+                                ...style,
+                                start: { x: 0, y: line.at },
+                                end: { x: MARK_LENGTH, y: line.at },
+                        });
+                        page.drawLine({
+                                ...style,
+                                start: { x: width, y: line.at },
+                                end: { x: width - MARK_LENGTH, y: line.at },
+                        });
+                }
+        }
 }
 
 function fontOf(run: PanelRun, fonts: PanelFonts): PanelFonts["body"] {
