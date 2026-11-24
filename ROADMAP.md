@@ -15,40 +15,30 @@ O Geração Zine é uma plataforma web para criadores independentes produzirem z
 
 ## Estado atual (auditoria)
 
-Levantamento feito no commit `5683f1c`, branch `master`.
+Levantamento refeito no commit `2e9dcd5`, branch `master`, depois das fases 1 a 6.
 
 **O que funciona**
 
-- Build de produção conclui sem erros (`next build`).
-- Verificação de tipos passa (`tsc --noEmit`).
-- Rotas existentes: `/`, `/Create`, `/Editor`, `/Library`, `/Support`.
-- Geração de PDF no formato "só para ler" (uma poesia por página A4 retrato) com capa, título, autor e data.
-- Preview do editor em grid com adição e remoção de páginas.
-- Login com Google na interface: o botão da navbar abre o popup do Google Identity
-  Services, troca o código no servidor, guarda a sessão em cookie e passa a mostrar
-  o nome de quem entrou, com opção de sair.
+- Build, tipagem e lint verdes (`npm run build`, `npm run typecheck`, `npm run lint`).
+- 340 testes automatizados em `node:test`; 338 passam e 2 pulam quando falta `DATABASE_URL`.
+- Rotas: `/`, `/Create`, `/Editor`, `/Library`, `/Support`.
+- Cadastro em quatro etapas com rascunho em `localStorage` e retomada de onde parou.
+- Doze dobras com imposição implementada (T1–T12), em frente única e frente e verso.
+- Motor único de medição alimentando preview e PDF, com ajuste de fonte por bisseção.
+- Login com Google, sessão em JWT e tabela `users` no Postgres via Prisma.
+- Deploy em Docker com Nginx, TLS e rollback documentados no README.
 
-**O que está quebrado ou incompleto**
+**O que falta**
 
-| # | Problema | Onde |
+| # | Pendência | Onde |
 |---|---|---|
-| B1 | `eslint` não executa: `eslint-config-next` está na versão `0.2.4` (pacote errado), quebra o `import` do `core-web-vitals` | `package.json`, `eslint.config.mjs` |
-| B2 | Classes Tailwind inexistentes (`bg-neutro-50`, `text-escuro`, `bg-zinc`, `border-neutro-100`) — a navbar fica sem cor de fundo e sem borda | `src/components/Navbar/index.tsx` |
-| B3 | ~~`jspdf` está instalado mas nunca é usado~~ (resolvido: removido) | `package.json` |
-| B4 | `concatTransformationMatrix`, `pushGraphicsState` e `popGraphicsState` importados e não usados | `src/app/Editor/page.tsx` |
-| B5 | `wrapText` recebe `font: any`, violando a tipagem estrita | `src/app/Editor/page.tsx` |
-| B6 | `console.log` de depuração rodando em produção | `src/app/Create/page.tsx` |
-| B7 | A data do zine é sempre "hoje" (`Date.now()` no render), não é editável e não persiste | `src/app/Editor/page.tsx` |
-| B8 | Fonte escolhida na tela (classe CSS) não é a fonte usada no PDF (Helvetica fixo) — preview e impressão divergem | `Create` + `Editor` |
-| B9 | `removePage` remapeia o conteúdo por índice de array; `addPage` usa `prev.length + 1`. Com remoções no meio, conteúdo e numeração podem sair de sincronia | `src/app/Editor/page.tsx` |
-| B10 | Página 1 é a capa, mas o conteúdo do usuário começa em 2: o array de páginas e o array de conteúdo usam réguas diferentes | `src/app/Editor/page.tsx` |
-| B11 | `wrapText` não trata palavra maior que a largura máxima (estoura a margem) | `src/app/Editor/page.tsx` |
-| B12 | Poema que transborda cria página nova no meio do texto, sem repetir título nem indicar continuação | `src/app/Editor/page.tsx` |
-| B13 | `--navbar-height` é definido em efeito, mas o layout usa `mt-14` fixo — pode descolar | `layout.tsx` + `Navbar` |
-| B14 | `body` força `font-family: Arial`, anulando a fonte Geist carregada | `src/app/globals.css` |
-| B15 | `Library` e `Support` são telas estáticas de placeholder | `src/app/Library`, `src/app/Support` |
-| B16 | Sem `.nvmrc`, sem `engines`, e `@types/node` em `^20` com Node 24 no ambiente | raiz |
-| B17 | Sem testes automatizados e sem CI | — |
+| P1 | Imagem não existe no modelo de página nem no PDF | `src/domain/page.ts`, `src/lib/pdf` |
+| P2 | O zine não é persistido em conta: só vive em `localStorage` | `src/lib/draft-storage.ts` |
+| P3 | `/Library` é placeholder estático, sem dados nem dono | `src/app/Library` |
+| P4 | O layout é algorítmico e fixo: não há posicionamento livre de elementos | `src/lib/pdf/panel.ts` |
+| P5 | Sem instruções de dobra nem nome de arquivo por título (as marcas de corte saíram na #29) | `src/lib/pdf/zine.ts` |
+| P6 | O rascunho é gravado a cada tecla, sem debounce | `src/hooks/useZineEditor.ts` |
+| P7 | Sem CI; os testes só rodam na máquina de quem desenvolve | — |
 
 **Dependências desatualizadas**
 
@@ -91,9 +81,9 @@ Objetivo: deploy reprodutível em VPS com imagem enxuta.
 - [x] 2.2 `.dockerignore` cobrindo `node_modules`, `.next`, `.git`, `*.md`.
 - [x] 2.3 `docker-compose.yml` com serviço da aplicação, porta configurável, `restart: unless-stopped` e healthcheck em `/`.
 - [x] 2.4 Variáveis de ambiente por `.env.example` documentado (sem segredos no repositório).
-- [ ] 2.5 Roteiro de deploy na VPS: Nginx como proxy reverso, certificado TLS (Let's Encrypt) e headers de segurança básicos.
+- [x] 2.5 Roteiro de deploy na VPS: Nginx como proxy reverso, certificado TLS (Let's Encrypt) e headers de segurança básicos. Feito em #9: o README tem a seção de deploy com proxy, certbot e snippet de headers, coberta por `tests/deploy-docs.test.mjs`.
 - [ ] 2.6 Publicação de imagem (GHCR) e instrução de atualização (`pull` + `up -d`).
-- [ ] 2.7 Documentar no README: requisitos, comandos de build/execução e rollback.
+- [x] 2.7 Documentar no README: requisitos, comandos de build/execução e rollback. Feito: seções "Requisitos", "Como rodar" e "Rollback".
 
 **Conclusão:** `docker compose up -d --build` sobe a aplicação em VPS e responde em HTTPS.
 
@@ -101,15 +91,15 @@ Objetivo: deploy reprodutível em VPS com imagem enxuta.
 
 Objetivo: zerar os defeitos conhecidos e evitar regressão.
 
-- [ ] 3.1 Corrigir B2 (classes Tailwind inválidas na navbar).
-- [ ] 3.2 Corrigir B4 (imports mortos) e B5 (`any` em `wrapText`).
-- [ ] 3.3 Remover B6 (`console.log`) e qualquer log de depuração remanescente.
-- [ ] 3.4 Reescrever o modelo de dados do editor para eliminar B9 e B10: uma lista única e estável de páginas com `id`, sendo a capa um item tipado, não um índice mágico.
-- [ ] 3.5 Corrigir B11: palavra maior que a largura máxima deve ser quebrada por caractere.
+- [x] 3.1 Corrigir B2 (classes Tailwind inválidas na navbar). Feito: a navbar usa os tokens do `globals.css` e `tests/navbar-classes.test.mjs` impede a volta das classes inexistentes.
+- [x] 3.2 Corrigir B4 (imports mortos) e B5 (`any` em `wrapText`). Feito: nenhum import morto e o `any` virou regra de lint com teste próprio.
+- [x] 3.3 Remover B6 (`console.log`) e qualquer log de depuração remanescente. Feito: `tests/no-debug-leftovers.test.mjs` varre o `src` e as chamadas de console ficaram concentradas no módulo de log.
+- [x] 3.4 Reescrever o modelo de dados do editor para eliminar B9 e B10: uma lista única e estável de páginas com `id`, sendo a capa um item tipado, não um índice mágico. Feito em #11.
+- [x] 3.5 Corrigir B11: palavra maior que a largura máxima deve ser quebrada por caractere. Feito em #12 (`breakWord`).
 - [x] 3.6 Corrigir B12: transbordo de poema deve ser controlado (ver Fase 6, ajuste automático de fonte) e, quando ainda assim estourar, gerar continuação identificada. Feito em #24.
 - [x] 3.7 Corrigir B13 (altura da navbar via variável, sem `mt-14` fixo) e B14 (fonte do `body`). Feito em #16.
-- [ ] 3.8 Corrigir B8: a fonte escolhida no cadastro deve valer no preview e no PDF (embutir a fonte no PDF).
-- [ ] 3.9 Corrigir B7: data opcional, editável e persistida.
+- [x] 3.8 Corrigir B8: a fonte escolhida no cadastro deve valer no preview e no PDF (embutir a fonte no PDF). Feito em #15: `embedZineFonts` embute o TTF e o preview carrega a mesma face.
+- [x] 3.9 Corrigir B7: data opcional, editável e persistida. Feito em #14: campo `type="date"` na capa, data ISO no domínio e no rascunho.
 - [ ] 3.10 Revisar estados vazios: nenhuma página, título em branco, texto só com espaços, caractere especial e acentuação no PDF.
 - [ ] 3.11 Testar em telas pequenas e com teclado (foco visível, navegação por tab).
 
@@ -119,11 +109,11 @@ Objetivo: zerar os defeitos conhecidos e evitar regressão.
 
 Objetivo: carregar rápido e não desperdiçar trabalho.
 
-- [ ] 4.1 Carregar `pdf-lib` por import dinâmico apenas ao gerar o PDF, reduzindo o bundle inicial do editor.
-- [ ] 4.2 Isolar a geração de PDF em módulo puro, sem dependência de React, permitindo execução fora do componente.
-- [ ] 4.3 Memoizar cálculos de quebra de linha e medição de texto; evitar recomputar a cada tecla.
-- [ ] 4.4 Aplicar `next/image` corretamente nas imagens existentes e revisar o peso dos assets em `src/assets`.
-- [ ] 4.5 Debounce na persistência de rascunho.
+- [x] 4.1 Carregar `pdf-lib` por import dinâmico apenas ao gerar o PDF, reduzindo o bundle inicial do editor. Feito em #17.
+- [x] 4.2 Isolar a geração de PDF em módulo puro, sem dependência de React, permitindo execução fora do componente. Feito em #17: `src/lib/pdf` não importa React e roda em teste com `node:test`.
+- [x] 4.3 Memoizar cálculos de quebra de linha e medição de texto; evitar recomputar a cada tecla. Feito: o preview usa `useMemo` por formato. A #18 foi fechada porque a premissa não valia — a medição nunca rodou a cada tecla.
+- [x] 4.4 Aplicar `next/image` corretamente nas imagens existentes e revisar o peso dos assets em `src/assets`. Feito na home e na navbar.
+- [ ] 4.5 Debounce na persistência de rascunho. Reclassificado para o backlog contínuo: não é otimização de bundle, é conforto de escrita, e só passa a doer quando o rascunho for para a conta (8.3).
 - [ ] 4.6 Medir com `next build` e Lighthouse; registrar números antes/depois neste documento.
 
 **Conclusão:** bundle inicial do editor reduzido e geração de PDF sem bloquear a interface perceptivelmente.
@@ -132,15 +122,15 @@ Objetivo: carregar rápido e não desperdiçar trabalho.
 
 Objetivo: um único estilo, tipagem explícita e responsabilidades separadas.
 
-- [ ] 5.1 Tipagem explícita: proibir `any`, tipar retornos de função e props; `strict` já está ativo, reforçar com `@typescript-eslint/no-explicit-any` como erro.
-- [ ] 5.2 Ponto e vírgula obrigatório ao final das linhas de comando, garantido por regra de lint (`semi`) e aplicado em todo o `src`.
+- [x] 5.1 Tipagem explícita: proibir `any`, tipar retornos de função e props; `strict` já está ativo, reforçar com `@typescript-eslint/no-explicit-any` como erro. Feito em #19, com teste que varre o `src`.
+- [x] 5.2 Ponto e vírgula obrigatório ao final das linhas de comando, garantido por regra de lint (`semi`) e aplicado em todo o `src`. Feito em #19.
 - [x] 5.3 Separar responsabilidades em camadas: `src/domain` (tipos e regras do zine), `src/lib` (quebra de texto, medição, PDF), `src/components` (apresentação), `src/app` (rotas e orquestração). Nenhum componente de tela gera PDF diretamente.
 - [x] 5.4 Extrair o estado do editor para um hook (`useZineEditor`). Feito em #20. O cadastro por etapas segue na #22.
-- [ ] 5.5 Padronizar nomes: componentes em PascalCase, hooks com prefixo `use`, tipos sem prefixo `I`, constantes em `SCREAMING_SNAKE_CASE`.
+- [x] 5.5 Padronizar nomes: componentes em PascalCase, hooks com prefixo `use`, tipos sem prefixo `I`, constantes em `SCREAMING_SNAKE_CASE`. Feito: os 11 componentes são PascalCase, os hooks são `useSession` e `useZineEditor`, nenhum tipo usa prefixo `I` e as constantes são maiúsculas.
 - [x] 5.6 Substituir strings mágicas (medidas A4, margens, tamanhos de fonte) por constantes nomeadas em um único arquivo de configuração de diagramação (`src/lib/pdf/layout.ts`).
 - [ ] 5.7 Centralizar o design system: remover classes arbitrárias repetidas, usar os tokens já definidos em `globals.css`.
 - [ ] 5.8 Revisar acessibilidade básica: `label` associado a `input`, `aria-*` nos seletores, contraste.
-- [ ] 5.9 Documentar as convenções no README e garantir que o lint as imponha.
+- [x] 5.9 Documentar as convenções no README e garantir que o lint as imponha. Feito: seção "Convenções de código" no README; `any` e `semi` são erro de lint com teste que verifica a própria configuração.
 
 **Conclusão:** lint sem exceções, zero `any`, nenhuma regra de diagramação fora de `src/lib`, e um PR de padronização aplicado ao projeto inteiro.
 
@@ -150,11 +140,11 @@ Objetivo: o autor cadastra pouco por vez, escolhe a dobra, o sistema diagrama e 
 
 ### 6.1 Fluxo em etapas curtas
 
-- [ ] 6.1.1 Quebrar o cadastro em etapas com salvamento incremental: (1) capa e autoria, (2) poesias, (3) revisão, (4) dobra e impressão.
-- [ ] 6.1.2 Persistir o rascunho localmente entre etapas, permitindo voltar e adaptar sem perder o que já foi escrito.
-- [ ] 6.1.3 Permitir adicionar, editar, reordenar e remover poesias a qualquer momento, com confirmação em ações destrutivas.
-- [ ] 6.1.4 Exibir progresso e pendências (ex.: "2 poesias sem título", "1 página vazia").
-- [ ] 6.1.5 Só liberar a etapa de dobra quando houver conteúdo mínimo válido.
+- [x] 6.1.1 Quebrar o cadastro em etapas com salvamento incremental: (1) capa e autoria, (2) poesias, (3) revisão, (4) dobra e impressão. Feito em #22 (PR #36).
+- [x] 6.1.2 Persistir o rascunho localmente entre etapas, permitindo voltar e adaptar sem perder o que já foi escrito. Feito em #22.
+- [x] 6.1.3 Permitir adicionar, editar, reordenar e remover poesias a qualquer momento, com confirmação em ações destrutivas. Feito: `addPage`, `movePage` e `removePage` operam por `id`, e a remoção pede confirmação.
+- [x] 6.1.4 Exibir progresso e pendências (ex.: "2 poesias sem título", "1 página vazia"). Feito: `draftIssues` gera as pendências e o `IssueList` mostra em cada etapa.
+- [x] 6.1.5 Só liberar a etapa de dobra quando houver conteúdo mínimo válido. Feito: `canEnterStep` e `stepStatus` barram a etapa no `StepNav`.
 
 ### 6.2 Conteúdo de cada página do zine
 
@@ -171,7 +161,7 @@ Regras de diagramação:
 - [x] 6.2.2 Ajuste automático de fonte: buscar por bisseção o maior corpo de fonte entre um mínimo e um máximo que faça o texto caber na caixa, respeitando entrelinha proporcional. Se o mínimo ainda não couber, dividir o texto em continuação com indicativo, nunca cortar em silêncio. Feito em #24.
 - [x] 6.2.3 Campos opcionais vazios não reservam espaço: a caixa do texto se expande quando título, subtítulo ou data estão ausentes. Feito em #23.
 - [x] 6.2.4 Hierarquia tipográfica fixa por painel: título > subtítulo > data > corpo, com proporções definidas em constantes. Feito em #23.
-- [ ] 6.2.5 Respeitar quebras de linha do autor (estrofe e verso) e hifenizar apenas quando necessário.
+- [ ] 6.2.5 Respeitar quebras de linha do autor (estrofe e verso) e hifenizar apenas quando necessário. Parcial: `wrapText` já trata cada linha do autor como parágrafo e preserva linha vazia como estrofe; falta a hifenização.
 - [x] 6.2.6 Pré-visualização fiel: o mesmo motor de medição alimenta preview e PDF. Feito em #24. O preview também mede no painel da dobra escolhida, não na largura da folha, desde #39.
 
 ### 6.3 Catálogo de dobras e templates
@@ -204,7 +194,7 @@ Cada dobra é um template com: quantidade de painéis por face, ordem de leitura
 
 - [x] 6.4.1 Opção de apenas frente, ou frente e verso, com imposição de verso espelhada corretamente. Feito em #28: a escolha fica na etapa de dobra, o verso espelha a grade em torno do eixo da dobra (virar na borda longa), a capa reserva o verso em branco e o PDF completa o par quando o número de páginas é ímpar. Conferido em pixels: frente e verso alinham com desvio de no máximo 1 pt e nenhum painel vaza para a goteira ou a margem.
 - [x] 6.4.2 Marcas de corte e dobra discretas, com margem de segurança configurável. Feito em #29: cada template declara as dobras e os cortes, o PDF desenha Ls discretos nos cantos e riscos curtos nas bordas (tracejado para dobra, contínuo para corte), e a margem de 0 a 10 mm reduz a caixa de texto no PDF e no preview. O texto nunca entra na faixa de corte.
-- [ ] 6.4.3 PDF em A4 real (595×842 pt) ou paisagem quando a dobra exigir, sem reescalonamento na impressão.
+- [x] 6.4.3 PDF em A4 real (595×842 pt) ou paisagem quando a dobra exigir, sem reescalonamento na impressão. Feito: a página é criada com o tamanho do template e os testes conferem 595×842 e 842×595 em cada dobra.
 - [ ] 6.4.4 Nome do arquivo gerado a partir do título e da data.
 - [ ] 6.4.5 Instruções de dobra e montagem incluídas como página final opcional do PDF.
 
@@ -212,15 +202,119 @@ Cada dobra é um template com: quantidade de painéis por face, ordem de leitura
 
 ---
 
+## Expansão em três eixos
+
+As três fases seguintes ampliam o produto em eixos independentes: **imagem**, **conta e biblioteca** e **layout livre**. A independência é real e vale a pena preservá-la — cada eixo pode entrar sozinho, e a ordem entre eles é uma escolha de produto, não uma imposição técnica.
+
+Dois deles, porém, compartilham uma **fundação**: imagem e layout livre precisam de uma representação de página que aceite elementos posicionados, e não só quatro campos de texto empilhados. Essa fundação é a tarefa 9.1, pré-requisito de 7.2 em diante e de 9.2 em diante. Ela aparece na Fase 9 por afinidade de assunto, mas precisa ser feita antes das outras duas. A Fase 8 não depende dela.
+
+Esforço: **P** = até um dia, **M** = dois a quatro dias, **G** = uma semana ou mais. É estimativa de implementação, sem contar revisão e impressão de teste.
+
+## Fase 7 — Imagem
+
+Objetivo: o autor coloca uma imagem na página, redimensiona mantendo a proporção e escolhe o enquadramento, sem deformar.
+
+A intenção declarada é **escala uniforme**: as alças redimensionam o retângulo inteiro mantendo a razão de aspecto, nunca um lado isolado. Esticar a imagem num eixo só é justamente o que a deforma — é o comportamento a evitar, não a oferecer. O recorte (o que fica visível) é uma operação separada da escala, e por isso aparece como tarefa própria (7.5).
+
+| Item | Esforço | Depende de | Entrega |
+|---|---|---|---|
+| 7.1 Modelo de imagem no domínio | P | — | `PageImage` com `assetId`, tamanho natural, escala, deslocamento e retângulo de recorte. Normalização de JSON salvo, como já acontece com `PageFields`. |
+| 7.2 Imagem no PDF a partir de um arquivo local | P | 9.1 | `pdf-lib` embute PNG e JPEG (`embedPng`, `embedJpg`). Desenho no painel respeitando a proporção. Cobre o caso de uma imagem fixa de teste, sem upload. |
+| 7.3 Upload e armazenamento | M | 7.1 | Receber o arquivo, validar tipo e tamanho, gravar e servir. Exige decisão de infraestrutura: volume Docker com backup, ou storage S3-compatível. Ver "Decisões pendentes". |
+| 7.4 Redimensionar com proporção travada | M | 7.2, 7.3 | Alças nos cantos e nas bordas que mudam a escala uniformemente. Um botão "livre" permite destravar, com aviso de deformação. |
+| 7.5 Enquadramento (recorte) | M | 7.4 | Mover a imagem dentro da moldura sem mudar a moldura, e cortar o excedente. É o que o Canva chama de *crop*. |
+| 7.6 Imagem de capa | P | 7.2 | A capa ganha uma imagem de fundo opcional, com o texto por cima. |
+| 7.7 Aviso de resolução para impressão | P | 7.2 | Comparar os pixels disponíveis com o tamanho impresso e avisar abaixo de 300 dpi. É o aviso que evita a impressão borrada. |
+| 7.8 Limites e recomposição | P | 7.3 | Tamanho máximo por arquivo, limite de imagens por zine e recomposição de imagem grande antes de gravar. |
+| 7.9 Texto alternativo | P | 7.1 | Campo de descrição, usado no PDF acessível e no preview. |
+
+Ordem sugerida: 7.1 → 7.2 → 7.6 → 7.3 → 7.4 → 7.5 → 7.7 → 7.8 → 7.9. A fatia 7.1 + 7.2 + 7.6 já entrega imagem na capa e no PDF sem upload, que é o teste mais barato da ideia.
+
+Riscos: `pdf-lib` embute PNG e JPEG, mas **não** SVG nem WebP — converter no cliente ou recusar o formato. Imagem grande embutida infla o PDF: precisa de recomposição e de um teto de resolução, senão o download passa de dezenas de megabytes.
+
+**Conclusão:** o autor envia uma foto, posiciona na capa e numa página, redimensiona sem deformar, recorta o enquadramento e recebe um PDF impresso com a imagem nítida — sem nenhuma imagem esticada em um eixo só.
+
+## Fase 8 — Conta e biblioteca
+
+Objetivo: quem entra com Google guarda seus zines na conta, marca o que é público e reaproveita o zine de outra pessoa.
+
+Hoje o zine vive só em `localStorage`: trocar de navegador perde tudo. A tabela `users` e a sessão já existem, então o trabalho é de modelo e de API, não de autenticação.
+
+| Item | Esforço | Depende de | Entrega |
+|---|---|---|---|
+| 8.1 Modelo `Zine` no schema | P | — | `ownerId`, `title`, `visibility` (`private`/`public`), `content` em JSON, `createdAt`/`updatedAt`, slug curto. Migration e teste de schema. |
+| 8.2 API de zines com sessão | M | 8.1 | `POST`, `GET`, `PATCH`, `DELETE` em `/api/zines`, sempre filtrando por `ownerId` da sessão. Sem sessão, 401. |
+| 8.3 Salvar na conta | M | 8.2 | Botão explícito "Salvar na conta" e salvamento automático para quem está logado. Anônimo continua em `localStorage`. |
+| 8.4 Migrar o rascunho local no primeiro login | P | 8.3 | Ao entrar, oferecer levar o rascunho de `localStorage` para a conta. Sem isso o autor perde o que escreveu antes de criar conta. |
+| 8.5 Meus zines | M | 8.2 | Lista com título, data, dobra e miniatura; abrir, duplicar e excluir. |
+| 8.6 Biblioteca pública | M | 8.1 | `/Library` deixa de ser placeholder: lista os zines `public`, com busca e filtro por dobra. |
+| 8.7 Alternar público e privado | P | 8.3 | Interruptor no editor e na lista. Privado é o padrão; publicar é ação explícita. |
+| 8.8 Reaproveitar o zine de outra pessoa | P | 8.5, 8.6 | "Usar como base": copia o conteúdo para um zine novo do usuário, com atribuição ao autor original. Nunca edita o original. |
+| 8.9 Cota, moderação e remoção | M | 8.6 | Limite de zines e de armazenamento por conta, denúncia de conteúdo público e remoção pelo dono do espaço. |
+| 8.10 Página de um zine público | P | 8.6 | Rota com o zine, o autor e o botão de reaproveitar. |
+
+Ordem sugerida: 8.1 → 8.2 → 8.3 → 8.5 → 8.7 → 8.4 → 8.6 → 8.8 → 8.10 → 8.9. As quatro primeiras já resolvem o problema real de hoje, que é perder o zine ao trocar de navegador. A biblioteca pública vem depois porque é a parte que cria obrigação de moderação.
+
+Riscos: conteúdo público é conteúdo de terceiros — precisa de regra de remoção e de termos antes de abrir, não depois. E `content` em JSON livre dificulta migração futura; versionar o JSON desde o início (como já é feito com `DRAFT_VERSION`) custa pouco agora e muito depois.
+
+**Conclusão:** quem entra com Google acha os próprios zines em qualquer navegador, marca um como público, e outra pessoa consegue partir dele para criar o seu — sem que ninguém edite o zine alheio.
+
+## Fase 9 — Layout livre por componentes
+
+Objetivo: o autor monta a página como no Canva — arrasta blocos de título, texto, imagem, traço e arquivo para qualquer posição, redimensiona, e escolhe entre partir de um template pronto ou de uma página em branco. As dobras continuam as mesmas: mudam os elementos dentro do painel, não a imposição.
+
+O modelo atual é **algorítmico**: `layoutPanel` recebe quatro campos e devolve as linhas já posicionadas. Não existe lugar para "este bloco fica em x=120, y=300". O eixo 3 exige o contrário, e é por isso que a primeira tarefa não é interface, é contrato.
+
+| Item | Esforço | Depende de | Entrega |
+|---|---|---|---|
+| 9.1 Representação de página posicionada | M | — | Um `PanelLayout` com elementos em coordenadas absolutas (tipo, retângulo, conteúdo, ordem). O layout algorítmico atual passa a **produzir** essa representação. Nenhuma mudança visível: é refatoração com os 340 testes como rede. |
+| 9.2 Componentes de texto e título | P | 9.1 | Bloco de título e bloco de texto posicionáveis, com fonte, corpo, cor e alinhamento próprios. |
+| 9.3 Renderizador de elementos no PDF e no preview | M | 9.1 | O mesmo `PanelLayout` alimenta `pdf-lib` e o SVG do preview, mantendo a paridade que já existe hoje. |
+| 9.4 Selecionar, arrastar e redimensionar | G | 9.3 | Canvas com seleção, arraste e alças. Encaixe nas margens e no centro do painel, guias de alinhamento. |
+| 9.5 Ordem de empilhamento | P | 9.4 | Trazer para frente, enviar para trás, travar elemento. |
+| 9.6 Templates prontos como layout inicial | M | 9.1 | As doze dobras continuam funcionando; cada uma ganha um layout de exemplo que o autor pode editar depois de aplicar. |
+| 9.7 Página em branco | P | 9.4 | Começar sem nada e adicionar blocos. |
+| 9.8 Componente de imagem no canvas | M | 9.4, 7.2 | Reaproveita 7.1 a 7.5 dentro do editor livre. |
+| 9.9 Componente de traço e arco | P | 9.3 | Linha, retângulo e arco com espessura e cor. Serve de divisória e de moldura. |
+| 9.10 Componente de arquivo | M | 9.3 | Ver "Decisões pendentes": no papel, arquivo anexado não existe. A entrega imprimível é um QR code com link; o anexo real só faz sentido no PDF lido na tela. |
+| 9.11 Avisos de área segura e sobreposição | M | 9.4 | Elemento fora da margem de segurança ou texto que estoura o bloco viram pendência na revisão, no mesmo `draftIssues` de hoje. |
+| 9.12 Persistir e versionar o layout | M | 9.1, 8.1 | O layout personalizado entra no JSON do rascunho e do zine, com versão de schema. |
+| 9.13 Biblioteca de blocos do usuário | G | 9.2, 8.3 | Salvar um bloco composto e reutilizar em outro zine. Depende da conta da Fase 8. |
+
+Ordem sugerida: 9.1 → 9.2 → 9.3 → 9.4 → 9.7 → 9.5 → 9.9 → 9.6 → 9.8 → 9.11 → 9.12 → 9.10 → 9.13.
+
+Riscos: 9.1 é a tarefa de maior risco do roadmap inteiro, porque mexe no motor que hoje garante a paridade entre preview e PDF. Ela precisa entrar sozinha, com comportamento idêntico e sem nenhuma funcionalidade nova junto. 9.4 é a maior em esforço e a que mais muda de ideia durante a execução — convém prototipar antes de fechar escopo.
+
+**Conclusão:** o autor escolhe entre partir de um template pronto ou de uma página em branco, adiciona blocos de título, texto, imagem, traço e arquivo, posiciona e redimensiona livremente, e o PDF sai igual ao que estava na tela — nas doze dobras, sem exceção.
+
+### Decisões pendentes
+
+Três decisões travam itens específicos e não devem ser tomadas por quem implementa sozinho:
+
+1. **Onde ficam os bytes das imagens** (7.3): volume Docker com backup, ou storage S3-compatível. Volume é mais simples e mais frágil — some junto com a VPS. S3-compatível custa configuração e uma dependência nova.
+2. **O que "arquivo" significa impresso** (9.10): anexo de PDF não sobrevive ao papel. A saída honesta é QR code com link no impresso e anexo no PDF digital, deixando claro para o autor que são coisas diferentes.
+3. **Conteúdo público e responsabilidade** (8.9): abrir a biblioteca pública sem regra de remoção e sem termo de uso cria obrigação jurídica que o projeto ainda não tem.
+
+### Ordem entre os eixos
+
+A fundação (9.1) vem primeiro, sozinha. Depois, a ordem recomendada é **8 → 7 → 9**, e não a ordem numérica:
+
+- A Fase 8 é a única que resolve um problema que já dói hoje, que é perder o zine ao trocar de navegador. Ela não depende de 9.1.
+- A Fase 7 entrega valor visível com pouco risco depois de 9.1.
+- O resto da Fase 9 é o maior esforço e o mais aberto a mudança de escopo; entrar por último evita refazer interface sobre um modelo que ainda vai mudar.
+
+---
+
 ## Backlog contínuo
 
-- [ ] Testes automatizados do motor de diagramação (quebra de linha, ajuste de fonte, imposição por dobra).
-- [ ] CI no GitHub Actions: lint, typecheck, build e testes em cada PR.
-- [ ] `AGENTS.md` com as convenções do projeto para contribuições assistidas.
-- [ ] Biblioteca com zines reais publicados (hoje é placeholder).
+- [x] Testes automatizados do motor de diagramação (quebra de linha, ajuste de fonte, imposição por dobra). Feito: 340 testes em `node:test`, incluindo `templates`, `folds`, `print-marks`, `print-mode`, `panel-layout`, `font-fit` e `preview-parity`.
+- [ ] CI no GitHub Actions: lint, typecheck, build e testes em cada PR. É o item que mais barato fica agora: a suíte já roda sem banco, com 2 testes pulando quando falta `DATABASE_URL`.
+- [ ] `AGENTS.md` com as convenções do projeto para contribuições assistidas. Parcial: o arquivo existe, mas só com o bloco que o `next dev` gera. As convenções de produto estão no README e ainda não foram levadas para lá.
+- [ ] Biblioteca com zines reais publicados (hoje é placeholder). Depende da Fase 8.
 - [ ] Página de apoio com meios de contribuição (hoje é placeholder).
 - [ ] Internacionalização, se houver demanda.
-- [ ] Acessibilidade auditada com leitor de tela.
+- [ ] Acessibilidade auditada com leitor de tela. A Fase 9 acrescenta o texto alternativo das imagens (7.9), que é pré-requisito.
+- [ ] Debounce na gravação do rascunho (era 4.5): hoje `localStorage` é escrito a cada tecla. Vira requisito de 8.3, quando a gravação passar a ir para o servidor.
 
 ## Convenções de código
 
@@ -266,8 +360,11 @@ Para pedir uma segunda tentativa em uma issue já processada, remova e reaplique
 | 4 — Otimização | #17, #18 | #17 entregue; #18 fechada (o problema não existia) |
 | 5 — Padronização | #19, #20, #21 | fase concluída: #19, #20 e #21 entregues |
 | 6 — Fluxo e diagramação | #22 a #29 | fase concluída: #22 a #29 entregues |
+| 7 — Imagem | a criar | planejada, depende da fundação 9.1 |
+| 8 — Conta e biblioteca | a criar | planejada, não depende de 9.1 |
+| 9 — Layout livre | a criar | planejada, começa pela fundação 9.1 |
 
-Fechadas: #3 (lint), #4 (versão do Node), #5 (dependências e audit), #6 (`jspdf` removido), #21 (constantes de diagramação), #19 (regras de lint), #9 (deploy em VPS), #7 (Dockerfile multi-stage), #8 (docker-compose e `.env.example`), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #20 (camadas), #16 (navbar e fonte do body), #22 (fluxo em etapas), #23 (modelo de página), #24 (auto-ajuste de fonte), #25 (templates T1 a T4), #26 (minizine e grampeado), #27 (trifold, Z, acordeão, gatefold e 16 páginas), #28 (frente e verso espelhado), #29 (marcas e margem de segurança).
+Fechadas: #3 (lint), #4 (versão do Node), #5 (dependências e audit), #6 (`jspdf` removido), #7 (Dockerfile multi-stage), #8 (docker-compose e `.env.example`), #9 (deploy em VPS), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #16 (navbar e fonte do body), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #19 (regras de lint), #20 (camadas), #21 (constantes de diagramação), #22 (fluxo em etapas), #23 (modelo de página), #24 (auto-ajuste de fonte), #25 (templates T1 a T4), #26 (minizine e grampeado), #27 (trifold, Z, acordeão, gatefold e 16 páginas), #28 (frente e verso espelhado), #29 (marcas e margem de segurança).
 
 ### Fila de execução
 
@@ -287,36 +384,45 @@ A #22 (fluxo em etapas) ficou para depois da fila acima: é funcionalidade nova 
 
 ```
 FECHADAS
-  #3 lint ──> #4 node ──> #5 deps ──> #6 jspdf  (todas fechadas)
-  #3 ──> #11 modelo editor ──> #12 wrapText
+  #3 lint ──> #4 node ──> #5 deps ──> #6 jspdf
   #10 navbar ──> #16 navbar/body
-  #17 pdf dinamico
-  #20 camadas  (dependia de #17)
-  #7 dockerfile  (#8 e #9 destravam a partir dele)
+  #11 modelo editor ──> #12 wrapText
+  #17 pdf dinamico ──> #20 camadas ──> #21 constantes
   #14 data da capa  (dependia de #20)
+  #7 dockerfile ──> #8 compose ──> #9 deploy
+  #20 + #11 ──> #22 fluxo etapas ──> #23 pagina zine ──> #24 auto-fonte
+  #24 ──> #25 T1-T4 ──┬─> #26 T5,T11 ──> #27 T6-T10,T12
+                      └─> #28 frente/verso
 
-ABERTAS
-  #5 (feita) ──> #6 (feita)
-  #7 (feita) ──> #8 (feita) ──> #9 (feita)
-  #19 regras lint  (feita)
-  #20 ──> #21 constantes (feita)
-  #20 + #11 ──> #22 fluxo etapas (feita)
-                   │
-                   v
-              #23 pagina zine (feita)
-                   │
-                   v
-              #24 auto-fonte (feita)
-                   │
-                   v
-  #25 T1-T4 ──┬─> #26 T5,T11 ──> #27 T6-T10,T12
-              └─> #28 frente/verso ──> #29 marcas
+ABERTAS E PLANEJADAS
+  #28 (feita) ──> #29 marcas de corte
+
+  9.1 fundacao (layout posicionado)
+    ├─> 7.2 imagem no PDF ──> 7.6 capa ──> 7.3 upload ──> 7.4 escala ──> 7.5 recorte
+    └─> 9.2 componentes texto ──> 9.3 renderizador ──> 9.4 canvas
+                                                          ├─> 9.5 ordem
+                                                          ├─> 9.7 pagina em branco
+                                                          └─> 9.8 imagem (com 7.2)
+
+  8.1 modelo Zine ──> 8.2 API ──> 8.3 salvar na conta ──┬─> 8.5 meus zines ──> 8.8 reaproveitar
+                                                        └─> 8.7 publico/privado
+  8.1 ──> 8.6 biblioteca publica ──> 8.10 pagina publica ──> 8.9 moderacao
+  8.3 ──> 8.4 migrar rascunho local
+  8.3 + 9.2 ──> 9.13 biblioteca de blocos
+  9.1 + 8.1 ──> 9.12 persistir layout
 ```
-
-A #18 saiu do grafo: a medição de texto nunca rodou a cada tecla, então não havia o que memoizar.
 
 ### Ordem prática de trabalho
 
 1. **Fila vazia.** As issues que receberam `next-up` foram todas fechadas, na ordem #8 → #6 → #21 → #19 → #9.
-2. **Em execução:** #25 (templates T1 a T4), armada com `openhands` depois do merge da #24.
-3. **Depois de #25:** (#26 → #27) e (#28 → #29). Todas seguem com `blocked` de propósito: cada uma depende do merge da anterior, e armar antes faz o trabalho começar sobre uma base que não existe.
+2. **Fase 6 encerrada:** #22 a #29 entregues. Restam nela só dois itens que não são código — a #6.3.6 (validação com impressão física) e a #6.4.4 (nome do arquivo por título), que ainda não virou issue.
+3. **Antes de abrir as fases 7, 8 e 9:** criar os milestones e as issues a partir das tabelas acima, e resolver as três decisões pendentes. Sem a decisão de armazenamento (7.3) e sem a de conteúdo público (8.9), os itens que dependem delas não devem ser armados.
+4. **Primeira issue dos três eixos:** 9.1, a fundação. Ela entra sozinha, sem funcionalidade nova e com os testes atuais como rede de segurança. Fazer 7.2 ou 9.2 antes dela significa implementar duas vezes.
+
+### Por que a fundação vem antes, mesmo não sendo o pedido mais visível
+
+O pedido dos três eixos parece três pedidos independentes, e em termos de produto são. Em termos de código, não: hoje uma página é `{ title, subtitle, date, body }`, e `layoutPanel` transforma esses quatro campos em linhas posicionadas por um algoritmo fixo. Não existe, em lugar nenhum, a noção de "um bloco nesta coordenada".
+
+Imagem precisa disso (7.1 descreve posição e escala). O editor livre precisa disso de forma ainda mais direta (9.2 em diante). Sem a representação posicionada, cada eixo inventaria a sua própria estrutura de página, e as três convergiriam depois por reescrita — o caminho mais caro possível.
+
+A conta e a biblioteca (Fase 8) são a exceção: elas guardam o que já existe, e por isso podem andar em paralelo à fundação ou mesmo antes dela. É o eixo que resolve a dor mais imediata, que é perder o zine ao trocar de navegador.

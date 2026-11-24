@@ -30,16 +30,20 @@ O projeto está em desenvolvimento ativo. O roadmap completo, com fases, tarefas
 
 **Funcionando hoje**
 
-- Site institucional (`/`), cadastro (`/Create`) e editor (`/Editor`) com pré-visualização.
+- Site institucional (`/`), cadastro em quatro etapas (`/Create`) e editor (`/Editor`) com pré-visualização fiel ao PDF.
 - Geração de PDF com imposição para as 12 dobras do catálogo, com a capa como página 1, título, autor e data.
+- Frente única ou frente e verso, com o verso espelhado na borda da dobra.
 - Marcas de corte e dobra opcionais e margem de segurança configurável, com o texto sempre fora da faixa de corte.
-- Build de produção e verificação de tipos passando.
+- Ajuste automático de fonte por área limitada, com página de continuação identificada.
+- Login com Google, sessão em cookie e tabela de usuários no Postgres.
+- 340 testes automatizados; build, tipagem e lint verdes.
+- Empacotamento em Docker para hospedagem em VPS, com deploy, TLS e rollback documentados.
 
 **Em desenvolvimento**
 
-- Ajuste automático de fonte por área limitada, com frente e verso.
-- Empacotamento em Docker para hospedagem em VPS.
-- Correção dos bugs mapeados na auditoria do roadmap.
+- Imagem na página, com escala uniforme e enquadramento.
+- Salvar zines na conta, com biblioteca pública e reaproveitamento entre autores.
+- Editor de layout livre por componentes, no estilo Canva.
 
 Telas de Biblioteca (`/Library`) e Apoio (`/Support`) são placeholders.
 
