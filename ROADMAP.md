@@ -216,17 +216,17 @@ Objetivo: o autor coloca uma imagem na página, redimensiona mantendo a proporç
 
 A intenção declarada é **escala uniforme**: as alças redimensionam o retângulo inteiro mantendo a razão de aspecto, nunca um lado isolado. Esticar a imagem num eixo só é justamente o que a deforma — é o comportamento a evitar, não a oferecer. O recorte (o que fica visível) é uma operação separada da escala, e por isso aparece como tarefa própria (7.5).
 
-| Item | Esforço | Depende de | Entrega |
-|---|---|---|---|
-| 7.1 Modelo de imagem no domínio | P | — | `PageImage` com `assetId`, tamanho natural, escala, deslocamento e retângulo de recorte. Normalização de JSON salvo, como já acontece com `PageFields`. |
-| 7.2 Imagem no PDF a partir de um arquivo local | P | 9.1 | `pdf-lib` embute PNG e JPEG (`embedPng`, `embedJpg`). Desenho no painel respeitando a proporção. Cobre o caso de uma imagem fixa de teste, sem upload. |
-| 7.3 Upload e armazenamento | M | 7.1 | Receber o arquivo, validar tipo e tamanho, gravar e servir. Exige decisão de infraestrutura: volume Docker com backup, ou storage S3-compatível. Ver "Decisões pendentes". |
-| 7.4 Redimensionar com proporção travada | M | 7.2, 7.3 | Alças nos cantos e nas bordas que mudam a escala uniformemente. Um botão "livre" permite destravar, com aviso de deformação. |
-| 7.5 Enquadramento (recorte) | M | 7.4 | Mover a imagem dentro da moldura sem mudar a moldura, e cortar o excedente. É o que o Canva chama de *crop*. |
-| 7.6 Imagem de capa | P | 7.2 | A capa ganha uma imagem de fundo opcional, com o texto por cima. |
-| 7.7 Aviso de resolução para impressão | P | 7.2 | Comparar os pixels disponíveis com o tamanho impresso e avisar abaixo de 300 dpi. É o aviso que evita a impressão borrada. |
-| 7.8 Limites e recomposição | P | 7.3 | Tamanho máximo por arquivo, limite de imagens por zine e recomposição de imagem grande antes de gravar. |
-| 7.9 Texto alternativo | P | 7.1 | Campo de descrição, usado no PDF acessível e no preview. |
+| Item | Issue | Esforço | Depende de | Entrega |
+|---|---|---|---|---|
+| 7.1 Modelo de imagem no domínio | [#46](https://github.com/Geracao-Zine/geracao-zine/issues/46) | P | — | `PageImage` com `assetId`, tamanho natural, escala, deslocamento e retângulo de recorte. Normalização de JSON salvo, como já acontece com `PageFields`. |
+| 7.2 Imagem no PDF a partir de um arquivo local | [#47](https://github.com/Geracao-Zine/geracao-zine/issues/47) | P | 9.1 | `pdf-lib` embute PNG e JPEG (`embedPng`, `embedJpg`). Desenho no painel respeitando a proporção. Cobre o caso de uma imagem fixa de teste, sem upload. |
+| 7.3 Upload e armazenamento | [#49](https://github.com/Geracao-Zine/geracao-zine/issues/49) | M | 7.1 | Receber o arquivo, validar tipo e tamanho, gravar e servir. Exige decisão de infraestrutura: volume Docker com backup, ou storage S3-compatível. Ver "Decisões pendentes". |
+| 7.4 Redimensionar com proporção travada | [#50](https://github.com/Geracao-Zine/geracao-zine/issues/50) | M | 7.2, 7.3 | Alças nos cantos e nas bordas que mudam a escala uniformemente. Um botão "livre" permite destravar, com aviso de deformação. |
+| 7.5 Enquadramento (recorte) | [#51](https://github.com/Geracao-Zine/geracao-zine/issues/51) | M | 7.4 | Mover a imagem dentro da moldura sem mudar a moldura, e cortar o excedente. É o que o Canva chama de *crop*. |
+| 7.6 Imagem de capa | [#48](https://github.com/Geracao-Zine/geracao-zine/issues/48) | P | 7.2 | A capa ganha uma imagem de fundo opcional, com o texto por cima. |
+| 7.7 Aviso de resolução para impressão | [#52](https://github.com/Geracao-Zine/geracao-zine/issues/52) | P | 7.2 | Comparar os pixels disponíveis com o tamanho impresso e avisar abaixo de 300 dpi. É o aviso que evita a impressão borrada. |
+| 7.8 Limites e recomposição | [#53](https://github.com/Geracao-Zine/geracao-zine/issues/53) | P | 7.3 | Tamanho máximo por arquivo, limite de imagens por zine e recomposição de imagem grande antes de gravar. |
+| 7.9 Texto alternativo | [#54](https://github.com/Geracao-Zine/geracao-zine/issues/54) | P | 7.1 | Campo de descrição, usado no PDF acessível e no preview. |
 
 Ordem sugerida: 7.1 → 7.2 → 7.6 → 7.3 → 7.4 → 7.5 → 7.7 → 7.8 → 7.9. A fatia 7.1 + 7.2 + 7.6 já entrega imagem na capa e no PDF sem upload, que é o teste mais barato da ideia.
 
@@ -240,18 +240,18 @@ Objetivo: quem entra com Google guarda seus zines na conta, marca o que é públ
 
 Hoje o zine vive só em `localStorage`: trocar de navegador perde tudo. A tabela `users` e a sessão já existem, então o trabalho é de modelo e de API, não de autenticação.
 
-| Item | Esforço | Depende de | Entrega |
-|---|---|---|---|
-| 8.1 Modelo `Zine` no schema | P | — | `ownerId`, `title`, `visibility` (`private`/`public`), `content` em JSON, `createdAt`/`updatedAt`, slug curto. Migration e teste de schema. |
-| 8.2 API de zines com sessão | M | 8.1 | `POST`, `GET`, `PATCH`, `DELETE` em `/api/zines`, sempre filtrando por `ownerId` da sessão. Sem sessão, 401. |
-| 8.3 Salvar na conta | M | 8.2 | Botão explícito "Salvar na conta" e salvamento automático para quem está logado. Anônimo continua em `localStorage`. |
-| 8.4 Migrar o rascunho local no primeiro login | P | 8.3 | Ao entrar, oferecer levar o rascunho de `localStorage` para a conta. Sem isso o autor perde o que escreveu antes de criar conta. |
-| 8.5 Meus zines | M | 8.2 | Lista com título, data, dobra e miniatura; abrir, duplicar e excluir. |
-| 8.6 Biblioteca pública | M | 8.1 | `/Library` deixa de ser placeholder: lista os zines `public`, com busca e filtro por dobra. |
-| 8.7 Alternar público e privado | P | 8.3 | Interruptor no editor e na lista. Privado é o padrão; publicar é ação explícita. |
-| 8.8 Reaproveitar o zine de outra pessoa | P | 8.5, 8.6 | "Usar como base": copia o conteúdo para um zine novo do usuário, com atribuição ao autor original. Nunca edita o original. |
-| 8.9 Cota, moderação e remoção | M | 8.6 | Limite de zines e de armazenamento por conta, denúncia de conteúdo público e remoção pelo dono do espaço. |
-| 8.10 Página de um zine público | P | 8.6 | Rota com o zine, o autor e o botão de reaproveitar. |
+| Item | Issue | Esforço | Depende de | Entrega |
+|---|---|---|---|---|
+| 8.1 Modelo `Zine` no schema | [#45](https://github.com/Geracao-Zine/geracao-zine/issues/45) | P | — | `ownerId`, `title`, `visibility` (`private`/`public`), `content` em JSON, `createdAt`/`updatedAt`, slug curto. Migration e teste de schema. |
+| 8.2 API de zines com sessão | [#55](https://github.com/Geracao-Zine/geracao-zine/issues/55) | M | 8.1 | `POST`, `GET`, `PATCH`, `DELETE` em `/api/zines`, sempre filtrando por `ownerId` da sessão. Sem sessão, 401. |
+| 8.3 Salvar na conta | [#56](https://github.com/Geracao-Zine/geracao-zine/issues/56) | M | 8.2 | Botão explícito "Salvar na conta" e salvamento automático para quem está logado. Anônimo continua em `localStorage`. |
+| 8.4 Migrar o rascunho local no primeiro login | [#59](https://github.com/Geracao-Zine/geracao-zine/issues/59) | P | 8.3 | Ao entrar, oferecer levar o rascunho de `localStorage` para a conta. Sem isso o autor perde o que escreveu antes de criar conta. |
+| 8.5 Meus zines | [#57](https://github.com/Geracao-Zine/geracao-zine/issues/57) | M | 8.2 | Lista com título, data, dobra e miniatura; abrir, duplicar e excluir. |
+| 8.6 Biblioteca pública | [#60](https://github.com/Geracao-Zine/geracao-zine/issues/60) | M | 8.1 | `/Library` deixa de ser placeholder: lista os zines `public`, com busca e filtro por dobra. |
+| 8.7 Alternar público e privado | [#58](https://github.com/Geracao-Zine/geracao-zine/issues/58) | P | 8.3 | Interruptor no editor e na lista. Privado é o padrão; publicar é ação explícita. |
+| 8.8 Reaproveitar o zine de outra pessoa | [#61](https://github.com/Geracao-Zine/geracao-zine/issues/61) | P | 8.5, 8.6 | "Usar como base": copia o conteúdo para um zine novo do usuário, com atribuição ao autor original. Nunca edita o original. |
+| 8.9 Cota, moderação e remoção | [#63](https://github.com/Geracao-Zine/geracao-zine/issues/63) | M | 8.6 | Limite de zines e de armazenamento por conta, denúncia de conteúdo público e remoção pelo dono do espaço. |
+| 8.10 Página de um zine público | [#62](https://github.com/Geracao-Zine/geracao-zine/issues/62) | P | 8.6 | Rota com o zine, o autor e o botão de reaproveitar. |
 
 Ordem sugerida: 8.1 → 8.2 → 8.3 → 8.5 → 8.7 → 8.4 → 8.6 → 8.8 → 8.10 → 8.9. As quatro primeiras já resolvem o problema real de hoje, que é perder o zine ao trocar de navegador. A biblioteca pública vem depois porque é a parte que cria obrigação de moderação.
 
@@ -265,21 +265,21 @@ Objetivo: o autor monta a página como no Canva — arrasta blocos de título, t
 
 O modelo atual é **algorítmico**: `layoutPanel` recebe quatro campos e devolve as linhas já posicionadas. Não existe lugar para "este bloco fica em x=120, y=300". O eixo 3 exige o contrário, e é por isso que a primeira tarefa não é interface, é contrato.
 
-| Item | Esforço | Depende de | Entrega |
-|---|---|---|---|
-| 9.1 Representação de página posicionada | M | — | Um `PanelLayout` com elementos em coordenadas absolutas (tipo, retângulo, conteúdo, ordem). O layout algorítmico atual passa a **produzir** essa representação. Nenhuma mudança visível: é refatoração com os 340 testes como rede. |
-| 9.2 Componentes de texto e título | P | 9.1 | Bloco de título e bloco de texto posicionáveis, com fonte, corpo, cor e alinhamento próprios. |
-| 9.3 Renderizador de elementos no PDF e no preview | M | 9.1 | O mesmo `PanelLayout` alimenta `pdf-lib` e o SVG do preview, mantendo a paridade que já existe hoje. |
-| 9.4 Selecionar, arrastar e redimensionar | G | 9.3 | Canvas com seleção, arraste e alças. Encaixe nas margens e no centro do painel, guias de alinhamento. |
-| 9.5 Ordem de empilhamento | P | 9.4 | Trazer para frente, enviar para trás, travar elemento. |
-| 9.6 Templates prontos como layout inicial | M | 9.1 | As doze dobras continuam funcionando; cada uma ganha um layout de exemplo que o autor pode editar depois de aplicar. |
-| 9.7 Página em branco | P | 9.4 | Começar sem nada e adicionar blocos. |
-| 9.8 Componente de imagem no canvas | M | 9.4, 7.2 | Reaproveita 7.1 a 7.5 dentro do editor livre. |
-| 9.9 Componente de traço e arco | P | 9.3 | Linha, retângulo e arco com espessura e cor. Serve de divisória e de moldura. |
-| 9.10 Componente de arquivo | M | 9.3 | Ver "Decisões pendentes": no papel, arquivo anexado não existe. A entrega imprimível é um QR code com link; o anexo real só faz sentido no PDF lido na tela. |
-| 9.11 Avisos de área segura e sobreposição | M | 9.4 | Elemento fora da margem de segurança ou texto que estoura o bloco viram pendência na revisão, no mesmo `draftIssues` de hoje. |
-| 9.12 Persistir e versionar o layout | M | 9.1, 8.1 | O layout personalizado entra no JSON do rascunho e do zine, com versão de schema. |
-| 9.13 Biblioteca de blocos do usuário | G | 9.2, 8.3 | Salvar um bloco composto e reutilizar em outro zine. Depende da conta da Fase 8. |
+| Item | Issue | Esforço | Depende de | Entrega |
+|---|---|---|---|---|
+| 9.1 Representação de página posicionada | [#44](https://github.com/Geracao-Zine/geracao-zine/issues/44) | M | — | Um `PanelLayout` com elementos em coordenadas absolutas (tipo, retângulo, conteúdo, ordem). O layout algorítmico atual passa a **produzir** essa representação. Nenhuma mudança visível: é refatoração com os 340 testes como rede. |
+| 9.2 Componentes de texto e título | [#64](https://github.com/Geracao-Zine/geracao-zine/issues/64) | P | 9.1 | Bloco de título e bloco de texto posicionáveis, com fonte, corpo, cor e alinhamento próprios. |
+| 9.3 Renderizador de elementos no PDF e no preview | [#65](https://github.com/Geracao-Zine/geracao-zine/issues/65) | M | 9.1 | O mesmo `PanelLayout` alimenta `pdf-lib` e o SVG do preview, mantendo a paridade que já existe hoje. |
+| 9.4 Selecionar, arrastar e redimensionar | [#66](https://github.com/Geracao-Zine/geracao-zine/issues/66) | G | 9.3 | Canvas com seleção, arraste e alças. Encaixe nas margens e no centro do painel, guias de alinhamento. |
+| 9.5 Ordem de empilhamento | [#67](https://github.com/Geracao-Zine/geracao-zine/issues/67) | P | 9.4 | Trazer para frente, enviar para trás, travar elemento. |
+| 9.6 Templates prontos como layout inicial | [#70](https://github.com/Geracao-Zine/geracao-zine/issues/70) | M | 9.1 | As doze dobras continuam funcionando; cada uma ganha um layout de exemplo que o autor pode editar depois de aplicar. |
+| 9.7 Página em branco | [#68](https://github.com/Geracao-Zine/geracao-zine/issues/68) | P | 9.4 | Começar sem nada e adicionar blocos. |
+| 9.8 Componente de imagem no canvas | [#71](https://github.com/Geracao-Zine/geracao-zine/issues/71) | M | 9.4, 7.2 | Reaproveita 7.1 a 7.5 dentro do editor livre. |
+| 9.9 Componente de traço e arco | [#69](https://github.com/Geracao-Zine/geracao-zine/issues/69) | P | 9.3 | Linha, retângulo e arco com espessura e cor. Serve de divisória e de moldura. |
+| 9.10 Componente de arquivo | [#74](https://github.com/Geracao-Zine/geracao-zine/issues/74) | M | 9.3 | Ver "Decisões pendentes": no papel, arquivo anexado não existe. A entrega imprimível é um QR code com link; o anexo real só faz sentido no PDF lido na tela. |
+| 9.11 Avisos de área segura e sobreposição | [#72](https://github.com/Geracao-Zine/geracao-zine/issues/72) | M | 9.4 | Elemento fora da margem de segurança ou texto que estoura o bloco viram pendência na revisão, no mesmo `draftIssues` de hoje. |
+| 9.12 Persistir e versionar o layout | [#73](https://github.com/Geracao-Zine/geracao-zine/issues/73) | M | 9.1, 8.1 | O layout personalizado entra no JSON do rascunho e do zine, com versão de schema. |
+| 9.13 Biblioteca de blocos do usuário | [#75](https://github.com/Geracao-Zine/geracao-zine/issues/75) | G | 9.2, 8.3 | Salvar um bloco composto e reutilizar em outro zine. Depende da conta da Fase 8. |
 
 Ordem sugerida: 9.1 → 9.2 → 9.3 → 9.4 → 9.7 → 9.5 → 9.9 → 9.6 → 9.8 → 9.11 → 9.12 → 9.10 → 9.13.
 
@@ -360,9 +360,9 @@ Para pedir uma segunda tentativa em uma issue já processada, remova e reaplique
 | 4 — Otimização | #17, #18 | #17 entregue; #18 fechada (o problema não existia) |
 | 5 — Padronização | #19, #20, #21 | fase concluída: #19, #20 e #21 entregues |
 | 6 — Fluxo e diagramação | #22 a #29 | fase concluída: #22 a #29 entregues |
-| 7 — Imagem | a criar | planejada, depende da fundação 9.1 |
-| 8 — Conta e biblioteca | a criar | planejada, não depende de 9.1 |
-| 9 — Layout livre | a criar | planejada, começa pela fundação 9.1 |
+| 7 — Imagem | #46 a #54 | aberta: #46 armada; #47 a #54 bloqueadas |
+| 8 — Conta e biblioteca | #45, #55 a #63 | aberta: #45 armada; #55 a #63 bloqueadas |
+| 9 — Layout livre | #44, #64 a #75 | aberta: #44 armada; #64 a #75 bloqueadas |
 
 Fechadas: #3 (lint), #4 (versão do Node), #5 (dependências e audit), #6 (`jspdf` removido), #7 (Dockerfile multi-stage), #8 (docker-compose e `.env.example`), #9 (deploy em VPS), #10 (navbar), #11 (modelo de dados do editor), #12 (quebra de palavra no PDF), #13 (imports mortos), #14 (data da capa), #15 (fonte do PDF), #16 (navbar e fonte do body), #17 (pdf-lib dinâmica), #18 (memoização — premissa inválida), #19 (regras de lint), #20 (camadas), #21 (constantes de diagramação), #22 (fluxo em etapas), #23 (modelo de página), #24 (auto-ajuste de fonte), #25 (templates T1 a T4), #26 (minizine e grampeado), #27 (trifold, Z, acordeão, gatefold e 16 páginas), #28 (frente e verso espelhado), #29 (marcas e margem de segurança).
 
@@ -394,29 +394,51 @@ FECHADAS
   #24 ──> #25 T1-T4 ──┬─> #26 T5,T11 ──> #27 T6-T10,T12
                       └─> #28 frente/verso
 
-ABERTAS E PLANEJADAS
-  #28 (feita) ──> #29 marcas de corte
+ABERTAS (numero da issue entre parenteses)
 
-  9.1 fundacao (layout posicionado)
-    ├─> 7.2 imagem no PDF ──> 7.6 capa ──> 7.3 upload ──> 7.4 escala ──> 7.5 recorte
-    └─> 9.2 componentes texto ──> 9.3 renderizador ──> 9.4 canvas
-                                                          ├─> 9.5 ordem
-                                                          ├─> 9.7 pagina em branco
-                                                          └─> 9.8 imagem (com 7.2)
+  Fundacao (independente, mas pre-requisito de 7.2 e de 9.2 em diante)
+    #44 9.1 representacao posicionada
 
-  8.1 modelo Zine ──> 8.2 API ──> 8.3 salvar na conta ──┬─> 8.5 meus zines ──> 8.8 reaproveitar
-                                                        └─> 8.7 publico/privado
-  8.1 ──> 8.6 biblioteca publica ──> 8.10 pagina publica ──> 8.9 moderacao
-  8.3 ──> 8.4 migrar rascunho local
-  8.3 + 9.2 ──> 9.13 biblioteca de blocos
-  9.1 + 8.1 ──> 9.12 persistir layout
+  Fase 7 — Imagem
+    #46 7.1 modelo de imagem (independente)
+      ├─> #49 7.3 upload ──> #53 7.8 limites
+      └─> #54 7.9 texto alternativo
+    #44 ──> #47 7.2 imagem no PDF
+      ├─> #48 7.6 capa
+      ├─> #52 7.7 aviso de dpi
+      └─> com #49 ──> #50 7.4 escala ──> #51 7.5 recorte
+
+  Fase 8 — Conta e biblioteca (nao depende de #44)
+    #45 8.1 modelo Zine
+      ├─> #55 8.2 API
+      │     ├─> #56 8.3 salvar na conta ──┬─> #58 8.7 publico/privado
+      │     │                             └─> #59 8.4 migrar rascunho
+      │     └─> #57 8.5 meus zines
+      └─> #60 8.6 biblioteca publica ──┬─> #62 8.10 pagina publica
+                                       └─> #63 8.9 moderacao
+    #57 + #60 ──> #61 8.8 reaproveitar
+
+  Fase 9 — Layout livre
+    #44 ──┬─> #70 9.6 templates prontos
+          └─> #64 9.2 texto ──> #65 9.3 renderizador
+                                  ├─> #69 9.9 formas
+                                  ├─> #74 9.10 arquivo
+                                  └─> #66 9.4 canvas
+                                        ├─> #67 9.5 ordem
+                                        ├─> #68 9.7 pagina em branco
+                                        ├─> #71 9.8 imagem (com #47)
+                                        └─> #72 9.11 area segura
+
+  Cruzamentos entre eixos
+    #44 + #45 ──> #73 9.12 persistir layout
+    #64 + #56 ──> #75 9.13 blocos reutilizaveis
 ```
 
 ### Ordem prática de trabalho
 
 1. **Fila vazia.** As issues que receberam `next-up` foram todas fechadas, na ordem #8 → #6 → #21 → #19 → #9.
 2. **Fase 6 encerrada:** #22 a #29 entregues. Restam nela só dois itens que não são código — a #6.3.6 (validação com impressão física) e a #6.4.4 (nome do arquivo por título), que ainda não virou issue.
-3. **Antes de abrir as fases 7, 8 e 9:** criar os milestones e as issues a partir das tabelas acima, e resolver as três decisões pendentes. Sem a decisão de armazenamento (7.3) e sem a de conteúdo público (8.9), os itens que dependem delas não devem ser armados.
+3. **Fases 7, 8 e 9 abertas:** milestones e 32 issues criados. Três estão armadas com `next-up`, uma por frente paralela — #44 (fundação), #45 (modelo `Zine`) e #46 (modelo de imagem). As demais seguem `blocked` de propósito. Ainda falta resolver as três decisões pendentes: sem a de armazenamento, a #49 não deve ser armada; sem a de conteúdo público, a #63 também não.
 4. **Primeira issue dos três eixos:** 9.1, a fundação. Ela entra sozinha, sem funcionalidade nova e com os testes atuais como rede de segurança. Fazer 7.2 ou 9.2 antes dela significa implementar duas vezes.
 
 ### Por que a fundação vem antes, mesmo não sendo o pedido mais visível
