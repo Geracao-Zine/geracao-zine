@@ -14,8 +14,6 @@ import type {
 	ZineStep,
 } from "@/domain";
 import {
-	EMPTY_IMAGE_OFFSET,
-	EMPTY_IMAGE_SCALE,
 	STEPS,
 	addPage,
 	canEnterStep,
@@ -43,6 +41,7 @@ import { downloadBlob } from "@/lib/download";
 import { naturalSize } from "@/lib/image-file";
 import { imageBytesFor, putImage } from "@/lib/image-store";
 import type { PageImage } from "@/domain";
+import { pageImageFrom } from "@/domain";
 import type { ZinePdfInput } from "@/lib/pdf";
 import { forcedPrintMode, generateZinePdf, mmToPt, templateFor } from "@/lib/pdf";
 
@@ -228,17 +227,19 @@ export function useZineEditor(
 
 		const assetId = putImage(bytes, file.type);
 
-		setImages((prev) => ({
-			...prev,
-			[id]: {
-				assetId,
-				naturalWidth: tamanho.width,
-				naturalHeight: tamanho.height,
-				scale: EMPTY_IMAGE_SCALE,
-				offsetX: EMPTY_IMAGE_OFFSET,
-				offsetY: EMPTY_IMAGE_OFFSET,
-			},
-		}));
+		// Passa pela normalizacao do dominio, o mesmo caminho de um `PageImage`
+		// vindo de JSON: campo faltando cai no padrao em vez de virar undefined.
+		const imagem = pageImageFrom({
+			assetId,
+			naturalWidth: tamanho.width,
+			naturalHeight: tamanho.height,
+		});
+
+		if (!imagem) {
+			return;
+		}
+
+		setImages((prev) => ({ ...prev, [id]: imagem }));
 	};
 
 	const clearPoemImage = (id: string): void => {

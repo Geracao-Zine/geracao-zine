@@ -1,5 +1,6 @@
 import type { PageImage } from "../../domain/image.ts";
 import { hasDrawableSize } from "../../domain/image.ts";
+import { IMAGE_MAX_SCALE, IMAGE_MIN_SCALE } from "./layout.ts";
 
 /**
  * Retangulo de desenho da imagem, em pontos, medido a partir do canto superior
@@ -43,7 +44,10 @@ export function imageRect(image: PageImage, box: ImageBox): ImageRect | null {
                 larguraCaixa / image.naturalWidth,
                 alturaCaixa / image.naturalHeight
         );
-        const fator = encaixe * Math.max(image.scale, 0.0001);
+        // O teto protege contra um `scale` absurdo vindo de JSON corrompido:
+        // ampliar alem disso so gasta memoria com pixel que a impressao perde.
+        const escala = Math.min(Math.max(image.scale, IMAGE_MIN_SCALE), IMAGE_MAX_SCALE);
+        const fator = encaixe * escala;
         const width = image.naturalWidth * fator;
         const height = image.naturalHeight * fator;
 

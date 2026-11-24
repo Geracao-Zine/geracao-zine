@@ -17,6 +17,7 @@ const {
 } = await import("../src/lib/image-store.ts");
 const { IMAGE_BAND_RATIO } = await import("../src/lib/pdf/layout.ts");
 const { layoutPreview } = await import("../src/lib/preview/index.ts");
+const { pageImageFrom } = await import("../src/domain/image.ts");
 
 const Tabela = new Uint32Array(256);
 
@@ -258,4 +259,75 @@ test("sem os bytes a imagem e ignorada em vez de quebrar a geracao", async () =>
 
         assert.equal(new TextDecoder().decode(saida.slice(0, 5)), "%PDF-");
         assert.equal(temImagem(await PDFDocument.load(saida)), false);
+});
+
+// --- 7.1: normalizacao do JSON salvo ---------------------------------------
+
+test("a imagem sobrevive a ida e volta por JSON", () => {
+        const original = imagem({ scale: 2.5, offsetX: -0.4, offsetY: 0.3 });
+        const voltou = pageImageFrom(JSON.parse(JSON.stringify(original)));
+
+        assert.deepEqual(voltou, original);
+});
+
+test("dado corrompido cai no padrao em vez de quebrar o rascunho", () => {
+        // o JSON de um rascunho antigo pode ter qualquer coisa nestes campos;
+        // normalizar e o que impede a pagina inteira de virar NaN
+        const voltou = pageImageFrom({
+                assetId: "img-1",
+                naturalWidth: "400",
+                naturalHeight: null,
+                scale: -3,
+                offsetX: "muito",
+                offsetY: Number.NaN,
+        });
+
+        assert.deepEqual(voltou, {
+                assetId: "img-1",
+                naturalWidth: 0,
+                naturalHeight: 0,
+                scale: 1,
+                offsetX: 0,
+                offsetY: 0,
+        });
+});
+
+test("sem assetId nao existe imagem", () => {
+        assert.equal(pageImageFrom(null), null);
+        assert.equal(pageImageFrom("img"), null);
+        assert.equal(pageImageFrom({}), null);
+        assert.equal(pageImageFrom({ assetId: "   " }), null);
+        assert.equal(pageImageFrom({ assetId: 42 }), null);
+});
+
+test("a escala normalizada e sempre uniforme, nunca por eixo", () => {
+        // o modelo nao tem campo de escala horizontal separado do vertical:
+        // se um dia tiver, este teste falha antes de a imagem sair esticada
+        const campos = Object.keys(pageImageFrom(imagem()));
+
+        assert.equal(campos.includes("scaleX"), false);
+        assert.equal(campos.includes("scaleY"), false);
+        assert.equal(campos.filter((c) => c.startsWith("scale")).length, 1);
+});
+
+test("a razao de aspecto do arquivo sobrevive a qualquer escala", () => {
+        const razao = 1600 / 900;
+
+        for (const scale of [0.5, 1, 2, 8]) {
+                const rect = imageRect(imagem({ naturalWidth: 1600, naturalHeight: 900, scale }), {
+                        width: 300,
+                        height: 300,
+                });
+
+                assert.ok(Math.abs(rect.width / rect.height - razao) < 1e-9, `escala ${scale} deformou`);
+        }
+});
+
+test("a escala absurda e limitada em vez de virar imagem gigante", () => {
+        const razoavel = imageRect(imagem({ scale: 8 }), { width: 100, height: 100 });
+        const absurda = imageRect(imagem({ scale: 10000 }), { width: 100, height: 100 });
+
+        // sem o teto, um scale corrompido no JSON inflaria o PDF e a memoria
+        assert.deepEqual(absurda, razoavel);
+        assert.ok(absurda.width < 10000);
 });
