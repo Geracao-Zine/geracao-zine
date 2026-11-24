@@ -123,6 +123,7 @@ export default function ReviewStep({
 							format={format}
 							safetyMargin={safetyMargin}
 							image={images[poem.id] ?? null}
+							editable
 						/>
 					))}
 				</div>
