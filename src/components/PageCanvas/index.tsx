@@ -13,6 +13,7 @@ import {
         DEFAULT_SNAP_THRESHOLD,
         RESIZE_HANDLES,
         alignmentGuides,
+        canDragElement,
         keyboardDelta,
         moveRect,
         resizeRect,
@@ -140,6 +141,11 @@ export default function PageCanvas({
                 event.preventDefault();
                 event.stopPropagation();
                 selectAt(index);
+
+                if (!canDragElement(element)) {
+                        return;
+                }
+
                 drag.current = {
                         mode,
                         index,
@@ -209,7 +215,7 @@ export default function PageCanvas({
                 event.stopPropagation();
                 const element = layout.elements[index];
 
-                if (!element) {
+                if (!element || !canDragElement(element)) {
                         return;
                 }
 
@@ -291,7 +297,9 @@ export default function PageCanvas({
                                         />
                                 ))}
 
-                                {selected === null ? null : (
+                                {selected === null ||
+                                !layout.elements[selected] ||
+                                !canDragElement(layout.elements[selected]) ? null : (
                                         <SelectionHandles
                                                 rect={layout.elements[selected]?.rect}
                                                 onStart={start}
@@ -302,7 +310,8 @@ export default function PageCanvas({
                         </svg>
                         <p className="text-xs text-zinc-500">
                                 Clique para selecionar. Arraste para mover. Foque uma alça e use as
-                                setas para redimensionar; Shift acelera.
+                                setas para redimensionar; Shift acelera. Blocos travados só podem
+                                ser selecionados.
                         </p>
                 </div>
         );
@@ -339,16 +348,18 @@ function CanvasElement({
         onKeyboard,
         onSelect,
 }: ElementProps): JSX.Element {
+        const locked = !canDragElement(element);
         const common = {
                 tabIndex: 0,
                 role: "button",
                 "aria-label": ariaLabel(element, index),
+                "aria-disabled": locked || undefined,
                 onFocus: () => onSelect(index),
                 onKeyDown: (event: ReactKeyboardEvent<SVGElement>) =>
                         onKeyboard(event, index, "move"),
                 onPointerDown: (event: ReactPointerEvent) =>
                         onStart(event, index, "move"),
-                style: { cursor: "move" },
+                style: { cursor: locked ? "not-allowed" : "move" },
         } as const;
 
         if (element.type === "image") {
@@ -397,6 +408,7 @@ function CanvasElement({
                                         strokeWidth={1.5}
                                         pointerEvents="none"
                                 />
+                                <LockBadge element={element} />
                         </g>
                 );
         }
@@ -424,6 +436,7 @@ function CanvasElement({
                                         strokeWidth={1.5}
                                         pointerEvents="none"
                                 />
+                                <LockBadge element={element} />
                         </g>
                 );
         }
@@ -457,6 +470,7 @@ function CanvasElement({
                                         strokeWidth={1.5}
                                         pointerEvents="none"
                                 />
+                                <LockBadge element={element} />
                 </g>
         );
 }
@@ -537,16 +551,35 @@ function handlePosition(handle: ResizeHandle, rect: PanelRect): { x: number; y: 
 
 function ariaLabel(element: PanelElement, index: number): string {
         const number = index + 1;
+        const sufixo = element.locked ? ", travado" : "";
 
         if (element.type === "image") {
-                return `Imagem ${number}: arraste para mover`;
+                return `Imagem ${number}: arraste para mover${sufixo}`;
         }
 
         if (element.type === "rule") {
-                return `Divisória ${number}: arraste para mover`;
+                return `Divisória ${number}: arraste para mover${sufixo}`;
         }
 
-        return `Texto ${number}: ${element.content.lines[0]?.text ?? "vazio"}`;
+        return `Texto ${number}: ${element.content.lines[0]?.text ?? "vazio"}${sufixo}`;
+}
+
+function LockBadge({ element }: { element: PanelElement }): JSX.Element | null {
+        if (!element.locked) {
+                return null;
+        }
+
+        return (
+                <text
+                        x={element.rect.x}
+                        y={Math.max(9, element.rect.y - 4)}
+                        fontSize={8}
+                        fill="#71717a"
+                        pointerEvents="none"
+                >
+                        travado
+                </text>
+        );
 }
 
 function gray(value: number): string {

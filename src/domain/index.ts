@@ -27,12 +27,15 @@ export {
         createTextBlock,
         isTextAlign,
         isTextBlockKind,
+        moveTextBlockLayer,
         nextTextBlockId,
+        nextTextBlockZ,
         placeTextBlock,
         removeTextBlock,
         textBlockFrom,
         textBlockHasText,
         textBlocksFrom,
+        toggleTextBlockLock,
         updateTextBlock,
 } from "./text-block.ts";
 export type { CoverPage, PoemPage, ZinePage, ZineDoc } from "./zine.ts";

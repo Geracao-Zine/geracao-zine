@@ -27,6 +27,12 @@ type Props = {
 	onAddBlock: (id: string, kind: TextBlockKind) => void;
 	onBlockTextChange: (id: string, blockId: string, text: string) => void;
 	onBlockRemove: (id: string, blockId: string) => void;
+	onBlockLayerChange: (
+		id: string,
+		blockId: string,
+		direction: "front" | "back"
+	) => void;
+	onBlockLockToggle: (id: string, blockId: string) => void;
 };
 
 const FIELD_CLASS = "bg-transparent outline-none w-full focus:border-purple-600";
@@ -50,6 +56,8 @@ export default function PoemCard({
 	onAddBlock,
 	onBlockTextChange,
 	onBlockRemove,
+	onBlockLayerChange,
+	onBlockLockToggle,
 }: Props): JSX.Element {
 	const thumbnail = useImageUrl(image?.assetId ?? null);
 
@@ -173,18 +181,45 @@ export default function PoemCard({
 									key={block.id}
 									className="rounded-lg border border-zinc-200 p-2 dark:border-zinc-700"
 								>
-									<div className="flex items-center justify-between gap-2">
+									<div className="flex flex-wrap items-center justify-between gap-2">
 										<span className="font-semibold text-zinc-500">
 											{block.kind === "title" ? "Título" : "Texto"}
+											{block.locked ? " · travado" : ""}
 										</span>
-										<button
-											type="button"
-											onClick={() => onBlockRemove(id, block.id)}
-											aria-label={`Remover bloco de ${block.kind === "title" ? "título" : "texto"}`}
-											className="text-zinc-400 hover:text-red-500 cursor-pointer"
-										>
-											Remover
-										</button>
+										<div className="flex items-center gap-2">
+											<button
+												type="button"
+												onClick={() => onBlockLayerChange(id, block.id, "back")}
+												aria-label="Enviar bloco para trás"
+												className="text-zinc-400 hover:text-purple-600 cursor-pointer"
+											>
+												Trás
+											</button>
+											<button
+												type="button"
+												onClick={() => onBlockLayerChange(id, block.id, "front")}
+												aria-label="Trazer bloco para frente"
+												className="text-zinc-400 hover:text-purple-600 cursor-pointer"
+											>
+												Frente
+											</button>
+											<button
+												type="button"
+												onClick={() => onBlockLockToggle(id, block.id)}
+												aria-pressed={block.locked}
+												className="text-zinc-400 hover:text-purple-600 cursor-pointer"
+											>
+												{block.locked ? "Destravar" : "Travar"}
+											</button>
+											<button
+												type="button"
+												onClick={() => onBlockRemove(id, block.id)}
+												aria-label={`Remover bloco de ${block.kind === "title" ? "título" : "texto"}`}
+												className="text-zinc-400 hover:text-red-500 cursor-pointer"
+											>
+												Remover
+											</button>
+										</div>
 									</div>
 									<label className="sr-only" htmlFor={`block-${id}-${block.id}`}>
 										Conteúdo do bloco

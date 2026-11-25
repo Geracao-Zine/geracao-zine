@@ -40,6 +40,12 @@ type Props = {
 	onAddBlock: (id: string, kind: TextBlockKind) => void;
 	onBlockTextChange: (id: string, blockId: string, text: string) => void;
 	onBlockRemove: (id: string, blockId: string) => void;
+	onBlockLayerChange: (
+		id: string,
+		blockId: string,
+		direction: "front" | "back"
+	) => void;
+	onBlockLockToggle: (id: string, blockId: string) => void;
 	onBlocksChange: (id: string, blocks: TextBlock[]) => void;
 };
 
@@ -63,6 +69,8 @@ export default function ReviewStep({
 	onAddBlock,
 	onBlockTextChange,
 	onBlockRemove,
+	onBlockLayerChange,
+	onBlockLockToggle,
 	onBlocksChange,
 }: Props): JSX.Element {
 	return (
@@ -115,6 +123,8 @@ export default function ReviewStep({
 					onAddBlock={onAddBlock}
 					onBlockTextChange={onBlockTextChange}
 					onBlockRemove={onBlockRemove}
+					onBlockLayerChange={onBlockLayerChange}
+					onBlockLockToggle={onBlockLockToggle}
 				/>
 			</section>
 

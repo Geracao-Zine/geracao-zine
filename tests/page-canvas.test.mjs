@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 const raiz = fileURLToPath(new URL("..", import.meta.url));
 const canvas = readFileSync(join(raiz, "src/components/PageCanvas/index.tsx"), "utf8");
 const selecao = readFileSync(join(raiz, "src/lib/canvas/selection.ts"), "utf8");
+const { canDragElement } = await import("../src/lib/canvas/selection.ts");
 
 test("o canvas seleciona o elemento pelo ponteiro", () => {
         assert.match(canvas, /onPointerDown=\{\(\) => selectAt\(null\)\}/);
@@ -45,6 +46,13 @@ test("o arraste usa o mesmo encaixe do motor puro", () => {
 test("as guias sao desenhadas nas duas direcoes", () => {
         assert.match(canvas, /guide\.axis === "vertical"/);
         assert.match(canvas, /guide\.axis === "horizontal"/);
+});
+
+test("elemento travado nao pode ser arrastado nem redimensionado", () => {
+        assert.equal(canDragElement({ locked: true }), false);
+        assert.equal(canDragElement({ locked: false }), true);
+        assert.match(canvas, /if \(!canDragElement\(element\)\)/);
+        assert.match(canvas, /!canDragElement\(layout\.elements\[selected\]\)/);
 });
 
 test("alterar um elemento preserva os outros e a ordem de empilhamento", () => {

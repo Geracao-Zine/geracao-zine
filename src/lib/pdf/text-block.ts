@@ -73,6 +73,7 @@ export function layoutTextBlock(
                                 baseline: rect.y + block.size + index * lineHeight,
                         })),
                 },
+                locked: block.locked,
                 z,
         };
 }

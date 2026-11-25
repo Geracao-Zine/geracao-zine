@@ -301,7 +301,7 @@ function layoutBlockPage(
 			block.kind === "title" ? fonts.title : fonts.body,
 			width,
 			height,
-			index
+			block.z ?? index
 		)
 	);
 
@@ -316,7 +316,7 @@ function layoutBlockPage(
 				align: "left",
 				lines: [],
 			},
-			z: elements.length,
+			z: elements.reduce((max, element) => Math.max(max, element.z), -1) + 1,
 		});
 	}
 
