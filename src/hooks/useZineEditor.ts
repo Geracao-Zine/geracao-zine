@@ -53,6 +53,10 @@ import { pageImageFrom } from "@/domain";
 import type { ZinePdfInput } from "@/lib/pdf";
 import { forcedPrintMode, generateZinePdf, mmToPt, templateFor } from "@/lib/pdf";
 import { previewPanelFor } from "@/lib/preview";
+import { LOCAL_SAVE_MS, debounce } from "@/lib/debounce";
+import { useSalvarNaConta } from "@/hooks/useSalvarNaConta";
+import type { SalvarNaConta } from "@/hooks/useSalvarNaConta";
+import { useSession } from "@/hooks/useSession";
 
 export type ZineEditor = {
 	/** Falso enquanto o rascunho salvo ainda nao foi lido do navegador. */
@@ -112,6 +116,8 @@ export type ZineEditor = {
 	canOpen: (step: ZineStep) => boolean;
 	download: () => Promise<void>;
 	reset: () => void;
+	/** Espelhamento do rascunho na conta, quando ha sessao. */
+	conta: SalvarNaConta;
 };
 
 /**
@@ -133,9 +139,16 @@ export function useZineEditor(
 	// recarregar. O rascunho guarda so o que e texto.
 	const [images, setImages] = useState<Record<string, PageImage>>({});
 	const storage = useRef<ReturnType<typeof browserStorage> | null>(null);
+	const localAgendado = useRef<ReturnType<typeof debounce<[ZineDraft]>> | null>(null);
 
 	useEffect(() => {
 		storage.current = browserStorage();
+		// Recriar o agendador descartaria um pendente: libera antes.
+		localAgendado.current?.liberar();
+		localAgendado.current = debounce<[ZineDraft]>(
+			(alvo) => saveDraft(storage.current, alvo),
+			LOCAL_SAVE_MS
+		);
 
 		const stored = loadDraft(storage.current);
 
@@ -149,13 +162,36 @@ export function useZineEditor(
 		// O rascunho salvo vence o seed: recarregar nunca volta ao formulario vazio.
 	}, [initialStep]);
 
+	// Gravar a cada tecla serializa o documento inteiro por caractere. O debounce
+	// corta isso, mas so e seguro porque o pendente e liberado ao sair ou
+	// esconder a aba: fechar o navegador nao pode custar o rascunho.
 	useEffect(() => {
 		if (!ready) {
 			return;
 		}
 
-		saveDraft(storage.current, draft);
+		localAgendado.current?.agendar(draft);
 	}, [draft, ready]);
+
+	useEffect(() => {
+		const liberar = (): void => {
+			localAgendado.current?.liberar();
+		};
+		const aoEsconder = (): void => {
+			if (document.visibilityState === "hidden") {
+				liberar();
+			}
+		};
+
+		window.addEventListener("pagehide", liberar);
+		document.addEventListener("visibilitychange", aoEsconder);
+
+		return () => {
+			window.removeEventListener("pagehide", liberar);
+			document.removeEventListener("visibilitychange", aoEsconder);
+			liberar();
+		};
+	}, []);
 
 	const update = useCallback(
 		(transform: (current: ZineDraft) => ZineDraft): void => {
@@ -449,8 +485,14 @@ export function useZineEditor(
 		downloadBlob(bytes, `zine-${draft.format}-${printMode}.pdf`);
 	};
 
+	// So espelha na conta depois de ler o rascunho do navegador: antes disso o
+	// estado inicial vazio sobrescreveria o zine salvo.
+	const { sessao } = useSession();
+	const conta = useSalvarNaConta(draft, sessao.status === "autenticado", ready);
+
 	const reset = (): void => {
 		clearDraft(storage.current);
+		conta.desvincular();
 		setDraft(createDraft());
 	};
 
@@ -499,5 +541,6 @@ export function useZineEditor(
 		canOpen,
 		download,
 		reset,
+		conta,
 	};
 }
