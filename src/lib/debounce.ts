@@ -37,7 +37,12 @@ type Relogio = {
 export function debounce<A extends unknown[]>(
 	acao: (...args: A) => void,
 	ms: number = DEBOUNCE_MS,
-	relogio: Relogio = { setTimeout, clearTimeout }
+	// Envelopes evitam `Illegal invocation`: o navegador exige que
+	// `setTimeout`/`clearTimeout` sejam chamados com `this` global.
+	relogio: Relogio = {
+		setTimeout: (handler, ms) => setTimeout(handler, ms),
+		clearTimeout: (id) => clearTimeout(id),
+	}
 ): Debounced<A> {
 	let timer: Timer | null = null;
 	let ultimos: A | null = null;
