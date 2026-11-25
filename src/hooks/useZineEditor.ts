@@ -27,12 +27,14 @@ import {
 	isFormatAvailable,
 	isZineStep,
 	movePage,
+	moveTextBlockLayer,
 	poemPages,
 	removePage,
 	removeTextBlock,
 	setPoemBlocks,
 	setPoemField,
 	updateTextBlock,
+	toggleTextBlockLock,
 	safetyMarginFrom,
 	stepIndex,
 	stepStatus,
@@ -96,6 +98,12 @@ export type ZineEditor = {
 	addPoemBlock: (id: string, kind: TextBlockKind) => void;
 	changePoemBlockText: (id: string, blockId: string, text: string) => void;
 	removePoemBlock: (id: string, blockId: string) => void;
+	movePoemBlockLayer: (
+		id: string,
+		blockId: string,
+		direction: "front" | "back"
+	) => void;
+	togglePoemBlockLock: (id: string, blockId: string) => void;
 	changePoemBlocks: (id: string, blocks: TextBlock[]) => void;
 	issues: DraftIssue[];
 	issuesOf: (step: ZineStep) => DraftIssue[];
@@ -354,6 +362,48 @@ export function useZineEditor(
 		});
 	};
 
+	const movePoemBlockLayer = (
+		id: string,
+		blockId: string,
+		direction: "front" | "back"
+	): void => {
+		update((current) => {
+			const poem = poemPages(current.doc).find((page) => page.id === id);
+
+			if (!poem) {
+				return current;
+			}
+
+			return {
+				...current,
+				doc: setPoemBlocks(
+					current.doc,
+					id,
+					moveTextBlockLayer(poem.blocks ?? [], blockId, direction)
+				),
+			};
+		});
+	};
+
+	const togglePoemBlockLock = (id: string, blockId: string): void => {
+		update((current) => {
+			const poem = poemPages(current.doc).find((page) => page.id === id);
+
+			if (!poem) {
+				return current;
+			}
+
+			return {
+				...current,
+				doc: setPoemBlocks(
+					current.doc,
+					id,
+					toggleTextBlockLock(poem.blocks ?? [], blockId)
+				),
+			};
+		});
+	};
+
 	const changePoemBlocks = (id: string, blocks: TextBlock[]): void => {
 		update((current) => ({
 			...current,
@@ -439,6 +489,8 @@ export function useZineEditor(
 		addPoemBlock,
 		changePoemBlockText,
 		removePoemBlock,
+		movePoemBlockLayer,
+		togglePoemBlockLock,
 		changePoemBlocks,
 		issues,
 		issuesOf,

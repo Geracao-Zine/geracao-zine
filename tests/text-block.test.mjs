@@ -13,13 +13,16 @@ const {
         createTextBlock,
         draftIssues,
         hasPoemContent,
+        moveTextBlockLayer,
         nextTextBlockId,
+        nextTextBlockZ,
         parseDraft,
         poemPages,
         serializeDraft,
         setPoemBlocks,
         textBlockFrom,
         textBlocksFrom,
+        toggleTextBlockLock,
 } = await import("../src/domain/index.ts");
 const { layoutTextBlock, textBlockRect } = await import("../src/lib/pdf/text-block.ts");
 const { layoutPanelElements, toPanelPageLayout } = await import("../src/lib/pdf/panel.ts");
@@ -43,6 +46,8 @@ const bloco = {
         size: 18,
         color: 0.2,
         align: "center",
+        z: 0,
+        locked: false,
 };
 
 test("o bloco preserva posicao e tipografia ao ser lido", () => {
@@ -137,6 +142,7 @@ test("o layout do bloco reaproveita wrapText e mantem o estilo", () => {
         assert.equal(elemento.z, 3);
 
 
+        assert.equal(elemento.locked, false);
         assert.equal(elemento.content.role, "body");
         assert.equal(elemento.content.size, bloco.size);
         assert.equal(elemento.content.color, bloco.color);
@@ -185,6 +191,51 @@ test("o criador de bloco usa os padroes do modelo", () => {
         assert.equal(criado.width, DEFAULT_TEXT_BLOCK_WIDTH);
         assert.equal(criado.height, DEFAULT_TEXT_BLOCK_HEIGHT);
         assert.equal(criado.align, "left");
+        assert.equal(criado.locked, false);
+});
+
+test("blocos novos nascem na frente da pilha", () => {
+        const area = { width: 300, height: 400 };
+        const primeiro = addTextBlock([], "title", area);
+        const segundo = addTextBlock(primeiro, "text", area);
+
+        assert.equal(primeiro[0].z, 0);
+        assert.equal(segundo[1].z, 1);
+        assert.equal(nextTextBlockZ(segundo), 2);
+});
+
+test("trazer para frente e enviar para tras trocam as camadas", () => {
+        const base = [
+                { ...bloco, id: "a", z: 0 },
+                { ...bloco, id: "b", z: 1 },
+                { ...bloco, id: "c", z: 2 },
+        ];
+        const camadas = (blocks) => Object.fromEntries(blocks.map((item) => [item.id, item.z]));
+
+        assert.deepEqual(camadas(moveTextBlockLayer(base, "b", "front")), { a: 0, b: 2, c: 1 });
+        assert.deepEqual(camadas(moveTextBlockLayer(base, "b", "back")), { a: 1, b: 0, c: 2 });
+        assert.deepEqual(camadas(moveTextBlockLayer(base, "c", "front")), { a: 0, b: 1, c: 2 });
+});
+
+test("blocos antigos ganham camadas pela ordem da lista", () => {
+        const semCamada = textBlocksFrom([
+                { ...bloco, id: "a", z: undefined },
+                { ...bloco, id: "b", z: undefined },
+        ]);
+
+        assert.deepEqual(semCamada.map((item) => item.z), [0, 1]);
+        assert.deepEqual(
+                moveTextBlockLayer(semCamada, "a", "front").map((item) => item.z),
+                [1, 0]
+        );
+});
+
+test("travar alterna sem mexer na geometria", () => {
+        const travado = toggleTextBlockLock([bloco], bloco.id);
+
+        assert.equal(travado[0].locked, true);
+        assert.equal(travado[0].x, bloco.x);
+        assert.equal(toggleTextBlockLock(travado, bloco.id)[0].locked, false);
 });
 
 test("blocos novos entram em pilha dentro da area segura", () => {
@@ -216,7 +267,14 @@ test("remover todos os blocos devolve a pagina aos campos", () => {
 
 test("a pagina com blocos ignora os campos e preserva a ordem", () => {
         const blocos = [
-                { ...bloco, id: "bloco-titulo", text: "Título do bloco", x: 20, y: 20 },
+                {
+                        ...bloco,
+                        id: "bloco-titulo",
+                        text: "Título do bloco",
+                        x: 20,
+                        y: 20,
+                        z: 0,
+                },
                 {
                         ...bloco,
                         id: "bloco-texto",
@@ -224,6 +282,7 @@ test("a pagina com blocos ignora os campos e preserva a ordem", () => {
                         text: "corpo posicionado",
                         x: 20,
                         y: 100,
+                        z: 1,
                 },
         ];
         const [layout] = layoutPanelElements(
@@ -244,6 +303,35 @@ test("a pagina com blocos ignora os campos e preserva a ordem", () => {
         );
         assert.deepEqual(textos.map((element) => element.z), [0, 1]);
         assert.equal(toPanelPageLayout(layout).header, true);
+});
+
+test("a camada do bloco comanda a ordem do layout", () => {
+        const blocos = [
+                { ...bloco, id: "frente", z: 2, text: "frente" },
+                { ...bloco, id: "fundo", z: 0, text: "fundo" },
+                { ...bloco, id: "meio", z: 1, text: "meio" },
+        ];
+        const [layout] = layoutPanelElements(
+                { title: "", subtitle: "", date: "", body: "", blocks: blocos },
+                fonts,
+                400,
+                300
+        );
+        const ordenados = [...layout.elements]
+                .filter((element) => element.id)
+                .sort((a, b) => a.z - b.z);
+
+        assert.deepEqual(ordenados.map((element) => element.id), ["fundo", "meio", "frente"]);
+});
+
+test("z e trava sobrevivem a salvar e recarregar", () => {
+        const draft = createDraft();
+        const poema = poemPages(draft.doc)[0];
+        const blocos = [{ ...bloco, z: 4, locked: true }];
+        const salvo = setPoemBlocks(draft.doc, poema.id, blocos);
+        const recarregado = parseDraft(serializeDraft({ ...draft, doc: salvo }));
+
+        assert.deepEqual(poemPages(recarregado.doc)[0].blocks, blocos);
 });
 
 test("pagina em branco gera um layout valido sem texto desenhado", () => {

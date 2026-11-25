@@ -26,6 +26,12 @@ type Props = {
 	onAddBlock: (id: string, kind: TextBlockKind) => void;
 	onBlockTextChange: (id: string, blockId: string, text: string) => void;
 	onBlockRemove: (id: string, blockId: string) => void;
+	onBlockLayerChange: (
+		id: string,
+		blockId: string,
+		direction: "front" | "back"
+	) => void;
+	onBlockLockToggle: (id: string, blockId: string) => void;
 };
 
 export default function PoemsStep({
@@ -42,6 +48,8 @@ export default function PoemsStep({
 	onAddBlock,
 	onBlockTextChange,
 	onBlockRemove,
+	onBlockLayerChange,
+	onBlockLockToggle,
 }: Props): JSX.Element {
 	return (
 		<div className="space-y-8">
@@ -63,6 +71,8 @@ export default function PoemsStep({
 				onAddBlock={onAddBlock}
 				onBlockTextChange={onBlockTextChange}
 				onBlockRemove={onBlockRemove}
+				onBlockLayerChange={onBlockLayerChange}
+				onBlockLockToggle={onBlockLockToggle}
 			/>
 		</div>
 	);

@@ -26,6 +26,10 @@ export type TextBlock = {
         /** Tom de 0 (preto) a 1 (branco), como o motor do PDF. */
         color: number;
         align: TextAlign;
+        /** Ordem de empilhamento: valores maiores ficam na frente. */
+        z: number;
+        /** Impede arraste e redimensionamento no canvas. */
+        locked: boolean;
 };
 
 export const DEFAULT_TEXT_BLOCK_WIDTH = 200;
@@ -42,7 +46,17 @@ export const DEFAULT_TEXT_BLOCK_GAP = 16;
 export type TextBlockPatch = Partial<
         Pick<
                 TextBlock,
-                "text" | "x" | "y" | "width" | "height" | "font" | "size" | "color" | "align"
+                | "text"
+                | "x"
+                | "y"
+                | "width"
+                | "height"
+                | "font"
+                | "size"
+                | "color"
+                | "align"
+                | "z"
+                | "locked"
         >
 >;
 
@@ -93,7 +107,14 @@ export function createTextBlock(kind: TextBlockKind, id: string): TextBlock {
                 size: DEFAULT_TEXT_BLOCK_SIZE,
                 color: DEFAULT_TEXT_BLOCK_COLOR,
                 align: "left",
+                z: 0,
+                locked: false,
         };
+}
+
+/** Proxima camada livre; blocos novos nascem na frente. */
+export function nextTextBlockZ(blocks: TextBlock[]): number {
+        return blocks.reduce((max, block) => Math.max(max, block.z), -1) + 1;
 }
 
 export function nextTextBlockId(blocks: TextBlock[]): string {
@@ -141,7 +162,7 @@ export function addTextBlock(
                 area
         );
 
-        return [...blocks, block];
+        return [...blocks, { ...block, z: nextTextBlockZ(blocks) }];
 }
 
 export function updateTextBlock(
@@ -154,6 +175,52 @@ export function updateTextBlock(
 
 export function removeTextBlock(blocks: TextBlock[], id: string): TextBlock[] {
         return blocks.filter((block) => block.id !== id);
+}
+
+/**
+ * Move um bloco uma camada para frente ou para tras.
+ *
+ * Os valores de `z` sao normalizados pela ordem atual antes da troca, para que
+ * rascunhos antigos (todos com `z: 0`) ganhem o primeiro movimento util.
+ */
+export function moveTextBlockLayer(
+        blocks: TextBlock[],
+        id: string,
+        direction: "front" | "back"
+): TextBlock[] {
+        const ordered = [...blocks]
+                .sort((a, b) => a.z - b.z)
+                .map((block, index) => ({ ...block, z: index }));
+        const index = ordered.findIndex((block) => block.id === id);
+        const target = direction === "front" ? index + 1 : index - 1;
+
+        if (index < 0 || target < 0 || target >= ordered.length) {
+                return blocks;
+        }
+
+        const moved = ordered[index];
+        const neighbour = ordered[target];
+        const byId = new Map(ordered.map((block) => [block.id, block]));
+
+        return blocks.map((block) => {
+                const current = byId.get(block.id) ?? block;
+
+                if (current.id === moved.id) {
+                        return { ...current, z: neighbour.z };
+                }
+
+                if (current.id === neighbour.id) {
+                        return { ...current, z: moved.z };
+                }
+
+                return current;
+        });
+}
+
+export function toggleTextBlockLock(blocks: TextBlock[], id: string): TextBlock[] {
+        return blocks.map((block) =>
+                block.id === id ? { ...block, locked: !block.locked } : block
+        );
 }
 
 export function textBlockHasText(block: TextBlock): boolean {
@@ -169,7 +236,8 @@ export function textBlockHasText(block: TextBlock): boolean {
  */
 export function textBlockFrom(
         source: Record<string, unknown>,
-        fallbackId: string
+        fallbackId: string,
+        fallbackZ = 0
 ): TextBlock {
         return {
                 id: text(source.id) || fallbackId,
@@ -187,6 +255,8 @@ export function textBlockFrom(
                 ),
                 color: clamp(finite(source.color, DEFAULT_TEXT_BLOCK_COLOR), 0, 1),
                 align: isTextAlign(source.align) ? source.align : "left",
+                z: finite(source.z, fallbackZ),
+                locked: source.locked === true,
         };
 }
 
@@ -205,7 +275,8 @@ export function textBlocksFrom(value: unknown): TextBlock[] {
 
                 const block = textBlockFrom(
                         entry as Record<string, unknown>,
-                        `block-${index + 1}`
+                        `block-${index + 1}`,
+                        index
                 );
 
                 if (ids.has(block.id)) {

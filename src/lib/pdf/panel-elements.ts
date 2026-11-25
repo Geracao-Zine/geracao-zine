@@ -50,6 +50,8 @@ export type PanelTextElement = {
         id?: string;
         rect: PanelRect;
         content: PanelTextContent;
+        /** Elemento travado nao pode ser movido pelo canvas. */
+        locked?: boolean;
         /** Ordem de empilhamento: valores menores sao desenhados primeiro. */
         z: number;
 };
@@ -59,6 +61,8 @@ export type PanelRuleElement = {
         id?: string;
         rect: PanelRect;
         content: PanelRuleContent;
+        /** Elemento travado nao pode ser movido pelo canvas. */
+        locked?: boolean;
         /** Ordem de empilhamento: valores menores sao desenhados primeiro. */
         z: number;
 };
@@ -70,6 +74,8 @@ export type PanelImageElement = {
         /** Faixa reservada no topo do painel: o desenho nunca passa daqui. */
         clip: PanelRect;
         content: { assetId: string };
+        /** Elemento travado nao pode ser movido pelo canvas. */
+        locked?: boolean;
         /** Ordem de empilhamento: valores menores sao desenhados primeiro. */
         z: number;
 };

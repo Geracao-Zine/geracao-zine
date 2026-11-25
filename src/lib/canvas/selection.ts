@@ -46,6 +46,11 @@ export const MIN_ELEMENT_SIZE = 8;
 export const DEFAULT_KEYBOARD_STEP = 1;
 export const DEFAULT_KEYBOARD_LARGE_STEP = 10;
 
+/** Elemento travado continua selecionavel, mas nao aceita arraste nem alcas. */
+export function canDragElement(element: { locked?: boolean }): boolean {
+        return element.locked !== true;
+}
+
 export const RESIZE_HANDLES: ResizeHandle[] = [
         "nw",
         "n",

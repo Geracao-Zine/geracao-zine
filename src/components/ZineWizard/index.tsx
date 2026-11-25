@@ -92,6 +92,8 @@ export default function ZineWizard({
 								onAddBlock={editor.addPoemBlock}
 								onBlockTextChange={editor.changePoemBlockText}
 								onBlockRemove={editor.removePoemBlock}
+								onBlockLayerChange={editor.movePoemBlockLayer}
+								onBlockLockToggle={editor.togglePoemBlockLock}
 							/>
 						) : null}
 
@@ -116,6 +118,8 @@ export default function ZineWizard({
 								onAddBlock={editor.addPoemBlock}
 								onBlockTextChange={editor.changePoemBlockText}
 								onBlockRemove={editor.removePoemBlock}
+								onBlockLayerChange={editor.movePoemBlockLayer}
+								onBlockLockToggle={editor.togglePoemBlockLock}
 								onBlocksChange={editor.changePoemBlocks}
 						/>
 						) : null}
