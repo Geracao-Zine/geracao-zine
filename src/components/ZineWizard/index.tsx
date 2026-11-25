@@ -2,6 +2,8 @@
 
 import type { JSX } from "react";
 import IssueList from "@/components/IssueList";
+import SalvarNaContaBotao from "@/components/SalvarNaConta";
+import { useSession } from "@/hooks/useSession";
 import StepNav from "@/components/StepNav";
 import { useZineEditor } from "@/hooks/useZineEditor";
 import type { Cover, ZineStep } from "@/domain";
@@ -22,6 +24,8 @@ export default function ZineWizard({
 	seedCover,
 }: Props): JSX.Element {
 	const editor = useZineEditor(seedCover, initialStep);
+	const { sessao } = useSession();
+	const autenticado = sessao.status === "autenticado";
 
 	const askRemove = (id: string): void => {
 		const poem = editor.poems.find((candidate) => candidate.id === id);
@@ -53,9 +57,7 @@ export default function ZineWizard({
 					<p className="text-zinc-600 dark:text-zinc-400">
 						Etapa {editor.stepNumber} de {editor.totalSteps} — {step.label}
 					</p>
-					<p className="text-sm text-zinc-500 dark:text-zinc-500">
-						Seu rascunho é salvo neste navegador a cada alteração.
-					</p>
+					<SalvarNaContaBotao conta={editor.conta} autenticado={autenticado} />
 				</header>
 
 				<StepNav
