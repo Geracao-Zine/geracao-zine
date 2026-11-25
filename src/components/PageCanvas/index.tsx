@@ -8,6 +8,7 @@ import type {
 import { useId, useRef, useState } from "react";
 import { DEFAULT_FONT_ID } from "@/lib/fonts";
 import type { FontId } from "@/lib/fonts";
+import { shapePoints } from "@/lib/shape-geometry";
 import type { PanelLayout } from "@/lib/preview";
 import {
         DEFAULT_SNAP_THRESHOLD,
@@ -413,6 +414,34 @@ function CanvasElement({
                 );
         }
 
+        if (element.type === "shape") {
+                const points = shapePoints(element.shape, element.rect);
+
+                return (
+                        <g {...common}>
+                                <polyline
+                                        points={points
+                                                .map((point) => `${point.x},${point.y}`)
+                                                .join(" ")}
+                                        fill="none"
+                                        stroke={gray(element.content.color)}
+                                        strokeWidth={element.content.thickness}
+                                />
+                                <rect
+                                        x={element.rect.x}
+                                        y={element.rect.y}
+                                        width={element.rect.width}
+                                        height={element.rect.height}
+                                        fill="transparent"
+                                        stroke={selected ? SELECTION_COLOR : "transparent"}
+                                        strokeWidth={1.5}
+                                        pointerEvents="none"
+                                />
+                                <LockBadge element={element} />
+                        </g>
+                );
+        }
+
         if (element.type === "rule") {
                 const y = element.rect.y + element.rect.height / 2;
 
@@ -555,6 +584,17 @@ function ariaLabel(element: PanelElement, index: number): string {
 
         if (element.type === "image") {
                 return `Imagem ${number}: arraste para mover${sufixo}`;
+        }
+
+        if (element.type === "shape") {
+                const nome =
+                        element.shape === "line"
+                                ? "Linha"
+                                : element.shape === "rect"
+                                        ? "Retângulo"
+                                        : "Arco";
+
+                return `${nome} ${number}: arraste para mover${sufixo}`;
         }
 
         if (element.type === "rule") {

@@ -6,6 +6,8 @@ import type {
 	PageField,
 	PageImage,
 	PoemPage,
+	ShapeBlockPatch,
+	ShapeKind,
 	TextBlockKind,
 	ZineDoc,
 } from "@/domain";
@@ -30,6 +32,9 @@ type Props = {
 		direction: "front" | "back"
 	) => void;
 	onBlockLockToggle: (id: string, blockId: string) => void;
+	onAddShape: (id: string, kind: ShapeKind) => void;
+	onRemoveShape: (id: string, shapeId: string) => void;
+	onShapeChange: (id: string, shapeId: string, patch: ShapeBlockPatch) => void;
 };
 
 export default function PoemGrid({
@@ -47,6 +52,9 @@ export default function PoemGrid({
 	onBlockRemove,
 	onBlockLayerChange,
 	onBlockLockToggle,
+	onAddShape,
+	onRemoveShape,
+	onShapeChange,
 }: Props): JSX.Element {
 	return (
 		<div className="space-y-8">
@@ -87,6 +95,10 @@ export default function PoemGrid({
 						onBlockRemove={onBlockRemove}
 						onBlockLayerChange={onBlockLayerChange}
 						onBlockLockToggle={onBlockLockToggle}
+						shapes={poem.shapes ?? []}
+						onAddShape={onAddShape}
+						onRemoveShape={onRemoveShape}
+						onShapeChange={onShapeChange}
 					/>
 				))}
 			</div>

@@ -7,6 +7,8 @@ import type {
 	PageField,
 	PageImage,
 	PoemPage,
+	ShapeBlockPatch,
+	ShapeKind,
 	TextBlockKind,
 	ZineDoc,
 } from "@/domain";
@@ -32,6 +34,9 @@ type Props = {
 		direction: "front" | "back"
 	) => void;
 	onBlockLockToggle: (id: string, blockId: string) => void;
+	onAddShape: (id: string, kind: ShapeKind) => void;
+	onRemoveShape: (id: string, shapeId: string) => void;
+	onShapeChange: (id: string, shapeId: string, patch: ShapeBlockPatch) => void;
 };
 
 export default function PoemsStep({
@@ -50,6 +55,9 @@ export default function PoemsStep({
 	onBlockRemove,
 	onBlockLayerChange,
 	onBlockLockToggle,
+	onAddShape,
+	onRemoveShape,
+	onShapeChange,
 }: Props): JSX.Element {
 	return (
 		<div className="space-y-8">
@@ -73,6 +81,9 @@ export default function PoemsStep({
 				onBlockRemove={onBlockRemove}
 				onBlockLayerChange={onBlockLayerChange}
 				onBlockLockToggle={onBlockLockToggle}
+				onAddShape={onAddShape}
+				onRemoveShape={onRemoveShape}
+				onShapeChange={onShapeChange}
 			/>
 		</div>
 	);

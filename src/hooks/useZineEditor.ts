@@ -12,11 +12,15 @@ import type {
 	PrintMode,
 	ZineFormat,
 	ZineStep,
+	ShapeBlock,
+	ShapeBlockPatch,
+	ShapeKind,
 	TextBlock,
 	TextBlockKind,
 } from "@/domain";
 import {
 	STEPS,
+	addShapeBlock,
 	addPage,
 	addTextBlock as appendTextBlock,
 	canEnterStep,
@@ -28,11 +32,15 @@ import {
 	isZineStep,
 	movePage,
 	moveTextBlockLayer,
+	nextTextBlockZ,
 	poemPages,
+	removeShapeBlock,
 	removePage,
 	removeTextBlock,
 	setPoemBlocks,
 	setPoemField,
+	setPoemShapes,
+	updateShapeBlock,
 	updateTextBlock,
 	toggleTextBlockLock,
 	safetyMarginFrom,
@@ -109,6 +117,10 @@ export type ZineEditor = {
 	) => void;
 	togglePoemBlockLock: (id: string, blockId: string) => void;
 	changePoemBlocks: (id: string, blocks: TextBlock[]) => void;
+	addPoemShape: (id: string, kind: ShapeKind) => void;
+	removePoemShape: (id: string, shapeId: string) => void;
+	changePoemShape: (id: string, shapeId: string, patch: ShapeBlockPatch) => void;
+	changePoemShapes: (id: string, shapes: ShapeBlock[]) => void;
 	issues: DraftIssue[];
 	issuesOf: (step: ZineStep) => DraftIssue[];
 	statusOf: (step: ZineStep) => StepStatus;
@@ -440,6 +452,66 @@ export function useZineEditor(
 		});
 	};
 
+	const addPoemShape = (id: string, kind: ShapeKind): void => {
+		update((current) => {
+			const poem = poemPages(current.doc).find((page) => page.id === id);
+
+			if (!poem) {
+				return current;
+			}
+
+			const panel = previewPanelFor(current.format);
+			const shapes = addShapeBlock(poem.shapes ?? [], kind, {
+				...panel,
+				inset: mmToPt(current.safetyMargin),
+			}, nextTextBlockZ(poem.blocks ?? []));
+
+			return { ...current, doc: setPoemShapes(current.doc, id, shapes) };
+		});
+	};
+
+	const removePoemShape = (id: string, shapeId: string): void => {
+		update((current) => {
+			const poem = poemPages(current.doc).find((page) => page.id === id);
+
+			if (!poem) {
+				return current;
+			}
+
+			return {
+				...current,
+				doc: setPoemShapes(current.doc, id, removeShapeBlock(poem.shapes ?? [], shapeId)),
+			};
+		});
+	};
+
+	const changePoemShape = (
+		id: string,
+		shapeId: string,
+		patch: ShapeBlockPatch
+	): void => {
+		update((current) => {
+			const poem = poemPages(current.doc).find((page) => page.id === id);
+
+			if (!poem) {
+				return current;
+			}
+
+			return {
+				...current,
+				doc: setPoemShapes(
+					current.doc,
+					id,
+					updateShapeBlock(poem.shapes ?? [], shapeId, patch)
+				),
+			};
+		});
+	};
+
+	const changePoemShapes = (id: string, shapes: ShapeBlock[]): void => {
+		update((current) => ({ ...current, doc: setPoemShapes(current.doc, id, shapes) }));
+	};
+
 	const changePoemBlocks = (id: string, blocks: TextBlock[]): void => {
 		update((current) => ({
 			...current,
@@ -476,6 +548,7 @@ export function useZineEditor(
 				date: formatIsoDate(poem.date),
 				body: poem.body,
 				blocks: poem.blocks,
+				shapes: poem.shapes,
 				image: images[poem.id] ?? null,
 			})),
 			images: imageBytesFor(images),
@@ -534,6 +607,10 @@ export function useZineEditor(
 		movePoemBlockLayer,
 		togglePoemBlockLock,
 		changePoemBlocks,
+		addPoemShape,
+		removePoemShape,
+		changePoemShape,
+		changePoemShapes,
 		issues,
 		issuesOf,
 		statusOf,

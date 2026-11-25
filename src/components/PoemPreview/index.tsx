@@ -3,9 +3,10 @@
 import type { JSX } from "react";
 import { useEffect, useId, useMemo, useState } from "react";
 import PageCanvas from "@/components/PageCanvas";
-import type { PageImage, TextBlock, ZineFormat } from "@/domain";
+import type { PageImage, ShapeBlock, TextBlock, ZineFormat } from "@/domain";
 import { useImageUrl } from "@/hooks/useImageUrl";
 import type { FontId } from "@/lib/fonts";
+import { shapePoints } from "@/lib/shape-geometry";
 import {
 	gray,
 	layoutPreview,
@@ -30,8 +31,12 @@ type Props = {
 	image?: PageImage | null;
 	/** Blocos posicionados; quando existem, substituem os campos algoritmicos. */
 	blocks?: TextBlock[];
+	/** Formas posicionadas por cima do layout da pagina. */
+	shapes?: ShapeBlock[];
 	/** Persiste a geometria dos blocos ajustada no canvas. */
 	onBlocksChange?: (blocks: TextBlock[]) => void;
+	/** Persiste a geometria das formas ajustada no canvas. */
+	onShapesChange?: (shapes: ShapeBlock[]) => void;
 	/** Habilita o canvas de selecao, arraste e redimensionamento. */
 	editable?: boolean;
 };
@@ -63,7 +68,9 @@ export default function PoemPreview({
 	safetyMargin,
 	image = null,
 	blocks,
+	shapes,
 	onBlocksChange,
+	onShapesChange,
 	editable = false,
 }: Props): JSX.Element {
 	// A fonte carregada vem junto com o id: quando o autor troca de fonte, o
@@ -112,10 +119,11 @@ export default function PoemPreview({
 					painel,
 					safetyMargin,
 					image,
-					blocks
+					blocks,
+					shapes
 				)
 				: [],
-		[fonts, painel, safetyMargin, title, subtitle, date, body, image, blocks]
+		[fonts, painel, safetyMargin, title, subtitle, date, body, image, blocks, shapes]
 	);
 	const shown = editState?.source === pages ? editState.pages : pages;
 
@@ -135,29 +143,49 @@ export default function PoemPreview({
 			};
 		});
 
-		if (!onBlocksChange || !blocks || blocks.length === 0) {
-			return;
+		if (onBlocksChange && blocks && blocks.length > 0) {
+			onBlocksChange(
+				blocks.map((block) => {
+					const element = next.elements.find(
+						(item) => item.type === "text" && item.id === block.id
+					);
+
+					if (!element || element.type !== "text") {
+						return block;
+					}
+
+					return {
+						...block,
+						x: element.rect.x,
+						y: element.rect.y,
+						width: element.rect.width,
+						height: element.rect.height,
+					};
+				})
+			);
 		}
 
-		onBlocksChange(
-			blocks.map((block) => {
-				const element = next.elements.find(
-					(item) => item.type === "text" && item.id === block.id
-				);
+		if (onShapesChange && shapes && shapes.length > 0) {
+			onShapesChange(
+				shapes.map((shape) => {
+					const element = next.elements.find(
+						(item) => item.type === "shape" && item.id === shape.id
+					);
 
-				if (!element || element.type !== "text") {
-					return block;
-				}
+					if (!element || element.type !== "shape") {
+						return shape;
+					}
 
-				return {
-					...block,
-					x: element.rect.x,
-					y: element.rect.y,
-					width: element.rect.width,
-					height: element.rect.height,
-				};
-			})
-		);
+					return {
+						...shape,
+						x: element.rect.x,
+						y: element.rect.y,
+						width: element.rect.width,
+						height: element.rect.height,
+					};
+				})
+			);
+		}
 	};
 
 	return (
@@ -226,6 +254,25 @@ export default function PoemPreview({
 	                                                                                        clipPath={`url(#${recorte})`}
 	                                                                                />
 	                                                                        </g>
+	                                                                );
+	                                                        }
+
+	                                                        if (item.kind === "shape") {
+	                                                                const points = shapePoints(item.shape, {
+	                                                                        x: item.x,
+	                                                                        y: item.y,
+	                                                                        width: item.width,
+	                                                                        height: item.height,
+	                                                                });
+
+	                                                                return (
+	                                                                        <polyline
+	                                                                                key={`shape-${itemIndex}`}
+	                                                                                points={points.map((point) => `${point.x},${point.y}`).join(" ")}
+	                                                                                fill="none"
+	                                                                                stroke={gray(item.color)}
+	                                                                                strokeWidth={item.thickness}
+	                                                                        />
 	                                                                );
 	                                                        }
 

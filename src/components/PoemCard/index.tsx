@@ -2,9 +2,13 @@ import type { JSX } from "react";
 import type {
         PageField,
         PageImage,
+        ShapeBlock,
+        ShapeBlockPatch,
+        ShapeKind,
         TextBlock,
         TextBlockKind,
 } from "@/domain";
+import { MAX_SHAPE_THICKNESS, MIN_SHAPE_THICKNESS, shapeLabel } from "@/domain";
 import { useImageUrl } from "@/hooks/useImageUrl";
 
 type Props = {
@@ -24,6 +28,7 @@ type Props = {
 	onMove: (id: string, direction: -1 | 1) => void;
 	onRemove: (id: string) => void;
 	blocks: TextBlock[];
+	shapes: ShapeBlock[];
 	onAddBlock: (id: string, kind: TextBlockKind) => void;
 	onBlockTextChange: (id: string, blockId: string, text: string) => void;
 	onBlockRemove: (id: string, blockId: string) => void;
@@ -33,6 +38,9 @@ type Props = {
 		direction: "front" | "back"
 	) => void;
 	onBlockLockToggle: (id: string, blockId: string) => void;
+	onAddShape: (id: string, kind: ShapeKind) => void;
+	onRemoveShape: (id: string, shapeId: string) => void;
+	onShapeChange: (id: string, shapeId: string, patch: ShapeBlockPatch) => void;
 };
 
 const FIELD_CLASS = "bg-transparent outline-none w-full focus:border-purple-600";
@@ -58,6 +66,10 @@ export default function PoemCard({
 	onBlockRemove,
 	onBlockLayerChange,
 	onBlockLockToggle,
+	shapes,
+	onAddShape,
+	onRemoveShape,
+	onShapeChange,
 }: Props): JSX.Element {
 	const thumbnail = useImageUrl(image?.assetId ?? null);
 
@@ -139,12 +151,13 @@ export default function PoemCard({
 			/>
 
 			{blocks.length === 0 &&
+			shapes.length === 0 &&
 			!title.trim() &&
 			!subtitle.trim() &&
 			!date &&
 			!body.trim() ? (
 				<p className="mt-3 rounded-xl border border-dashed border-zinc-300 p-3 text-xs text-zinc-500 dark:border-zinc-700">
-					Página em branco. Adicione um bloco de título ou de texto para começar.
+					Página em branco. Adicione um bloco de título, de texto ou uma forma para começar.
 				</p>
 			) : null}
 
@@ -238,6 +251,93 @@ export default function PoemCard({
 							))}
 						</div>
 					</>
+				) : null}
+			</details>
+
+			<details className="mt-3 text-xs">
+				<summary className="cursor-pointer font-semibold text-zinc-500 hover:text-purple-600">
+					Formas ({shapes.length})
+				</summary>
+
+				<div className="mt-2 flex flex-wrap gap-2">
+					<button
+						type="button"
+						onClick={() => onAddShape(id, "line")}
+						className="rounded-full border border-zinc-300 px-3 py-1 font-semibold hover:border-[var(--purple)] cursor-pointer dark:border-zinc-700"
+					>
+						+ Linha
+					</button>
+					<button
+						type="button"
+						onClick={() => onAddShape(id, "rect")}
+						className="rounded-full border border-zinc-300 px-3 py-1 font-semibold hover:border-[var(--purple)] cursor-pointer dark:border-zinc-700"
+					>
+						+ Retângulo
+					</button>
+					<button
+						type="button"
+						onClick={() => onAddShape(id, "arc")}
+						className="rounded-full border border-zinc-300 px-3 py-1 font-semibold hover:border-[var(--purple)] cursor-pointer dark:border-zinc-700"
+					>
+						+ Arco
+					</button>
+				</div>
+
+				{shapes.length > 0 ? (
+					<div className="mt-2 max-h-56 space-y-2 overflow-auto pr-1">
+						{shapes.map((shape) => (
+							<div
+								key={shape.id}
+								className="rounded-lg border border-zinc-200 p-2 dark:border-zinc-700"
+							>
+								<div className="flex items-center justify-between gap-2">
+									<span className="font-semibold text-zinc-500">{shapeLabel(shape.kind)}</span>
+									<button
+										type="button"
+										onClick={() => onRemoveShape(id, shape.id)}
+										aria-label={`Remover ${shapeLabel(shape.kind)}`}
+										className="text-zinc-400 hover:text-red-500 cursor-pointer"
+									>
+										Remover
+									</button>
+								</div>
+								<div className="mt-1 flex flex-wrap items-center gap-3">
+									<label className="flex items-center gap-1">
+										Espessura
+										<input
+											type="number"
+											min={MIN_SHAPE_THICKNESS}
+											max={MAX_SHAPE_THICKNESS}
+											step={0.25}
+											value={shape.thickness}
+											onChange={(event) =>
+												onShapeChange(id, shape.id, {
+													thickness: Number(event.target.value),
+												})
+											}
+											className="w-14 rounded border border-zinc-300 px-1 py-0.5 dark:border-zinc-700"
+										/>
+									</label>
+									<label className="flex items-center gap-1">
+										Cor
+										<input
+											type="range"
+											min={0}
+											max={1}
+											step={0.05}
+											value={shape.color}
+											onChange={(event) =>
+												onShapeChange(id, shape.id, {
+													color: Number(event.target.value),
+												})
+											}
+											className="w-20"
+										/>
+									</label>
+								</div>
+							</div>
+						))}
+					</div>
 				) : null}
 			</details>
 
