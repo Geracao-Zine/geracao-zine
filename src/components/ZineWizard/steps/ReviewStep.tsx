@@ -11,6 +11,8 @@ import type {
 	PageField,
 	PageImage,
 	PoemPage,
+	TextBlock,
+	TextBlockKind,
 	ZineDoc,
 	ZineFormat,
 	ZineStep,
@@ -35,6 +37,10 @@ type Props = {
 	images: Record<string, PageImage>;
 	onImageChange: (id: string, file: File) => void;
 	onImageClear: (id: string) => void;
+	onAddBlock: (id: string, kind: TextBlockKind) => void;
+	onBlockTextChange: (id: string, blockId: string, text: string) => void;
+	onBlockRemove: (id: string, blockId: string) => void;
+	onBlocksChange: (id: string, blocks: TextBlock[]) => void;
 };
 
 export default function ReviewStep({
@@ -54,6 +60,10 @@ export default function ReviewStep({
 	images,
 	onImageChange,
 	onImageClear,
+	onAddBlock,
+	onBlockTextChange,
+	onBlockRemove,
+	onBlocksChange,
 }: Props): JSX.Element {
 	return (
 		<div className="space-y-10">
@@ -102,6 +112,9 @@ export default function ReviewStep({
 					images={images}
 					onImageChange={onImageChange}
 					onImageClear={onImageClear}
+					onAddBlock={onAddBlock}
+					onBlockTextChange={onBlockTextChange}
+					onBlockRemove={onBlockRemove}
 				/>
 			</section>
 
@@ -119,10 +132,12 @@ export default function ReviewStep({
 							subtitle={poem.subtitle}
 							date={formatIsoDate(poem.date)}
 							body={poem.body}
+							blocks={poem.blocks}
 							font={cover.titleFont}
 							format={format}
 							safetyMargin={safetyMargin}
 							image={images[poem.id] ?? null}
+							onBlocksChange={(next) => onBlocksChange(poem.id, next)}
 							editable
 						/>
 					))}

@@ -46,6 +46,8 @@ export type PanelRuleContent = {
 
 export type PanelTextElement = {
         type: "text";
+        /** Origem opcional no modelo de blocos; o desenho ignora. */
+        id?: string;
         rect: PanelRect;
         content: PanelTextContent;
         /** Ordem de empilhamento: valores menores sao desenhados primeiro. */
@@ -54,6 +56,7 @@ export type PanelTextElement = {
 
 export type PanelRuleElement = {
         type: "rule";
+        id?: string;
         rect: PanelRect;
         content: PanelRuleContent;
         /** Ordem de empilhamento: valores menores sao desenhados primeiro. */
@@ -62,6 +65,7 @@ export type PanelRuleElement = {
 
 export type PanelImageElement = {
         type: "image";
+        id?: string;
         rect: PanelRect;
         /** Faixa reservada no topo do painel: o desenho nunca passa daqui. */
         clip: PanelRect;

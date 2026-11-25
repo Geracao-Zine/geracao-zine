@@ -1,5 +1,10 @@
 import type { JSX } from "react";
-import type { PageField, PageImage } from "@/domain";
+import type {
+        PageField,
+        PageImage,
+        TextBlock,
+        TextBlockKind,
+} from "@/domain";
 import { useImageUrl } from "@/hooks/useImageUrl";
 
 type Props = {
@@ -18,6 +23,10 @@ type Props = {
 	onImageClear: (id: string) => void;
 	onMove: (id: string, direction: -1 | 1) => void;
 	onRemove: (id: string) => void;
+	blocks: TextBlock[];
+	onAddBlock: (id: string, kind: TextBlockKind) => void;
+	onBlockTextChange: (id: string, blockId: string, text: string) => void;
+	onBlockRemove: (id: string, blockId: string) => void;
 };
 
 const FIELD_CLASS = "bg-transparent outline-none w-full focus:border-purple-600";
@@ -37,11 +46,15 @@ export default function PoemCard({
 	image,
 	onImageChange,
 	onImageClear,
+	blocks,
+	onAddBlock,
+	onBlockTextChange,
+	onBlockRemove,
 }: Props): JSX.Element {
 	const thumbnail = useImageUrl(image?.assetId ?? null);
 
 	return (
-		<article className="bg-white dark:bg-zinc-900 shadow-xl rounded-2xl aspect-[3/4] border border-zinc-200 dark:border-zinc-800 flex flex-col p-6 relative">
+		<article className="bg-white dark:bg-zinc-900 shadow-xl rounded-2xl min-h-[28rem] border border-zinc-200 dark:border-zinc-800 flex flex-col p-6 relative">
 			<div className="absolute top-3 right-3 flex items-center gap-1">
 				<button
 					type="button"
@@ -114,8 +127,84 @@ export default function PoemCard({
 				placeholder="Escreva sua poesia aqui..."
 				value={body}
 				onChange={(e) => onChange(id, "body", e.target.value)}
-				className={`flex-1 resize-none text-sm leading-relaxed ${FIELD_CLASS}`}
+				className={`min-h-24 flex-1 resize-none text-sm leading-relaxed ${FIELD_CLASS}`}
 			/>
+
+			{blocks.length === 0 &&
+			!title.trim() &&
+			!subtitle.trim() &&
+			!date &&
+			!body.trim() ? (
+				<p className="mt-3 rounded-xl border border-dashed border-zinc-300 p-3 text-xs text-zinc-500 dark:border-zinc-700">
+					Página em branco. Adicione um bloco de título ou de texto para começar.
+				</p>
+			) : null}
+
+			<details className="mt-3 text-xs">
+				<summary className="cursor-pointer font-semibold text-zinc-500 hover:text-purple-600">
+					Blocos posicionados ({blocks.length})
+				</summary>
+
+				<div className="mt-2 flex flex-wrap gap-2">
+					<button
+						type="button"
+						onClick={() => onAddBlock(id, "title")}
+						className="rounded-full border border-zinc-300 px-3 py-1 font-semibold hover:border-[var(--purple)] cursor-pointer dark:border-zinc-700"
+					>
+						+ Título
+					</button>
+					<button
+						type="button"
+						onClick={() => onAddBlock(id, "text")}
+						className="rounded-full border border-zinc-300 px-3 py-1 font-semibold hover:border-[var(--purple)] cursor-pointer dark:border-zinc-700"
+					>
+						+ Texto
+					</button>
+				</div>
+
+				{blocks.length > 0 ? (
+					<>
+						<p className="mt-2 text-zinc-500">
+							Esta página usa os blocos abaixo; os campos de texto acima são ignorados.
+						</p>
+						<div className="mt-2 max-h-56 space-y-2 overflow-auto pr-1">
+							{blocks.map((block) => (
+								<div
+									key={block.id}
+									className="rounded-lg border border-zinc-200 p-2 dark:border-zinc-700"
+								>
+									<div className="flex items-center justify-between gap-2">
+										<span className="font-semibold text-zinc-500">
+											{block.kind === "title" ? "Título" : "Texto"}
+										</span>
+										<button
+											type="button"
+											onClick={() => onBlockRemove(id, block.id)}
+											aria-label={`Remover bloco de ${block.kind === "title" ? "título" : "texto"}`}
+											className="text-zinc-400 hover:text-red-500 cursor-pointer"
+										>
+											Remover
+										</button>
+									</div>
+									<label className="sr-only" htmlFor={`block-${id}-${block.id}`}>
+										Conteúdo do bloco
+									</label>
+									<textarea
+										id={`block-${id}-${block.id}`}
+										rows={2}
+										value={block.text}
+										onChange={(e) =>
+											onBlockTextChange(id, block.id, e.target.value)
+										}
+										placeholder="Escreva aqui..."
+										className={`mt-1 resize-none text-sm leading-relaxed ${FIELD_CLASS}`}
+									/>
+								</div>
+							))}
+						</div>
+					</>
+				) : null}
+			</details>
 
 			<div className="flex items-center gap-2 mt-3">
 			<label

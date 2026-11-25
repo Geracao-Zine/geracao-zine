@@ -1,5 +1,6 @@
 import type { PageImage } from "../../domain/image.ts";
 import type { PageFields } from "../../domain/page.ts";
+import type { TextBlock } from "../../domain/text-block.ts";
 import type { ZineFormat } from "../../domain/format.ts";
 import type { FontId } from "../fonts.ts";
 import { fontById } from "../fonts.ts";
@@ -88,10 +89,11 @@ export function layoutPreview(
 	fonts: PanelFonts,
 	panel: PanelSize = { width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT },
 	inset = 0,
-	image: PageImage | null = null
+	image: PageImage | null = null,
+	blocks: TextBlock[] = []
 ): PanelLayout[] {
 	return layoutPanelElements(
-		page,
+		{ ...page, blocks },
 		fonts,
 		panel.height,
 		panel.width,

@@ -2,7 +2,14 @@
 
 import type { JSX } from "react";
 import IssueList from "@/components/IssueList";
-import type { DraftIssue, PageField, PageImage, PoemPage, ZineDoc } from "@/domain";
+import type {
+	DraftIssue,
+	PageField,
+	PageImage,
+	PoemPage,
+	TextBlockKind,
+	ZineDoc,
+} from "@/domain";
 import PoemGrid from "./PoemGrid";
 
 type Props = {
@@ -16,6 +23,9 @@ type Props = {
 	images: Record<string, PageImage>;
 	onImageChange: (id: string, file: File) => void;
 	onImageClear: (id: string) => void;
+	onAddBlock: (id: string, kind: TextBlockKind) => void;
+	onBlockTextChange: (id: string, blockId: string, text: string) => void;
+	onBlockRemove: (id: string, blockId: string) => void;
 };
 
 export default function PoemsStep({
@@ -29,6 +39,9 @@ export default function PoemsStep({
 	images,
 	onImageChange,
 	onImageClear,
+	onAddBlock,
+	onBlockTextChange,
+	onBlockRemove,
 }: Props): JSX.Element {
 	return (
 		<div className="space-y-8">
@@ -47,6 +60,9 @@ export default function PoemsStep({
 				images={images}
 				onImageChange={onImageChange}
 				onImageClear={onImageClear}
+				onAddBlock={onAddBlock}
+				onBlockTextChange={onBlockTextChange}
+				onBlockRemove={onBlockRemove}
 			/>
 		</div>
 	);

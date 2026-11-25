@@ -34,6 +34,24 @@ export const DEFAULT_TEXT_BLOCK_SIZE = 12;
 export const MIN_TEXT_BLOCK_SIZE = 4;
 export const MAX_TEXT_BLOCK_SIZE = 96;
 export const DEFAULT_TEXT_BLOCK_COLOR = 0;
+/** Distancia entre a borda segura e o primeiro bloco empilhado. */
+export const DEFAULT_TEXT_BLOCK_OFFSET = 24;
+/** Espaco vertical entre blocos criados na mesma pagina. */
+export const DEFAULT_TEXT_BLOCK_GAP = 16;
+
+export type TextBlockPatch = Partial<
+        Pick<
+                TextBlock,
+                "text" | "x" | "y" | "width" | "height" | "font" | "size" | "color" | "align"
+        >
+>;
+
+export type TextBlockArea = {
+        width: number;
+        height: number;
+        /** Margem de seguranca ja convertida para pontos. */
+        inset?: number;
+};
 
 const ALIGNS: TextAlign[] = ["left", "center", "right"];
 
@@ -76,6 +94,70 @@ export function createTextBlock(kind: TextBlockKind, id: string): TextBlock {
                 color: DEFAULT_TEXT_BLOCK_COLOR,
                 align: "left",
         };
+}
+
+export function nextTextBlockId(blocks: TextBlock[]): string {
+        const ids = new Set(blocks.map((block) => block.id));
+        let index = blocks.length + 1;
+
+        while (ids.has(`block-${index}`)) {
+                index += 1;
+        }
+
+        return `block-${index}`;
+}
+
+/** Coloca um bloco novo em pilha dentro da area segura, sem sair do painel. */
+export function placeTextBlock(
+        block: TextBlock,
+        index: number,
+        area: TextBlockArea
+): TextBlock {
+        const inset = area.inset ?? 0;
+        const x = inset + DEFAULT_TEXT_BLOCK_OFFSET;
+        const width = Math.max(1, area.width - x - inset);
+        const height = Math.min(
+                DEFAULT_TEXT_BLOCK_HEIGHT,
+                Math.max(1, area.height - inset * 2)
+        );
+        const maxY = Math.max(inset, area.height - inset - height);
+        const y = Math.min(
+                inset + DEFAULT_TEXT_BLOCK_OFFSET +
+                        index * (DEFAULT_TEXT_BLOCK_HEIGHT + DEFAULT_TEXT_BLOCK_GAP),
+                maxY
+        );
+
+        return { ...block, x, y, width, height };
+}
+
+export function addTextBlock(
+        blocks: TextBlock[],
+        kind: TextBlockKind,
+        area: TextBlockArea
+): TextBlock[] {
+        const block = placeTextBlock(
+                createTextBlock(kind, nextTextBlockId(blocks)),
+                blocks.length,
+                area
+        );
+
+        return [...blocks, block];
+}
+
+export function updateTextBlock(
+        blocks: TextBlock[],
+        id: string,
+        patch: TextBlockPatch
+): TextBlock[] {
+        return blocks.map((block) => (block.id === id ? { ...block, ...patch } : block));
+}
+
+export function removeTextBlock(blocks: TextBlock[], id: string): TextBlock[] {
+        return blocks.filter((block) => block.id !== id);
+}
+
+export function textBlockHasText(block: TextBlock): boolean {
+        return block.text.trim().length > 0;
 }
 
 /**

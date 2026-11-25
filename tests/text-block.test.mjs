@@ -3,22 +3,33 @@ import assert from "node:assert/strict";
 import { PDFDocument, StandardFonts } from "pdf-lib";
 
 const {
+        DEFAULT_TEXT_BLOCK_GAP,
         DEFAULT_TEXT_BLOCK_HEIGHT,
+        DEFAULT_TEXT_BLOCK_OFFSET,
         DEFAULT_TEXT_BLOCK_WIDTH,
         MAX_TEXT_BLOCK_SIZE,
+        addTextBlock,
         createDraft,
         createTextBlock,
+        draftIssues,
+        hasPoemContent,
+        nextTextBlockId,
         parseDraft,
         poemPages,
         serializeDraft,
+        setPoemBlocks,
         textBlockFrom,
         textBlocksFrom,
 } = await import("../src/domain/index.ts");
 const { layoutTextBlock, textBlockRect } = await import("../src/lib/pdf/text-block.ts");
+const { layoutPanelElements, toPanelPageLayout } = await import("../src/lib/pdf/panel.ts");
+const { panelDrawables } = await import("../src/lib/pdf/panel-render.ts");
 const { wrapText } = await import("../src/lib/wrap-text.ts");
 
 const pdfDoc = await PDFDocument.create();
 const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+const fonts = { title: bold, subtitle: regular, date: regular, body: regular };
 
 const bloco = {
         id: "bloco-1",
@@ -174,4 +185,90 @@ test("o criador de bloco usa os padroes do modelo", () => {
         assert.equal(criado.width, DEFAULT_TEXT_BLOCK_WIDTH);
         assert.equal(criado.height, DEFAULT_TEXT_BLOCK_HEIGHT);
         assert.equal(criado.align, "left");
+});
+
+test("blocos novos entram em pilha dentro da area segura", () => {
+        const area = { width: 300, height: 400, inset: 20 };
+        const primeiro = addTextBlock([], "title", area);
+        const segundo = addTextBlock(primeiro, "text", area);
+
+        assert.equal(segundo[0].id, "block-1");
+        assert.equal(segundo[0].x, 20 + DEFAULT_TEXT_BLOCK_OFFSET);
+        assert.equal(segundo[0].width, 300 - (20 + DEFAULT_TEXT_BLOCK_OFFSET) - 20);
+        assert.equal(segundo[1].y, segundo[0].y + DEFAULT_TEXT_BLOCK_HEIGHT + DEFAULT_TEXT_BLOCK_GAP);
+        assert.equal(nextTextBlockId(segundo), "block-3");
+        assert.ok(segundo.every((bloco) => bloco.y + bloco.height <= 400 - 20));
+
+        const semPrimeiro = segundo.slice(1);
+        const novoId = nextTextBlockId(semPrimeiro);
+        assert.ok(semPrimeiro.every((bloco) => bloco.id !== novoId));
+        assert.equal(addTextBlock(semPrimeiro, "text", area).at(-1).id, novoId);
+});
+
+test("remover todos os blocos devolve a pagina aos campos", () => {
+        const draft = createDraft();
+        const poema = poemPages(draft.doc)[0];
+        const comBloco = setPoemBlocks(draft.doc, poema.id, [bloco]);
+        const semBloco = setPoemBlocks(comBloco, poema.id, []);
+
+        assert.equal("blocks" in poemPages(semBloco)[0], false);
+});
+
+test("a pagina com blocos ignora os campos e preserva a ordem", () => {
+        const blocos = [
+                { ...bloco, id: "bloco-titulo", text: "Título do bloco", x: 20, y: 20 },
+                {
+                        ...bloco,
+                        id: "bloco-texto",
+                        kind: "text",
+                        text: "corpo posicionado",
+                        x: 20,
+                        y: 100,
+                },
+        ];
+        const [layout] = layoutPanelElements(
+                { title: "ignorado", subtitle: "", date: "", body: "ignorado", blocks: blocos },
+                fonts,
+                400,
+                300
+        );
+        const textos = layout.elements.filter(
+                (element) =>
+                        element.type === "text" &&
+                        element.content.lines.some((line) => line.text !== "")
+        );
+
+        assert.deepEqual(
+                textos.map((element) => element.content.lines.map((line) => line.text).join(" ")),
+                ["Título do bloco", "corpo posicionado"]
+        );
+        assert.deepEqual(textos.map((element) => element.z), [0, 1]);
+        assert.equal(toPanelPageLayout(layout).header, true);
+});
+
+test("pagina em branco gera um layout valido sem texto desenhado", () => {
+        const [layout] = layoutPanelElements(
+                { title: "", subtitle: "", date: "", body: "" },
+                fonts,
+                400,
+                300
+        );
+
+        assert.deepEqual(panelDrawables(layout), []);
+        assert.equal(toPanelPageLayout(layout).header, false);
+});
+
+test("texto em bloco conta como conteudo da pagina", () => {
+        const draft = createDraft();
+        const poema = poemPages(draft.doc)[0];
+        const comBloco = {
+                ...draft,
+                doc: setPoemBlocks(draft.doc, poema.id, [
+                        { ...bloco, text: "Título escrito no bloco" },
+                ]),
+        };
+
+        assert.equal(hasPoemContent(comBloco), true);
+        assert.ok(!draftIssues(comBloco).some((issue) => issue.id === "empty-pages"));
+        assert.ok(!draftIssues(comBloco).some((issue) => issue.id === "untitled-poems"));
 });

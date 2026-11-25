@@ -1,6 +1,8 @@
 import type { PDFFont } from "pdf-lib";
 import type { PageImage } from "../../domain/image.ts";
 import type { PageFields } from "../../domain/page.ts";
+import { DEFAULT_TEXT_BLOCK_SIZE } from "../../domain/text-block.ts";
+import type { TextBlock } from "../../domain/text-block.ts";
 import { wrapText } from "../wrap-text.ts";
 import { fitBody } from "./fit-body.ts";
 import type { BodyMetrics } from "./fit-body.ts";
@@ -15,6 +17,7 @@ import type {
 	PanelTextElement,
 } from "./panel-elements.ts";
 import { orderedPanelElements } from "./panel-elements.ts";
+import { layoutTextBlock } from "./text-block.ts";
 import {
 	A4_CONTENT_WIDTH,
 	IMAGE_BAND_RATIO,
@@ -144,13 +147,17 @@ type PlacedBlock = {
  * continuacao identificada, sem perder linha.
  */
 export function layoutPanelElements(
-	page: PageFields,
+	page: PageFields & { blocks?: TextBlock[] },
 	fonts: PanelFonts,
 	panelHeight: number = PANEL_HEIGHT,
 	width: number = A4_CONTENT_WIDTH,
 	inset = 0,
 	image: PageImage | null = null
 ): PanelLayout[] {
+	if (page.blocks && page.blocks.length > 0) {
+		return [layoutBlockPage(page.blocks, fonts, width, panelHeight, inset)];
+	}
+
 	const contentWidth = Math.max(1, width - inset * 2);
 	const contentHeight = Math.max(1, panelHeight - inset * 2);
 	// A imagem reserva uma faixa no topo e o texto fica com o resto. Sem
@@ -272,6 +279,48 @@ export function layoutPanelElements(
 	} while (remaining.length > 0);
 
 	return layouts;
+}
+
+/**
+ * Diagrama uma pagina composta por blocos posicionados.
+ *
+ * Os blocos mandam no layout: os campos algoritmicos ficam de fora, inclusive
+ * o texto principal. Um corpo vazio mantem o contrato antigo de `PanelPageLayout`
+ * sem desenhar nada.
+ */
+function layoutBlockPage(
+	blocks: TextBlock[],
+	fonts: PanelFonts,
+	width: number,
+	height: number,
+	inset: number
+): PanelLayout {
+	const elements: PanelElement[] = blocks.map((block, index) =>
+		layoutTextBlock(
+			block,
+			block.kind === "title" ? fonts.title : fonts.body,
+			width,
+			height,
+			index
+		)
+	);
+
+	if (!elements.some((element) => element.type === "text" && element.content.role === "body")) {
+		elements.push({
+			type: "text",
+			rect: { x: inset, y: inset, width: Math.max(1, width - inset * 2), height: 0 },
+			content: {
+				role: "body",
+				size: DEFAULT_TEXT_BLOCK_SIZE,
+				color: POEM_BODY_COLOR,
+				align: "left",
+				lines: [],
+			},
+			z: elements.length,
+		});
+	}
+
+	return { width, height, inset, elements };
 }
 
 /** Converte a representacao posicionada para o contrato do preview e do PDF. */

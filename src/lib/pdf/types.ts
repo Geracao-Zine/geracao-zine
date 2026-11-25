@@ -1,11 +1,12 @@
 import type { ZineFormat } from "../../domain/format.ts";
 import type { PageImage } from "../../domain/image.ts";
 import type { PageFields } from "../../domain/page.ts";
+import type { TextBlock } from "../../domain/text-block.ts";
 import type { PrintMode } from "../../domain/print.ts";
 import type { FontId } from "../fonts";
 
-/** Uma pagina do zine pronta para diagramar: os quatro campos do modelo. */
-export type PdfPoem = PageFields;
+/** Uma pagina do zine pronta para diagramar: campos do modelo e blocos posicionados. */
+export type PdfPoem = PageFields & { blocks?: TextBlock[] };
 
 /**
  * Poema com a imagem opcional do painel.

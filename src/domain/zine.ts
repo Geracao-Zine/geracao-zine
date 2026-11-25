@@ -113,6 +113,32 @@ export function setPoemField(
 	};
 }
 
+/** Substitui os blocos posicionados de uma pagina; lista vazia remove o campo. */
+export function setPoemBlocks(
+	doc: ZineDoc,
+	id: string,
+	blocks: TextBlock[]
+): ZineDoc {
+	return {
+		...doc,
+		pages: doc.pages.map((page) => {
+			if (page.id !== id || page.kind !== "poem") {
+				return page;
+			}
+
+			if (blocks.length === 0) {
+				const rest = { ...page };
+
+				delete rest.blocks;
+
+				return rest;
+			}
+
+			return { ...page, blocks };
+		}),
+	};
+}
+
 export function coverOf(doc: ZineDoc): CoverPage | undefined {
 	return doc.pages.find((page): page is CoverPage => page.kind === "cover");
 }
