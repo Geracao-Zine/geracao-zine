@@ -59,6 +59,7 @@ export function layoutTextBlock(
 
         return {
                 type: "text",
+                id: block.id,
                 rect,
                 content: {
                         role: block.kind === "title" ? "title" : "body",

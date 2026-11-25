@@ -3,7 +3,7 @@
 import type { JSX } from "react";
 import { useEffect, useId, useMemo, useState } from "react";
 import PageCanvas from "@/components/PageCanvas";
-import type { PageImage, ZineFormat } from "@/domain";
+import type { PageImage, TextBlock, ZineFormat } from "@/domain";
 import { useImageUrl } from "@/hooks/useImageUrl";
 import type { FontId } from "@/lib/fonts";
 import {
@@ -28,6 +28,10 @@ type Props = {
 	safetyMargin: number;
 	/** Imagem desta sessao; os bytes existem apenas no navegador. */
 	image?: PageImage | null;
+	/** Blocos posicionados; quando existem, substituem os campos algoritmicos. */
+	blocks?: TextBlock[];
+	/** Persiste a geometria dos blocos ajustada no canvas. */
+	onBlocksChange?: (blocks: TextBlock[]) => void;
 	/** Habilita o canvas de selecao, arraste e redimensionamento. */
 	editable?: boolean;
 };
@@ -58,6 +62,8 @@ export default function PoemPreview({
 	format,
 	safetyMargin,
 	image = null,
+	blocks,
+	onBlocksChange,
 	editable = false,
 }: Props): JSX.Element {
 	// A fonte carregada vem junto com o id: quando o autor troca de fonte, o
@@ -105,10 +111,11 @@ export default function PoemPreview({
 					fonts,
 					painel,
 					safetyMargin,
-					image
+					image,
+					blocks
 				)
 				: [],
-		[fonts, painel, safetyMargin, title, subtitle, date, body, image]
+		[fonts, painel, safetyMargin, title, subtitle, date, body, image, blocks]
 	);
 	const shown = editState?.source === pages ? editState.pages : pages;
 
@@ -117,6 +124,41 @@ export default function PoemPreview({
 			<p className="text-sm text-zinc-500">Carregando pré-visualização...</p>
 		);
 	}
+
+	const commitLayout = (index: number, next: PanelLayout): void => {
+		setEditState((current) => {
+			const base = current?.source === pages ? current.pages : pages;
+
+			return {
+				source: pages,
+				pages: base.map((item, itemIndex) => (itemIndex === index ? next : item)),
+			};
+		});
+
+		if (!onBlocksChange || !blocks || blocks.length === 0) {
+			return;
+		}
+
+		onBlocksChange(
+			blocks.map((block) => {
+				const element = next.elements.find(
+					(item) => item.type === "text" && item.id === block.id
+				);
+
+				if (!element || element.type !== "text") {
+					return block;
+				}
+
+				return {
+					...block,
+					x: element.rect.x,
+					y: element.rect.y,
+					width: element.rect.width,
+					height: element.rect.height,
+				};
+			})
+		);
+	};
 
 	return (
 		<div className="space-y-4">
@@ -142,18 +184,7 @@ export default function PoemPreview({
 							layout={page}
 							selected={selected}
 							onSelect={setSelected}
-							onChange={(next) =>
-								setEditState((current) => {
-									const base = current?.source === pages ? current.pages : pages;
-
-									return {
-										source: pages,
-										pages: base.map((item, itemIndex) =>
-											itemIndex === index ? next : item
-										),
-									};
-								})
-							}
+							onChange={(next) => commitLayout(index, next)}
 							resolveImage={() => imageUrl}
 						/>
 					) : (

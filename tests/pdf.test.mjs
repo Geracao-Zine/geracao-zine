@@ -93,6 +93,40 @@ test("generateZinePdf gera um PDF valido", async () => {
 	assert.equal(doc.getPageCount(), 3);
 });
 
+test("pagina em branco com blocos gera um PDF valido", async () => {
+        const bytes = await generateZinePdf({
+                ...cenario,
+                poems: [
+                        {
+                                title: "",
+                                subtitle: "",
+                                date: "",
+                                body: "",
+                                blocks: [
+                                        {
+                                                id: "block-1",
+                                                kind: "title",
+                                                text: "Título do bloco",
+                                                x: 24,
+                                                y: 24,
+                                                width: 200,
+                                                height: 60,
+                                                font: "geistMono",
+                                                size: 18,
+                                                color: 0,
+                                                align: "left",
+                                        },
+                                ],
+                        },
+                ],
+        });
+
+        assert.ok(bytes instanceof Uint8Array);
+        assert.equal(new TextDecoder().decode(bytes.slice(0, 5)), "%PDF-");
+        const doc = await PDFDocument.load(bytes);
+        assert.ok(doc.getPageCount() >= 2);
+});
+
 test("generateZinePdf e deterministico com o relogio fixo", async () => {
 	const primeiro = await comRelogioFixo(() => generateZinePdf(cenario));
 	const segundo = await comRelogioFixo(() => generateZinePdf(cenario));

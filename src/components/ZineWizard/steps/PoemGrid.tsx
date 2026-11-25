@@ -2,7 +2,13 @@
 
 import type { JSX } from "react";
 import PoemCard from "@/components/PoemCard";
-import type { PageField, PageImage, PoemPage, ZineDoc } from "@/domain";
+import type {
+	PageField,
+	PageImage,
+	PoemPage,
+	TextBlockKind,
+	ZineDoc,
+} from "@/domain";
 import { positionOf } from "@/domain";
 
 type Props = {
@@ -15,6 +21,9 @@ type Props = {
 	images: Record<string, PageImage>;
 	onImageChange: (id: string, file: File) => void;
 	onImageClear: (id: string) => void;
+	onAddBlock: (id: string, kind: TextBlockKind) => void;
+	onBlockTextChange: (id: string, blockId: string, text: string) => void;
+	onBlockRemove: (id: string, blockId: string) => void;
 };
 
 export default function PoemGrid({
@@ -27,6 +36,9 @@ export default function PoemGrid({
 	images,
 	onImageChange,
 	onImageClear,
+	onAddBlock,
+	onBlockTextChange,
+	onBlockRemove,
 }: Props): JSX.Element {
 	return (
 		<div className="space-y-8">
@@ -61,6 +73,10 @@ export default function PoemGrid({
 						image={images[poem.id] ?? null}
 						onImageChange={onImageChange}
 						onImageClear={onImageClear}
+						blocks={poem.blocks ?? []}
+						onAddBlock={onAddBlock}
+						onBlockTextChange={onBlockTextChange}
+						onBlockRemove={onBlockRemove}
 					/>
 				))}
 			</div>

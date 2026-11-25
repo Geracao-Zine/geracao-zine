@@ -14,7 +14,7 @@ import {
 import type { PageFields } from "./page.ts";
 import { pageFieldsFrom } from "./page.ts";
 import type { PoemPage, ZineDoc } from "./zine.ts";
-import { textBlocksFrom } from "./text-block.ts";
+import { textBlockHasText, textBlocksFrom } from "./text-block.ts";
 import { COVER_PAGE_ID, createDoc, poemPages } from "./zine.ts";
 import { resolveFontId } from "../lib/fonts.ts";
 
@@ -216,8 +216,21 @@ export function serializeDraft(draft: ZineDraft): string {
 	return JSON.stringify(draft);
 }
 
+function pageHasText(poem: PoemPage): boolean {
+	return poem.body.trim().length > 0 || (poem.blocks ?? []).some(textBlockHasText);
+}
+
+function pageHasTitle(poem: PoemPage): boolean {
+	return (
+		poem.title.trim().length > 0 ||
+		(poem.blocks ?? []).some(
+			(block) => block.kind === "title" && textBlockHasText(block)
+		)
+	);
+}
+
 export function hasPoemContent(draft: ZineDraft): boolean {
-	return poemPages(draft.doc).some((poem) => poem.body.trim().length > 0);
+	return poemPages(draft.doc).some(pageHasText);
 }
 
 export function draftIssues(draft: ZineDraft): DraftIssue[] {
@@ -251,7 +264,7 @@ export function draftIssues(draft: ZineDraft): DraftIssue[] {
 		});
 	}
 
-	const untitled = poems.filter((poem) => !poem.title.trim()).length;
+	const untitled = poems.filter((poem) => !pageHasTitle(poem)).length;
 
 	if (untitled > 0) {
 		issues.push({
@@ -265,7 +278,7 @@ export function draftIssues(draft: ZineDraft): DraftIssue[] {
 		});
 	}
 
-	const empty = poems.filter((poem) => !poem.body.trim()).length;
+	const empty = poems.filter((poem) => !pageHasText(poem)).length;
 
 	if (empty > 0) {
 		issues.push({

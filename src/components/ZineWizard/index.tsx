@@ -89,6 +89,9 @@ export default function ZineWizard({
 								images={editor.images}
 								onImageChange={editor.setPoemImage}
 								onImageClear={editor.clearPoemImage}
+								onAddBlock={editor.addPoemBlock}
+								onBlockTextChange={editor.changePoemBlockText}
+								onBlockRemove={editor.removePoemBlock}
 							/>
 						) : null}
 
@@ -110,7 +113,11 @@ export default function ZineWizard({
 								images={editor.images}
 								onImageChange={editor.setPoemImage}
 								onImageClear={editor.clearPoemImage}
-							/>
+								onAddBlock={editor.addPoemBlock}
+								onBlockTextChange={editor.changePoemBlockText}
+								onBlockRemove={editor.removePoemBlock}
+								onBlocksChange={editor.changePoemBlocks}
+						/>
 						) : null}
 
 						{editor.step === "print" ? (

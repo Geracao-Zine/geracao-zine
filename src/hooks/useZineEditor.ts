@@ -12,10 +12,13 @@ import type {
 	PrintMode,
 	ZineFormat,
 	ZineStep,
+	TextBlock,
+	TextBlockKind,
 } from "@/domain";
 import {
 	STEPS,
 	addPage,
+	addTextBlock as appendTextBlock,
 	canEnterStep,
 	createDraft,
 	draftIssues,
@@ -26,7 +29,10 @@ import {
 	movePage,
 	poemPages,
 	removePage,
+	removeTextBlock,
+	setPoemBlocks,
 	setPoemField,
+	updateTextBlock,
 	safetyMarginFrom,
 	stepIndex,
 	stepStatus,
@@ -44,6 +50,7 @@ import type { PageImage } from "@/domain";
 import { pageImageFrom } from "@/domain";
 import type { ZinePdfInput } from "@/lib/pdf";
 import { forcedPrintMode, generateZinePdf, mmToPt, templateFor } from "@/lib/pdf";
+import { previewPanelFor } from "@/lib/preview";
 
 export type ZineEditor = {
 	/** Falso enquanto o rascunho salvo ainda nao foi lido do navegador. */
@@ -86,6 +93,10 @@ export type ZineEditor = {
 	addPoem: () => void;
 	removePoem: (id: string) => void;
 	movePoem: (id: string, direction: -1 | 1) => void;
+	addPoemBlock: (id: string, kind: TextBlockKind) => void;
+	changePoemBlockText: (id: string, blockId: string, text: string) => void;
+	removePoemBlock: (id: string, blockId: string) => void;
+	changePoemBlocks: (id: string, blocks: TextBlock[]) => void;
 	issues: DraftIssue[];
 	issuesOf: (step: ZineStep) => DraftIssue[];
 	statusOf: (step: ZineStep) => StepStatus;
@@ -276,6 +287,80 @@ export function useZineEditor(
 		}));
 	};
 
+	const addPoemBlock = (id: string, kind: TextBlockKind): void => {
+		update((current) => {
+			const poem = poemPages(current.doc).find((page) => page.id === id);
+
+			if (!poem) {
+				return current;
+			}
+
+			const panel = previewPanelFor(current.format);
+			const blocks = appendTextBlock(poem.blocks ?? [], kind, {
+				...panel,
+				inset: mmToPt(current.safetyMargin),
+			}).map((block, index, all) =>
+				index === all.length - 1
+					? { ...block, font: current.cover.titleFont }
+					: block
+			);
+
+			return {
+				...current,
+				doc: setPoemBlocks(current.doc, id, blocks),
+			};
+		});
+	};
+
+	const changePoemBlockText = (
+		id: string,
+		blockId: string,
+		text: string
+	): void => {
+		update((current) => {
+			const poem = poemPages(current.doc).find((page) => page.id === id);
+
+			if (!poem) {
+				return current;
+			}
+
+			return {
+				...current,
+				doc: setPoemBlocks(
+					current.doc,
+					id,
+					updateTextBlock(poem.blocks ?? [], blockId, { text })
+				),
+			};
+		});
+	};
+
+	const removePoemBlock = (id: string, blockId: string): void => {
+		update((current) => {
+			const poem = poemPages(current.doc).find((page) => page.id === id);
+
+			if (!poem) {
+				return current;
+			}
+
+			return {
+				...current,
+				doc: setPoemBlocks(
+					current.doc,
+					id,
+					removeTextBlock(poem.blocks ?? [], blockId)
+				),
+			};
+		});
+	};
+
+	const changePoemBlocks = (id: string, blocks: TextBlock[]): void => {
+		update((current) => ({
+			...current,
+			doc: setPoemBlocks(current.doc, id, blocks),
+		}));
+	};
+
 	const issuesOf = (step: ZineStep): DraftIssue[] =>
 		issues.filter((issue) => issue.step === step);
 
@@ -304,6 +389,7 @@ export function useZineEditor(
 				subtitle: poem.subtitle,
 				date: formatIsoDate(poem.date),
 				body: poem.body,
+				blocks: poem.blocks,
 				image: images[poem.id] ?? null,
 			})),
 			images: imageBytesFor(images),
@@ -350,6 +436,10 @@ export function useZineEditor(
 		addPoem,
 		removePoem,
 		movePoem,
+		addPoemBlock,
+		changePoemBlockText,
+		removePoemBlock,
+		changePoemBlocks,
 		issues,
 		issuesOf,
 		statusOf,
