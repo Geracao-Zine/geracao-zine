@@ -17,6 +17,7 @@ import { markLines } from "./marks.ts";
 import { layoutPanelElements } from "./panel.ts";
 import type { PanelFonts, PanelLayout } from "./panel.ts";
 import { panelDrawables } from "./panel-render.ts";
+import { shapePoints } from "../shape-geometry.ts";
 import type { PanelTextDrawable } from "./panel-render.ts";
 import { panelFontsFrom } from "./panel-fonts.ts";
 import { panelSize, templateFor } from "./templates.ts";
@@ -263,6 +264,29 @@ function drawFace(
                                         imageOperators,
                                         angle
                                 );
+                                continue;
+                        }
+
+                        if (item.kind === "shape") {
+                                const points = shapePoints(item.shape, {
+                                        x: item.x,
+                                        y: item.y,
+                                        width: item.width,
+                                        height: item.height,
+                                });
+
+                                for (let index = 1; index < points.length; index += 1) {
+                                        const start = points[index - 1];
+                                        const end = points[index];
+
+                                        page.drawLine({
+                                                start: place(pageX(start.x), pageY(start.y)),
+                                                end: place(pageX(end.x), pageY(end.y)),
+                                                thickness: item.thickness,
+                                                color: rgb(item.color, item.color, item.color),
+                                        });
+                                }
+
                                 continue;
                         }
 

@@ -2,6 +2,7 @@ import type { PDFFont } from "pdf-lib";
 import type { PageImage } from "../../domain/image.ts";
 import type { PageFields } from "../../domain/page.ts";
 import { DEFAULT_TEXT_BLOCK_SIZE } from "../../domain/text-block.ts";
+import type { ShapeBlock } from "../../domain/shape-block.ts";
 import type { TextBlock } from "../../domain/text-block.ts";
 import { wrapText } from "../wrap-text.ts";
 import { fitBody } from "./fit-body.ts";
@@ -17,6 +18,7 @@ import type {
 	PanelTextElement,
 } from "./panel-elements.ts";
 import { orderedPanelElements } from "./panel-elements.ts";
+import { shapeBlockRect } from "../shape-geometry.ts";
 import { layoutTextBlock } from "./text-block.ts";
 import {
 	A4_CONTENT_WIDTH,
@@ -147,15 +149,19 @@ type PlacedBlock = {
  * continuacao identificada, sem perder linha.
  */
 export function layoutPanelElements(
-	page: PageFields & { blocks?: TextBlock[] },
+	page: PageFields & { blocks?: TextBlock[]; shapes?: ShapeBlock[] },
 	fonts: PanelFonts,
 	panelHeight: number = PANEL_HEIGHT,
 	width: number = A4_CONTENT_WIDTH,
 	inset = 0,
 	image: PageImage | null = null
 ): PanelLayout[] {
+	const shapes = page.shapes ?? [];
+
 	if (page.blocks && page.blocks.length > 0) {
-		return [layoutBlockPage(page.blocks, fonts, width, panelHeight, inset)];
+		return [
+			layoutBlockPage(page.blocks, shapes, fonts, width, panelHeight, inset),
+		];
 	}
 
 	const contentWidth = Math.max(1, width - inset * 2);
@@ -278,7 +284,32 @@ export function layoutPanelElements(
 		first = false;
 	} while (remaining.length > 0);
 
+	if (shapes.length > 0) {
+		const first = layouts[0];
+		const baseZ =
+			first.elements.reduce((max, element) => Math.max(max, element.z), -1) + 1;
+
+		first.elements.push(...shapeElements(shapes, width, panelHeight, baseZ));
+	}
+
 	return layouts;
+}
+
+function shapeElements(
+        shapes: ShapeBlock[],
+        width: number,
+        height: number,
+        baseZ?: number
+): PanelElement[] {
+        return shapes.map((shape, index) => ({
+                type: "shape" as const,
+                id: shape.id,
+                shape: shape.kind,
+                rect: shapeBlockRect(shape, width, height),
+                content: { color: shape.color, thickness: shape.thickness },
+                locked: shape.locked,
+                z: baseZ === undefined ? shape.z : baseZ + index,
+        }));
 }
 
 /**
@@ -290,6 +321,7 @@ export function layoutPanelElements(
  */
 function layoutBlockPage(
 	blocks: TextBlock[],
+	shapes: ShapeBlock[],
 	fonts: PanelFonts,
 	width: number,
 	height: number,
@@ -304,6 +336,8 @@ function layoutBlockPage(
 			block.z ?? index
 		)
 	);
+
+	elements.push(...shapeElements(shapes, width, height));
 
 	if (!elements.some((element) => element.type === "text" && element.content.role === "body")) {
 		elements.push({

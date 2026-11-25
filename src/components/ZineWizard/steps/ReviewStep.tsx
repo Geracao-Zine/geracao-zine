@@ -11,6 +11,9 @@ import type {
 	PageField,
 	PageImage,
 	PoemPage,
+	ShapeBlock,
+	ShapeBlockPatch,
+	ShapeKind,
 	TextBlock,
 	TextBlockKind,
 	ZineDoc,
@@ -46,7 +49,11 @@ type Props = {
 		direction: "front" | "back"
 	) => void;
 	onBlockLockToggle: (id: string, blockId: string) => void;
+	onAddShape: (id: string, kind: ShapeKind) => void;
+	onRemoveShape: (id: string, shapeId: string) => void;
+	onShapeChange: (id: string, shapeId: string, patch: ShapeBlockPatch) => void;
 	onBlocksChange: (id: string, blocks: TextBlock[]) => void;
+	onShapesChange: (id: string, shapes: ShapeBlock[]) => void;
 };
 
 export default function ReviewStep({
@@ -71,7 +78,11 @@ export default function ReviewStep({
 	onBlockRemove,
 	onBlockLayerChange,
 	onBlockLockToggle,
+	onAddShape,
+	onRemoveShape,
+	onShapeChange,
 	onBlocksChange,
+	onShapesChange,
 }: Props): JSX.Element {
 	return (
 		<div className="space-y-10">
@@ -125,6 +136,9 @@ export default function ReviewStep({
 					onBlockRemove={onBlockRemove}
 					onBlockLayerChange={onBlockLayerChange}
 					onBlockLockToggle={onBlockLockToggle}
+					onAddShape={onAddShape}
+					onRemoveShape={onRemoveShape}
+					onShapeChange={onShapeChange}
 				/>
 			</section>
 
@@ -143,11 +157,13 @@ export default function ReviewStep({
 							date={formatIsoDate(poem.date)}
 							body={poem.body}
 							blocks={poem.blocks}
+							shapes={poem.shapes}
 							font={cover.titleFont}
 							format={format}
 							safetyMargin={safetyMargin}
 							image={images[poem.id] ?? null}
 							onBlocksChange={(next) => onBlocksChange(poem.id, next)}
+							onShapesChange={(next) => onShapesChange(poem.id, next)}
 							editable
 						/>
 					))}

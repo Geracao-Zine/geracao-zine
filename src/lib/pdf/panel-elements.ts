@@ -7,6 +7,7 @@
  * consumindo `PanelPageLayout`, que e derivado dela.
  */
 
+import type { ShapeKind } from "../../domain/shape-block.ts";
 import type { FontId } from "../fonts.ts";
 
 export type PanelRole = "title" | "subtitle" | "date" | "body" | "label";
@@ -67,6 +68,24 @@ export type PanelRuleElement = {
         z: number;
 };
 
+export type PanelShapeContent = {
+        color: number;
+        thickness: number;
+};
+
+export type PanelShapeElement = {
+        type: "shape";
+        /** Origem no modelo de formas; o canvas usa para devolver a geometria. */
+        id?: string;
+        shape: ShapeKind;
+        rect: PanelRect;
+        content: PanelShapeContent;
+        /** Elemento travado nao pode ser movido pelo canvas. */
+        locked?: boolean;
+        /** Ordem de empilhamento: valores menores sao desenhados primeiro. */
+        z: number;
+};
+
 export type PanelImageElement = {
         type: "image";
         id?: string;
@@ -80,7 +99,11 @@ export type PanelImageElement = {
         z: number;
 };
 
-export type PanelElement = PanelTextElement | PanelRuleElement | PanelImageElement;
+export type PanelElement =
+        | PanelTextElement
+        | PanelRuleElement
+        | PanelShapeElement
+        | PanelImageElement;
 
 export type PanelLayout = {
         width: number;

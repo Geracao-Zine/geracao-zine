@@ -8,6 +8,34 @@ export {
 } from "./image.ts";
 export { EMPTY_PAGE_FIELDS, pageFieldsFrom } from "./page.ts";
 export type {
+        ShapeArea,
+        ShapeBlock,
+        ShapeBlockPatch,
+        ShapeKind,
+} from "./shape-block.ts";
+export {
+        DEFAULT_SHAPE_COLOR,
+        DEFAULT_SHAPE_HEIGHT,
+        DEFAULT_SHAPE_THICKNESS,
+        DEFAULT_SHAPE_WIDTH,
+        MAX_SHAPE_THICKNESS,
+        MIN_SHAPE_THICKNESS,
+        SHAPE_ARC_SEGMENTS,
+        SHAPE_DEFAULT_GAP,
+        SHAPE_DEFAULT_OFFSET,
+        addShapeBlock,
+        createShapeBlock,
+        isShapeKind,
+        nextShapeBlockId,
+        nextShapeBlockZ,
+        placeShapeBlock,
+        removeShapeBlock,
+        shapeBlockFrom,
+        shapeBlocksFrom,
+        shapeLabel,
+        updateShapeBlock,
+} from "./shape-block.ts";
+export type {
         TextAlign,
         TextBlock,
         TextBlockArea,
@@ -50,6 +78,7 @@ export {
 	removePage,
 	setPoemBlocks,
 	setPoemField,
+	setPoemShapes,
 } from "./zine.ts";
 export type {
 	ZineStep,

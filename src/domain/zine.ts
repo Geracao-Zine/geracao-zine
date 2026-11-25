@@ -1,5 +1,6 @@
 import type { PageFields } from "./page.ts";
 import { EMPTY_PAGE_FIELDS } from "./page.ts";
+import type { ShapeBlock } from "./shape-block.ts";
 import type { TextBlock } from "./text-block.ts";
 
 export type CoverPage = {
@@ -16,6 +17,8 @@ export type PoemPage = PageFields & {
 	kind: "poem";
 	/** Blocos posicionados; ausentes usam o layout algoritmico. */
 	blocks?: TextBlock[];
+	/** Formas posicionadas por cima do layout da pagina. */
+	shapes?: ShapeBlock[];
 };
 
 export type ZinePage = CoverPage | PoemPage;
@@ -137,6 +140,32 @@ export function setPoemBlocks(
 			return { ...page, blocks };
 		}),
 	};
+}
+
+/** Substitui as formas posicionadas de uma pagina; lista vazia remove o campo. */
+export function setPoemShapes(
+        doc: ZineDoc,
+        id: string,
+        shapes: ShapeBlock[]
+): ZineDoc {
+        return {
+                ...doc,
+                pages: doc.pages.map((page) => {
+                        if (page.id !== id || page.kind !== "poem") {
+                                return page;
+                        }
+
+                        if (shapes.length === 0) {
+                                const rest = { ...page };
+
+                                delete rest.shapes;
+
+                                return rest;
+                        }
+
+                        return { ...page, shapes };
+                }),
+        };
 }
 
 export function coverOf(doc: ZineDoc): CoverPage | undefined {

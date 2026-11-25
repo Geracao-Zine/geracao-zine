@@ -1,3 +1,4 @@
+import type { ShapeKind } from "../../domain/shape-block.ts";
 import type { FontId } from "../fonts.ts";
 import type { PanelLayout, PanelRole } from "./panel-elements.ts";
 import { orderedPanelElements } from "./panel-elements.ts";
@@ -26,6 +27,18 @@ export type PanelRuleDrawable = {
         z: number;
 };
 
+export type PanelShapeDrawable = {
+        kind: "shape";
+        shape: ShapeKind;
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+        thickness: number;
+        color: number;
+        z: number;
+};
+
 export type PanelImageDrawable = {
         kind: "image";
         x: number;
@@ -40,7 +53,11 @@ export type PanelImageDrawable = {
         z: number;
 };
 
-export type PanelDrawable = PanelTextDrawable | PanelRuleDrawable | PanelImageDrawable;
+export type PanelDrawable =
+        | PanelTextDrawable
+        | PanelRuleDrawable
+        | PanelShapeDrawable
+        | PanelImageDrawable;
 
 /**
  * Traduz um `PanelLayout` para comandos de desenho independentes do alvo.
@@ -63,6 +80,22 @@ export function panelDrawables(layout: PanelLayout): PanelDrawable[] {
                                         clipWidth: element.clip.width,
                                         clipHeight: element.clip.height,
                                         assetId: element.content.assetId,
+                                        z: element.z,
+                                },
+                        ];
+                }
+
+                if (element.type === "shape") {
+                        return [
+                                {
+                                        kind: "shape",
+                                        shape: element.shape,
+                                        x: element.rect.x,
+                                        y: element.rect.y,
+                                        width: element.rect.width,
+                                        height: element.rect.height,
+                                        thickness: element.content.thickness,
+                                        color: element.content.color,
                                         z: element.z,
                                 },
                         ];

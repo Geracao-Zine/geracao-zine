@@ -116,3 +116,16 @@ export const IMAGE_MIN_SCALE = 0.0001;
 export const IMAGE_BAND_RATIO = 0.4;
 // Folga entre a imagem e o cabecalho, para o titulo nao encostar na imagem.
 export const POEM_GAP_AFTER_IMAGE = 14;
+
+// As formas livres vivem no dominio; o PDF so reexporta os mesmos numeros.
+export {
+        DEFAULT_SHAPE_COLOR,
+        DEFAULT_SHAPE_HEIGHT,
+        DEFAULT_SHAPE_THICKNESS,
+        DEFAULT_SHAPE_WIDTH,
+        MAX_SHAPE_THICKNESS,
+        MIN_SHAPE_THICKNESS,
+        SHAPE_ARC_SEGMENTS,
+        SHAPE_DEFAULT_GAP,
+        SHAPE_DEFAULT_OFFSET,
+} from "../../domain/shape-block.ts";
