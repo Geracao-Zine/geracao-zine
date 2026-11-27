@@ -27,6 +27,17 @@ RUN npm run build
 # estagio final, evita que os bytes viagem na camada do COPY.
 RUN rm -rf .next/standalone/node_modules/typescript
 
+# O CLI do Prisma e necessario em runtime para aplicar as migrations, mas nao
+# pode entrar no node_modules do app: o standalone ja tem suas proprias copias
+# resolvidas e misturar os dois quebraria a resolucao de modulos. Instalar num
+# diretorio separado, e apenas o CLI, evita arrastar o devDependencies inteiro
+# do projeto (~900 MB) so para rodar um comando.
+FROM node:26-alpine AS migrator
+WORKDIR /migrate
+RUN npm init -y > /dev/null && npm install --no-audit --no-fund prisma@7.10.1 dotenv@18.0.10
+COPY prisma ./prisma
+COPY prisma7.config.ts ./
+
 FROM node:26-alpine AS runner
 WORKDIR /app
 
@@ -44,7 +55,13 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
+# O entrypoint aplica as migrations antes de servir. O diretorio fica fora de
+# /app para o node_modules do CLI nao competir com o do standalone.
+COPY --from=migrator --chown=nextjs:nodejs /migrate /app/migrate
+COPY --chown=nextjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
+
 USER nextjs
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["./docker-entrypoint.sh"]
