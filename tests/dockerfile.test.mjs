@@ -30,6 +30,63 @@ test("o Dockerfile tem os tres estagios", () => {
 	}
 });
 
+test("as migrations rodam na subida do container", () => {
+	const dockerfile = ler("Dockerfile");
+
+	// O runner nao tem o CLI do Prisma, entao as migrations precisam vir de um
+	// estagio proprio e ser acionadas pelo entrypoint.
+	assert.match(dockerfile, /FROM\s+\S+\s+AS\s+migrator\b/);
+	assert.match(dockerfile, /COPY --from=migrator[^\n]*\/migrate/);
+	assert.match(dockerfile, /CMD\s+\["\.\/docker-entrypoint\.sh"\]/);
+
+	// Sem o diretorio de migrations e o config dentro do estagio, o `migrate
+	// deploy` nao teria o que aplicar.
+	const migrator = dockerfile.slice(
+		dockerfile.indexOf("AS migrator"),
+		dockerfile.indexOf("AS runner"),
+	);
+
+	assert.match(migrator, /COPY prisma \.\/prisma/);
+	assert.match(migrator, /COPY prisma7\.config\.ts \.\//);
+});
+
+test("o CLI do Prisma nao entra no node_modules do app", () => {
+	const dockerfile = ler("Dockerfile");
+	const runner = dockerfile.slice(dockerfile.indexOf("AS runner"));
+
+	// Instalar o CLI dentro do /app sobrescreveria modulos que o standalone ja
+	// resolveu, e o CLI arrasta centenas de MB.
+	assert.doesNotMatch(
+		runner,
+		/COPY --from=migrator[^\n]*\/migrate \.\/?$/m,
+		"o diretorio do migrator nao pode ser copiado para a raiz do /app",
+	);
+	assert.match(runner, /\/app\/migrate/);
+});
+
+test("o estagio do migrator nao instala o devDependencies do projeto", () => {
+	const dockerfile = ler("Dockerfile");
+	const migrator = dockerfile.slice(
+		dockerfile.indexOf("AS migrator"),
+		dockerfile.indexOf("AS runner"),
+	);
+
+	// `npm ci` com o package.json do projeto baixaria ~900 MB para rodar um comando.
+	assert.doesNotMatch(migrator, /npm ci/);
+	assert.match(migrator, /npm install[^\n]*prisma@/);
+});
+
+test("o entrypoint entra na imagem antes de trocar para usuario nao-root", () => {
+	const dockerfile = ler("Dockerfile");
+	const runner = dockerfile.slice(dockerfile.indexOf("AS runner"));
+
+	assert.ok(
+		runner.indexOf("docker-entrypoint.sh ./docker-entrypoint.sh") < runner.indexOf("USER nextjs"),
+		"copiar depois do USER deixaria o arquivo sem permissao de execucao",
+	);
+	assert.match(runner, /chmod \+x \.\/docker-entrypoint\.sh/);
+});
+
 test("o estagio final roda node:26-alpine e sem root", () => {
 	const dockerfile = ler("Dockerfile");
 	const final = dockerfile.slice(dockerfile.lastIndexOf("FROM "));
