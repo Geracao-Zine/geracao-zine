@@ -30,6 +30,26 @@ export function mensagemDeErro(codigo: string): string {
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
+/**
+ * Prazo das chamadas de login. Sem ele, um servidor que aceita a conexao e nao
+ * responde deixaria o botao em "Entrando..." para sempre, sem erro na tela.
+ */
+export const LOGIN_TIMEOUT_MS = 15000;
+
+function comPrazo(ms: number = LOGIN_TIMEOUT_MS): AbortSignal | undefined {
+	// Navegador sem `AbortSignal.timeout` (Safari antigo) perderia o login inteiro
+	// se isto lancasse; sem prazo a requisicao volta ao comportamento anterior.
+	if (typeof AbortSignal.timeout !== "function") {
+		return undefined;
+	}
+
+	return AbortSignal.timeout(ms);
+}
+
+function ehTimeout(erro: unknown): boolean {
+	return erro instanceof Error && (erro.name === "TimeoutError" || erro.name === "AbortError");
+}
+
 type RespostaSessao = { user?: unknown };
 
 function usuarioDe(corpo: unknown): PublicUser | null {
@@ -68,6 +88,7 @@ export async function buscarSessao(
 			method: "GET",
 			credentials: "same-origin",
 			headers: { accept: "application/json" },
+			signal: comPrazo(),
 		});
 
 		if (!resposta.ok) {
@@ -92,6 +113,7 @@ export async function buscarConfig(fetcher: Fetcher = fetch): Promise<ConfigPubl
 			method: "GET",
 			credentials: "same-origin",
 			headers: { accept: "application/json" },
+			signal: comPrazo(),
 		});
 
 		if (!resposta.ok) {
@@ -121,6 +143,7 @@ export async function entrarComCode(
 			credentials: "same-origin",
 			headers: { "content-type": "application/json" },
 			body: JSON.stringify({ code }),
+			signal: comPrazo(),
 		});
 
 		const corpo: unknown = await resposta.json().catch(() => null);
@@ -137,7 +160,11 @@ export async function entrarComCode(
 		const user = usuarioDe(corpo);
 
 		return user ? { ok: true, user } : { ok: false, motivo: mensagemDeErro("falha_no_login") };
-	} catch {
+	} catch (erro) {
+		if (ehTimeout(erro)) {
+			return { ok: false, motivo: "O servidor demorou demais para responder. Tente de novo." };
+		}
+
 		return { ok: false, motivo: "Sem conexao com o servidor. Verifique sua rede." };
 	}
 }
@@ -149,6 +176,7 @@ export async function sair(fetcher: Fetcher = fetch): Promise<void> {
 		await fetcher("/api/auth/logout", {
 			method: "POST",
 			credentials: "same-origin",
+			signal: comPrazo(),
 		});
 	} catch {
 		return;
