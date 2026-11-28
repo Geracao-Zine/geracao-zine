@@ -607,7 +607,7 @@ export function useZineEditor(
 			}
 
 			setDraft(aberto);
-			conta.adotar(resultado.zine.id, aberto);
+			conta.adotar(resultado.zine.id, aberto, resultado.zine.visibility);
 			setIdCarregado(zineId);
 		});
 

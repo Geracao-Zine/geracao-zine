@@ -138,8 +138,8 @@ if (semBanco) {
 
                 assert.equal(response.status, 201);
                 assert.equal(corpo.zine.title, "Meu Zine");
-                assert.equal(corpo.zine.visibility, "public", "criar ja divulga por padrao");
-                assert.equal(corpo.zine.slug, "meu-zine", "divulgado nasce com slug");
+                assert.equal(corpo.zine.visibility, "private", "criar nao divulga; publicar e explicito");
+                assert.equal(corpo.zine.slug, null, "privado nao tem slug, entao nao vaza por URL");
 
                 const gravado = await db.zine.findUniqueOrThrow({ where: { id: corpo.zine.id } });
 
@@ -366,5 +366,43 @@ if (semBanco) {
 
                 assert.equal(response.status, 400);
                 assert.equal(await db.zine.count({ where: { ownerId: dono.id } }), 0);
+        });
+
+        test("CRITERIO: zine novo nasce privado, sem aparecer na biblioteca", async () => {
+                const { corpo } = await criarZinePeloDono({ title: "Recem escrito" });
+
+                const publica = await (await zines.GET(pedidoLista(null, "?scope=public"))).json();
+
+                assert.equal(corpo.zine.visibility, "private");
+                assert.equal(
+                        publica.zines.some((z) => z.id === corpo.zine.id),
+                        false,
+                        "publicar sem pedir poria o texto de alguem na rua"
+                );
+        });
+
+        test("CRITERIO: alternar para publico poe o zine na biblioteca na hora", async () => {
+                const { corpo } = await criarZinePeloDono({ title: "Agora divulgado" });
+
+                const antes = await (await zines.GET(pedidoLista(null, "?scope=public"))).json();
+                assert.equal(antes.zines.some((z) => z.id === corpo.zine.id), false);
+
+                const patch = await detalhe.PATCH(
+                        pedidoDetalhe(corpo.zine.id, cookieDono, {
+                                method: "PATCH",
+                                headers: { "content-type": "application/json" },
+                                body: JSON.stringify({ visibility: "public" }),
+                        }),
+                        { params: Promise.resolve({ id: corpo.zine.id }) }
+                );
+                assert.equal(patch.status, 200);
+
+                const depois = await (await zines.GET(pedidoLista(null, "?scope=public"))).json();
+
+                assert.equal(
+                        depois.zines.some((z) => z.id === corpo.zine.id),
+                        true,
+                        "divulgar precisa refletir na listagem sem passo extra"
+                );
         });
 }

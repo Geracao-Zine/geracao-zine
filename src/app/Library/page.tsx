@@ -102,6 +102,18 @@ export default function LibraryPage(): JSX.Element {
 
         const mudarVisibilidade = useCallback(
                 (zine: ZineDaConta, visibility: "private" | "public"): void => {
+                        // Divulgar tira o zine do privado e o poe na biblioteca de todo
+                        // mundo, com link proprio. Voltar a privar nao desfaz uma copia
+                        // ja vista, entao a confirmacao vem antes de publicar.
+                        if (
+                                visibility === "public" &&
+                                !window.confirm(
+                                        `Divulgar “${zine.title}” na biblioteca publica? Qualquer pessoa com o link vai poder ler.`
+                                )
+                        ) {
+                                return;
+                        }
+
                         setOcupado(zine.id);
                         setErro(null);
 

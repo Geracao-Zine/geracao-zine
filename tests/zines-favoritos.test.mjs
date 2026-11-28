@@ -81,8 +81,12 @@ if (semBanco) {
                 await db.$disconnect();
         });
 
+        // O padrao do zine e privado, entao o que este arquivo exercita — favoritar
+        // um zine que outra pessoa pode ver — precisa dizer "public" para existir.
         async function criarZine(body, cookie = cookieDono) {
-                const response = await zines.POST(pedidoCria({ content: CONTEUDO, contentVersion: 1, ...body }, cookie));
+                const response = await zines.POST(
+                        pedidoCria({ content: CONTEUDO, contentVersion: 1, visibility: "public", ...body }, cookie)
+                );
                 return (await response.json()).zine;
         }
 

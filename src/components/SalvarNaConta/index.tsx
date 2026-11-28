@@ -34,6 +34,20 @@ export default function SalvarNaContaBotao({ conta, autenticado }: Props): JSX.E
 	}
 
 	const salvando = conta.estado === "salvando";
+	const publico = conta.visibility === "public";
+
+	const alternarVisibilidade = (): void => {
+		if (
+			!publico &&
+			!window.confirm(
+				"Divulgar este zine na biblioteca publica? Qualquer pessoa com o link vai poder ler."
+			)
+		) {
+			return;
+		}
+
+		void conta.definirVisibilidade(publico ? "private" : "public");
+	};
 
 	return (
 		<div className="flex flex-wrap items-center justify-center gap-3" data-testid="conta-barra">
@@ -52,6 +66,22 @@ export default function SalvarNaContaBotao({ conta, autenticado }: Props): JSX.E
 			>
 				Salvar na conta
 			</button>
+
+			{/* Antes do primeiro salvamento nao existe zine para divulgar, entao o
+			    interruptor so aparece depois que a conta tem o texto. */}
+			{conta.visibility === null ? null : (
+				<label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+					<input
+						type="checkbox"
+						checked={publico}
+						onChange={alternarVisibilidade}
+						disabled={salvando}
+						className="h-4 w-4 accent-[var(--purple-dark)]"
+						data-testid="interruptor-visibilidade"
+					/>
+					{publico ? "Divulgado" : "Privado"}
+				</label>
+			)}
 
 			<span
 				role="status"

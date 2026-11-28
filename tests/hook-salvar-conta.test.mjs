@@ -73,3 +73,28 @@ test("o assistente mostra a barra da conta", () => {
 	assert.match(wizard, /<SalvarNaContaBotao conta=\{editor\.conta\}/);
 	assert.match(wizard, /const autenticado = sessao\.status === "autenticado"/);
 });
+
+test("o editor divulga e priva pelo interruptor, sem tocar no conteudo", () => {
+        assert.match(botao, /data-testid="interruptor-visibilidade"/);
+        assert.match(botao, /conta\.definirVisibilidade\(publico \? "private" : "public"\)/);
+        assert.match(hook, /definirVisibilidade as alterarVisibilidade/);
+});
+
+test("divulgar pede confirmacao antes de sair do privado", () => {
+        // Publicar tem link publico e nao desfaz o que ja foi visto; privar, sim,
+        // e seguro. Por isso so a ida para `public` pergunta.
+        assert.match(botao, /if \(\s*!publico &&\s*!window\.confirm\(/);
+        assert.match(botao, /biblioteca publica/);
+});
+
+test("sem zine na conta o interruptor nao aparece", () => {
+        assert.match(botao, /conta\.visibility === null \? null :/);
+});
+
+test("divulgar exige que o conteudo ja esteja na conta", () => {
+        assert.match(hook, /if \(!id\) \{\s*setErro\("Salve o zine na conta antes de divulgar\."\)/);
+});
+
+test("abrir um zine da conta assume a visibilidade que ele ja tinha", () => {
+        assert.match(editor, /conta\.adotar\(resultado\.zine\.id, aberto, resultado\.zine\.visibility\)/);
+});

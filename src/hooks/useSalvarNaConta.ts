@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ZineDraft } from "@/domain";
-import { atualizarZineNaConta, criarZineNaConta, podeSalvar } from "@/lib/zines/client";
+import {
+	atualizarZineNaConta,
+	criarZineNaConta,
+	definirVisibilidade as alterarVisibilidade,
+	podeSalvar,
+} from "@/lib/zines/client";
 import { debounce } from "@/lib/debounce";
 
 /**
@@ -39,7 +44,16 @@ export type SalvarNaConta = {
 	 * Sem isso, abrir um zine pela biblioteca faria o primeiro salvamento criar
 	 * outro zine em vez de atualizar o que foi aberto.
 	 */
-	adotar: (zineId: string, draft: ZineDraft) => void;
+	adotar: (zineId: string, draft: ZineDraft, visibility: "private" | "public") => void;
+	/**
+	 * Visibilidade do zine na conta; `null` enquanto nada foi salvo.
+	 *
+	 * Enquanto e `null` o interruptor do editor fica desligado: nao ha zine
+	 * para divulgar antes do primeiro salvamento.
+	 */
+	visibility: "private" | "public" | null;
+	/** Divulga ou priva o zine ja gravado, sem tocar no conteudo. */
+	definirVisibilidade: (visibility: "private" | "public") => Promise<boolean>;
 };
 
 /**
@@ -57,6 +71,7 @@ export function useSalvarNaConta(
 	const [estado, setEstado] = useState<EstadoSalvamento>("inativo");
 	const [erro, setErro] = useState<string | null>(null);
 	const [zineId, setZineId] = useState<string | null>(null);
+	const [visibility, setVisibility] = useState<"private" | "public" | null>(null);
 
 	const idRef = useRef<string | null>(null);
 	const emVoo = useRef(false);
@@ -96,6 +111,7 @@ export function useSalvarNaConta(
 				setZineId(resultado.zine.id);
 			}
 
+			setVisibility(resultado.zine.visibility);
 			setEstado("salvo");
 			return;
 		}
@@ -152,20 +168,52 @@ export function useSalvarNaConta(
 		idRef.current = null;
 		ultimoSalvo.current = null;
 		setZineId(null);
+		setVisibility(null);
 		setErro(null);
 		setEstado("inativo");
 	}, []);
 
-	const adotar = useCallback((id: string, alvo: ZineDraft): void => {
-		agendado.current?.cancelar();
-		idRef.current = id;
-		// O conteudo recem-aberto ja e o que esta na conta: sem esta marca, o
-		// primeiro efeito de espelhamento gravaria o mesmo conteudo de novo.
-		ultimoSalvo.current = JSON.stringify({ ...alvo, step: "cover" });
-		setZineId(id);
-		setErro(null);
-		setEstado("salvo");
-	}, []);
+	const adotar = useCallback(
+		(id: string, alvo: ZineDraft, visibilidade: "private" | "public"): void => {
+			agendado.current?.cancelar();
+			idRef.current = id;
+			// O conteudo recem-aberto ja e o que esta na conta: sem esta marca, o
+			// primeiro efeito de espelhamento gravaria o mesmo conteudo de novo.
+			ultimoSalvo.current = JSON.stringify({ ...alvo, step: "cover" });
+			setZineId(id);
+			setVisibility(visibilidade);
+			setErro(null);
+			setEstado("salvo");
+		},
+		[]
+	);
+
+	const definirVisibilidade = useCallback(
+		async (alvo: "private" | "public"): Promise<boolean> => {
+			const id = idRef.current;
+
+			// Sem id nao ha zine na conta ainda: publicar exige que o conteudo ja
+			// esteja gravado, senao o link publico apontaria para nada.
+			if (!id) {
+				setErro("Salve o zine na conta antes de divulgar.");
+				return false;
+			}
+
+			setErro(null);
+
+			const resultado = await alterarVisibilidade(id, alvo);
+
+			if (!resultado.ok) {
+				setErro(resultado.motivo);
+				return false;
+			}
+
+			setVisibility(resultado.zine.visibility);
+
+			return true;
+		},
+		[]
+	);
 
 	// Sair da pagina com alteracao pendente: grava antes de fechar.
 	useEffect(() => {
@@ -189,5 +237,7 @@ export function useSalvarNaConta(
 		cancelar,
 		desvincular,
 		adotar,
+		visibility,
+		definirVisibilidade,
 	};
 }

@@ -102,12 +102,12 @@ test("apagar o dono nao deixa zine orfao", () => {
   assert.match(blocoZine, /onDelete:\s*Cascade/);
 });
 
-test("visibility e enum com public como padrao", () => {
+test("visibility e enum com private como padrao", () => {
   const enumZine = schema.slice(schema.indexOf("enum ZineVisibility"), schema.indexOf("model Zine"));
 
   assert.match(enumZine, /^\s*private\s*$/m);
   assert.match(enumZine, /^\s*public\s*$/m);
-  assert.match(blocoZine, /visibility\s+ZineVisibility\s+@default\(public\)/);
+  assert.match(blocoZine, /visibility\s+ZineVisibility\s+@default\(private\)/);
 });
 
 test("o conteudo e JSON e carrega a versao do formato desde o inicio", () => {

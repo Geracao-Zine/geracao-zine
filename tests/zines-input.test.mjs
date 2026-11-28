@@ -19,13 +19,13 @@ function erroDe(fn) {
 
 const CONTEUDO = { version: 1, cover: { title: "Zine" } };
 
-test("newZineFrom le os campos e nasce divulgado por padrao", () => {
+test("newZineFrom le os campos e nasce privado por padrao", () => {
         const zine = newZineFrom({ title: "  Meu Zine  ", content: CONTEUDO, contentVersion: 1 });
 
         assert.equal(zine.title, "Meu Zine");
         assert.deepEqual(zine.content, CONTEUDO);
         assert.equal(zine.contentVersion, 1);
-        assert.equal(zine.visibility, "public", "criar ja divulga; privar e escolha explicita");
+        assert.equal(zine.visibility, "private", "publicar e acao explicita; criar nao divulga");
 });
 
 test("newZineFrom respeita o privado quando o autor escolhe", () => {
