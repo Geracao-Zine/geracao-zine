@@ -181,3 +181,34 @@ test("mensagemDeErro cobre os codigos que a API de zines devolve", () => {
 		assert.notEqual(mensagemDeErro(codigo), MENSAGEM_FALHA_GENERICA, codigo);
 	}
 });
+
+test("atualizar cria um novo quando o zine sumiu da conta", async () => {
+        // Zine apagado em outra aba: insistir no PATCH deixaria o editor em erro
+        // para sempre. A gravacao precisa virar um zine novo.
+        let chamada = 0;
+        const { fetch, chamadas } = fetcherFalso(() => {
+                chamada += 1;
+
+                return chamada === 1
+                        ? resposta({ error: "zine_nao_encontrado" }, 404)
+                        : resposta(ZINE_OK, 201);
+        });
+
+        const resultado = await atualizarZineNaConta("3f2504e0-4f89-11d3-9a0c-0305e82c3301", rascunhoComTitulo(), fetch);
+
+        assert.equal(resultado.ok, true);
+        assert.deepEqual(
+                chamadas.map((c) => c.init.method),
+                ["PATCH", "POST"],
+                "o POST so pode acontecer depois do 404"
+        );
+        assert.equal(chamadas[1].url, "/api/zines");
+});
+
+test("atualizar mantem o erro quando a falha nao e zine ausente", async () => {
+        const { fetch, chamadas } = fetcherFalso(() => resposta({ error: "titulo_ausente" }, 400));
+        const resultado = await atualizarZineNaConta("3f2504e0-4f89-11d3-9a0c-0305e82c3301", rascunhoComTitulo(), fetch);
+
+        assert.equal(resultado.ok, false);
+        assert.equal(chamadas.length, 1, "erro de conteudo nao pode virar zine novo");
+});

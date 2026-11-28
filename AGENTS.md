@@ -70,3 +70,15 @@ evitam corrida entre eles:
   publica e a falha aparece longe da causa.
 - A listagem publica exige `?scope=public`. Sem o escopo, `GET /api/zines`
   devolve os zines do dono da sessao, e nao a biblioteca.
+- **O id do zine criado vai para a URL.** `useZineEditor` grava `?zine=<id>`
+  com `history.replaceState` assim que o primeiro salvamento cria o zine. Sem
+  isso, recarregar a pagina voltava a "rascunho local" e o salvamento seguinte
+  criava outro zine para o mesmo texto — a origem das duplicatas na aba "Meus
+  zines". Como a URL passa a apontar para o zine recem-criado, o efeito de
+  abertura precisa ignorar `zineId === conta.zineId`; buscar de novo
+  sobrescreveria o rascunho em digitacao pela copia do banco.
+- **PATCH em zine apagado recria.** `atualizarZineNaConta` responde 404 com
+  `zine_nao_encontrado` quando o zine sumiu (apagado em outra aba) e, nesse
+  caso, faz um POST em vez de devolver erro. Outros erros nao viram zine novo.
+- O seletor de visibilidade mostra estado ("Privado"/"Publico"), nao acao.
+  "Divulgar" como valor selecionado de um zine ja publico confundia.

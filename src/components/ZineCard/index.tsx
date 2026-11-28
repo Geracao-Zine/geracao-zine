@@ -92,8 +92,8 @@ export default function ZineCard({ zine, onVisibilidade, onFavoritar, ocupado = 
                                                                         className="rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm disabled:opacity-50"
                                                                         data-testid="seletor-visibilidade"
                                                                 >
-                                                                        <option value="public">Divulgar</option>
                                                                         <option value="private">Privado</option>
+                                                                        <option value="public">Publico</option>
                                                                 </select>
                                                         </label>
                                                 ) : null}

@@ -576,10 +576,41 @@ export function useZineEditor(
 	const { sessao } = useSession();
 	const conta = useSalvarNaConta(draft, sessao.status === "autenticado", ready);
 
+	// Ajuste em tempo de render: quando a URL passa a apontar para o zine que este
+	// editor acabou de criar, ele ja esta carregado e nao precisa de novo GET.
+	if (zineId !== undefined && zineId === conta.zineId && idCarregado !== zineId) {
+		setIdCarregado(zineId);
+	}
+
+	// O primeiro salvamento cria o zine e o id passa a ir na URL. Sem isso,
+	// recarregar a pagina voltaria a "rascunho local" e o proximo salvamento
+	// criaria outro zine para o mesmo texto: foi assim que a aba "Meus zines"
+	// encheu de duplicatas.
+	const idNaUrl = useRef<string | null>(null);
+
+	useEffect(() => {
+		if (!conta.zineId || conta.zineId === idNaUrl.current) {
+			return;
+		}
+
+		idNaUrl.current = conta.zineId;
+
+		const url = new URL(window.location.href);
+		url.searchParams.set("zine", conta.zineId);
+		window.history.replaceState(null, "", url.toString());
+	}, [conta.zineId]);
+
 	// Abrir um zine da conta: busca, converte em rascunho e assume o id para os
 	// proximos salvamentos atualizarem este zine em vez de criar outro.
 	useEffect(() => {
 		if (!zineId) {
+			return;
+		}
+
+		// A URL aponta para o zine que este editor acabou de criar: ele ja esta
+		// carregado, e buscar de novo sobrescreveria o rascunho em digitacao pela
+		// copia do banco. `idCarregado` ja foi ajustado no render.
+		if (zineId === conta.zineId) {
 			return;
 		}
 

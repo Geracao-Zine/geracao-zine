@@ -106,6 +106,8 @@ export function useSalvarNaConta(
 		if (resultado.ok) {
 			ultimoSalvo.current = serializado;
 
+			// Um PATCH em zine apagado em outra aba volta como zine novo, entao o
+			// id recebido pode diferir do atual: adotar evita 404 em toda gravacao.
 			if (resultado.zine.id !== idRef.current) {
 				idRef.current = resultado.zine.id;
 				setZineId(resultado.zine.id);

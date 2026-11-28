@@ -98,3 +98,29 @@ test("divulgar exige que o conteudo ja esteja na conta", () => {
 test("abrir um zine da conta assume a visibilidade que ele ja tinha", () => {
         assert.match(editor, /conta\.adotar\(resultado\.zine\.id, aberto, resultado\.zine\.visibility\)/);
 });
+
+test("o id do zine criado vai para a URL, para recarregar reabrir em vez de criar outro", () => {
+        // Sem o id na URL, um reload voltava a "rascunho local" e o salvamento
+        // seguinte criava um zine novo para o mesmo texto — a origem das
+        // duplicatas na aba "Meus zines".
+        assert.match(editor, /searchParams\.set\("zine", conta\.zineId\)/);
+        assert.match(editor, /history\.replaceState/, "trocar a URL nao pode empilhar historico");
+});
+
+test("abrir o zine que este editor acabou de criar nao reabre do banco", () => {
+        // Refazer o GET sobrescreveria o rascunho em digitacao pela copia salva.
+        assert.match(editor, /if \(zineId === conta\.zineId\)/);
+        assert.match(
+                editor,
+                /zineId === conta\.zineId && idCarregado !== zineId/,
+                "o ajuste no render evita refazer o GET do zine recem-criado"
+        );
+});
+
+test("o seletor de visibilidade mostra estado, nao acao", () => {
+        const card = ler("src/components/ZineCard/index.tsx");
+
+        assert.match(card, /<option value="private">Privado<\/option>/);
+        assert.match(card, /<option value="public">Publico<\/option>/);
+        assert.doesNotMatch(card, /<option value="public">Divulgar<\/option>/, "o rotulo do valor selecionado precisa dizer onde o zine esta");
+});

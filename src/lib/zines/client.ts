@@ -134,6 +134,16 @@ async function corpoDe(resposta: Response): Promise<ResultadoSalvar> {
 	return zine ? { ok: true, zine } : { ok: false, motivo: MENSAGEM_FALHA_GENERICA };
 }
 
+/**
+ * Verdadeiro quando a conta nao tem mais o zine que o editor acha que tem.
+ *
+ * Acontece quando o zine e apagado em outra aba: insistir no PATCH daria erro
+ * para sempre e o autor perderia a gravacao automatica.
+ */
+function zineSumiu(resultado: ResultadoSalvar): boolean {
+        return !resultado.ok && resultado.motivo === mensagemDeErro("zine_nao_encontrado");
+}
+
 /** Cria um zine novo na conta do usuario da sessao. */
 export async function criarZineNaConta(
 	draft: ZineDraft,
@@ -158,7 +168,12 @@ export async function criarZineNaConta(
 	}
 }
 
-/** Grava o rascunho por cima de um zine que ja esta na conta. */
+/**
+ * Grava o rascunho por cima de um zine que ja esta na conta.
+ *
+ * Se o zine sumiu (apagado em outra aba), cria um novo em vez de falhar para
+ * sempre: o `zine.id` devolvido e o que passa a valer.
+ */
 export async function atualizarZineNaConta(
 	id: string,
 	draft: ZineDraft,
@@ -176,7 +191,9 @@ export async function atualizarZineNaConta(
 			}),
 		});
 
-		return corpoDe(resposta);
+		const resultado = await corpoDe(resposta);
+
+		return zineSumiu(resultado) ? await criarZineNaConta(draft, fetcher) : resultado;
 	} catch {
 		return { ok: false, motivo: MENSAGEM_FALHA_GENERICA };
 	}
