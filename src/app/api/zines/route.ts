@@ -4,6 +4,7 @@ import { logError } from "../../../lib/log.ts";
 import {
         ZineError,
         createZine,
+        listFavoritedZines,
         listOwnZines,
         listPublicZines,
         newZineFrom,
@@ -23,25 +24,46 @@ function falha(error: unknown): Response {
 }
 
 /**
- * GET sem sessao lista so os zines publicos, que e o que qualquer visitante
- * pode ver. Com sessao, lista os do dono: o autor precisa achar os proprios
- * zines, inclusive os privados.
+ * Tres escopos, porque sao tres perguntas diferentes:
+ *
+ * - `public`: a biblioteca. Sem sessao tambem responde, e com sessao marca
+ *   `favorited` para o coracao aparecer certo.
+ * - `favorites`: o que a pessoa salvou. Exige sessao.
+ * - sem escopo: os zines do dono, inclusive os privados.
  */
 export async function GET(request: Request): Promise<Response> {
         const url = new URL(request.url);
         const escopo = url.searchParams.get("scope");
 
-        if (escopo === "public") {
-                try {
-                        return json({ zines: await listPublicZines(prisma) }, 200);
-                } catch (error) {
-                        return falha(error);
-                }
-        }
-
         try {
-                const ownerId = await ownerIdFromSession(request);
-                return json({ zines: await listOwnZines(prisma, ownerId) }, 200);
+                // Sessao opcional: um visitante ve a biblioteca, so nao ve favoritos.
+                // Token forjado, porem, continua sendo erro: engoli-lo faria um
+                // cookie invalido passar por visitante.
+                const viewerId = await ownerIdFromSession(request).catch((error: unknown) => {
+                        if (error instanceof ZineError && error.code === "nao_autenticado") {
+                                return null;
+                        }
+
+                        throw error;
+                });
+
+                if (escopo === "public") {
+                        return json({ zines: await listPublicZines(prisma, viewerId) }, 200);
+                }
+
+                if (escopo === "favorites") {
+                        if (!viewerId) {
+                                throw new ZineError("nao_autenticado", 401);
+                        }
+
+                        return json({ zines: await listFavoritedZines(prisma, viewerId) }, 200);
+                }
+
+                if (!viewerId) {
+                        throw new ZineError("nao_autenticado", 401);
+                }
+
+                return json({ zines: await listOwnZines(prisma, viewerId) }, 200);
         } catch (error) {
                 return falha(error);
         }

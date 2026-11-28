@@ -25,15 +25,16 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  zines Zine[]
+  zines     Zine[]
+  favorites Favorite[]
 
   @@map("users")
 }
 
 /// Quem pode ver um zine.
 ///
-/// O padrao e `private`: publicar e uma acao explicita do autor, nunca o
-/// resultado de esquecer de escolher.
+/// O padrao e `public`: o autor cria ja divulgado e escolhe privar quando
+/// quiser. A escolha e sempre reversivel pelo seletor no editor e na lista.
 enum ZineVisibility {
   private
   public
@@ -49,7 +50,7 @@ model Zine {
   id             String         @id @default(uuid()) @db.Uuid
   ownerId        String         @db.Uuid
   title          String
-  visibility     ZineVisibility @default(private)
+  visibility     ZineVisibility @default(public)
   content        Json
   contentVersion Int            @default(1)
   /// Identificador curto da URL publica. Nulo enquanto o zine e privado.
@@ -57,9 +58,29 @@ model Zine {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner     User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  favorites Favorite[]
 
   @@index([ownerId])
   @@index([visibility, updatedAt])
   @@map("zines")
+}
+
+/// Zine que alguem marcou para achar depois.
+///
+/// Nao e uma copia nem um reaproveitamento: guarda so a referencia, entao
+/// desfavoritar nao toca no zine. A chave e o par (`userId`, `zineId`), porque
+/// favoritar duas vezes nao pode criar duas linhas.
+model Favorite {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  zineId    String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  zine Zine @relation(fields: [zineId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, zineId])
+  @@index([zineId])
+  @@map("favorites")
 }

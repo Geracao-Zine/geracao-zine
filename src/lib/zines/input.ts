@@ -118,9 +118,9 @@ export function newZineFrom(body: unknown): NewZine {
                 title: titleFrom(record.title),
                 content: contentFrom(record.content),
                 contentVersion: contentVersionFrom(record.contentVersion),
-                // Privado e o padrao: publicar e acao explicita, nunca efeito
-                // de criar um zine.
-                visibility: record.visibility === undefined ? "private" : visibilityFrom(record.visibility),
+                // Divulgar e o padrao: quem cria ja quer mostrar, e privar e uma
+                // escolha do seletor depois. O schema tem o mesmo default.
+                visibility: record.visibility === undefined ? "public" : visibilityFrom(record.visibility),
         };
 }
 

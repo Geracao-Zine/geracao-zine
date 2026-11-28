@@ -50,7 +50,7 @@ export async function GET(request: Request, contexto: Contexto): Promise<Respons
                         }
                 }
 
-                return json({ zine: await getPublicZine(prisma, id) }, 200);
+                return json({ zine: await getPublicZine(prisma, id, dono) }, 200);
         } catch (error) {
                 return falha(error);
         }

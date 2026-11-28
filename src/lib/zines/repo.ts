@@ -5,10 +5,15 @@ import type { Visibility, ZinePatch } from "./input.ts";
 import { ZineError } from "./errors.ts";
 import { slugWithSuffix, slugify } from "./slug.ts";
 
+export type ZineAuthor = {
+        name: string | null;
+        avatarUrl: string | null;
+};
+
 /**
  * O que sai para o cliente. Igual ao model, menos `ownerId`: o dono ja e quem
  * fez a requisicao, e devolver o campo so daria motivo para tentar envia-lo de
- * volta.
+ * volta. `mine` existe para a tela nao precisar comparar ids que nao recebe.
  */
 export type PublicZine = {
         id: string;
@@ -19,9 +24,24 @@ export type PublicZine = {
         slug: string | null;
         createdAt: string;
         updatedAt: string;
+        /** Quem escreveu: a biblioteca publica precisa creditar o autor. */
+        author: ZineAuthor;
+        /** Verdadeiro quando quem pediu e o dono. */
+        mine: boolean;
+        favorited: boolean;
 };
 
-export function toPublicZine(zine: ZineModel): PublicZine {
+type ZineComAutor = ZineModel & { owner?: ZineAuthor | null };
+
+/**
+ * `viewerId` decide `mine`; `favorited` vem de quem consultou, porque depende
+ * da tabela de favoritos e nao da linha do zine.
+ */
+export function toPublicZine(
+        zine: ZineComAutor,
+        viewerId: string | null = null,
+        favorited = false
+): PublicZine {
         return {
                 id: zine.id,
                 title: zine.title,
@@ -31,8 +51,16 @@ export function toPublicZine(zine: ZineModel): PublicZine {
                 slug: zine.slug,
                 createdAt: zine.createdAt.toISOString(),
                 updatedAt: zine.updatedAt.toISOString(),
+                author: {
+                        name: zine.owner?.name ?? null,
+                        avatarUrl: zine.owner?.avatarUrl ?? null,
+                },
+                mine: viewerId !== null && zine.ownerId === viewerId,
+                favorited,
         };
 }
+
+const AUTOR = { select: { name: true, avatarUrl: true } } as const;
 
 function isUniqueViolation(error: unknown): boolean {
         return typeof error === "object" && error !== null && (error as { code?: unknown }).code === "P2002";
@@ -57,22 +85,59 @@ async function slugFor(db: PrismaClient, title: string, id: string): Promise<str
         return slugWithSuffix(base, id);
 }
 
+/** Ids dos zines que `userId` favoritou, para marcar a lista numa consulta so. */
+async function favoritedIds(db: PrismaClient, userId: string | null): Promise<Set<string>> {
+        if (!userId) {
+                return new Set();
+        }
+
+        const linhas = await db.favorite.findMany({ where: { userId }, select: { zineId: true } });
+
+        return new Set(linhas.map((linha) => linha.zineId));
+}
+
 export async function listOwnZines(db: PrismaClient, ownerId: string): Promise<PublicZine[]> {
         const zines = await db.zine.findMany({
                 where: { ownerId },
                 orderBy: { updatedAt: "desc" },
+                include: { owner: AUTOR },
         });
 
-        return zines.map(toPublicZine);
+        const favoritos = await favoritedIds(db, ownerId);
+
+        return zines.map((zine) => toPublicZine(zine, ownerId, favoritos.has(zine.id)));
 }
 
-export async function listPublicZines(db: PrismaClient): Promise<PublicZine[]> {
+export async function listPublicZines(
+        db: PrismaClient,
+        viewerId: string | null = null
+): Promise<PublicZine[]> {
         const zines = await db.zine.findMany({
                 where: { visibility: "public" },
                 orderBy: { updatedAt: "desc" },
+                include: { owner: AUTOR },
         });
 
-        return zines.map(toPublicZine);
+        const favoritos = await favoritedIds(db, viewerId);
+
+        return zines.map((zine) => toPublicZine(zine, viewerId, favoritos.has(zine.id)));
+}
+
+/**
+ * Zines favoritados por quem pediu.
+ *
+ * Filtra por `public`: um zine que era publico quando foi favoritado pode ter
+ * virado privado depois, e nesse caso ele sai da lista em vez de continuar
+ * visivel pelo favorito.
+ */
+export async function listFavoritedZines(db: PrismaClient, userId: string): Promise<PublicZine[]> {
+        const zines = await db.zine.findMany({
+                where: { visibility: "public", favorites: { some: { userId } } },
+                orderBy: { updatedAt: "desc" },
+                include: { owner: AUTOR },
+        });
+
+        return zines.map((zine) => toPublicZine(zine, userId, true));
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -105,19 +170,38 @@ async function ownZineOr404(db: PrismaClient, ownerId: string, id: string): Prom
 }
 
 export async function getOwnZine(db: PrismaClient, ownerId: string, id: string): Promise<PublicZine> {
-        return toPublicZine(await ownZineOr404(db, ownerId, id));
-}
-
-export async function getPublicZine(db: PrismaClient, id: string): Promise<PublicZine> {
         assertUuid(id);
 
-        const zine = await db.zine.findFirst({ where: { id, visibility: "public" } });
+        const zine = await db.zine.findFirst({ where: { id, ownerId }, include: { owner: AUTOR } });
 
         if (!zine) {
                 throw new ZineError("zine_nao_encontrado", 404);
         }
 
-        return toPublicZine(zine);
+        const favoritos = await favoritedIds(db, ownerId);
+
+        return toPublicZine(zine, ownerId, favoritos.has(zine.id));
+}
+
+export async function getPublicZine(
+        db: PrismaClient,
+        id: string,
+        viewerId: string | null = null
+): Promise<PublicZine> {
+        assertUuid(id);
+
+        const zine = await db.zine.findFirst({
+                where: { id, visibility: "public" },
+                include: { owner: AUTOR },
+        });
+
+        if (!zine) {
+                throw new ZineError("zine_nao_encontrado", 404);
+        }
+
+        const favoritos = await favoritedIds(db, viewerId);
+
+        return toPublicZine(zine, viewerId, favoritos.has(zine.id));
 }
 
 export async function createZine(
@@ -136,18 +220,20 @@ export async function createZine(
                         contentVersion: dados.contentVersion,
                         visibility: dados.visibility,
                 },
+                include: { owner: AUTOR },
         });
 
         if (dados.visibility !== "public") {
-                return toPublicZine(zine);
+                return toPublicZine(zine, ownerId);
         }
 
         const comSlug = await db.zine.update({
                 where: { id: zine.id },
                 data: { slug: await slugFor(db, dados.title, zine.id) },
+                include: { owner: AUTOR },
         });
 
-        return toPublicZine(comSlug);
+        return toPublicZine(comSlug, ownerId);
 }
 
 /**
@@ -203,8 +289,8 @@ export async function updateZine(
         }
 
         try {
-                const zine = await db.zine.update({ where: { id }, data });
-                return toPublicZine(zine);
+                const zine = await db.zine.update({ where: { id }, data, include: { owner: AUTOR } });
+                return toPublicZine(zine, ownerId);
         } catch (error) {
                 // Duas publicacoes simultaneas com o mesmo titulo podem escolher o
                 // mesmo slug entre a checagem e o update. Quem perde a corrida tenta
@@ -213,9 +299,10 @@ export async function updateZine(
                         const zine = await db.zine.update({
                                 where: { id },
                                 data: { ...data, slug: slugWithSuffix(slugify(tituloFinal), id) },
+                                include: { owner: AUTOR },
                         });
 
-                        return toPublicZine(zine);
+                        return toPublicZine(zine, ownerId);
                 }
 
                 throw error;
@@ -225,4 +312,42 @@ export async function updateZine(
 export async function deleteZine(db: PrismaClient, ownerId: string, id: string): Promise<void> {
         await ownZineOr404(db, ownerId, id);
         await db.zine.delete({ where: { id } });
+}
+
+/**
+ * Favorita um zine publico.
+ *
+ * Idempotente: favoritar duas vezes (dois cliques, duas abas) deixa uma linha
+ * so, em vez de estourar a chave unica como erro para quem clicou. Zine privado
+ * responde 404 mesmo existindo: o favorito nao pode ser um atalho para
+ * descobrir zine alheio.
+ */
+export async function favoriteZine(db: PrismaClient, userId: string, zineId: string): Promise<PublicZine> {
+        assertUuid(zineId);
+
+        const zine = await db.zine.findFirst({
+                where: { id: zineId, visibility: "public" },
+                include: { owner: AUTOR },
+        });
+
+        if (!zine) {
+                throw new ZineError("zine_nao_encontrado", 404);
+        }
+
+        try {
+                await db.favorite.create({ data: { userId, zineId } });
+        } catch (error) {
+                // P2002 aqui significa "ja estava favoritado", que e o estado desejado.
+                if (!isUniqueViolation(error)) {
+                        throw error;
+                }
+        }
+
+        return toPublicZine(zine, userId, true);
+}
+
+/** Remove o favorito. Desfavoritar o que nao estava favoritado nao e erro. */
+export async function unfavoriteZine(db: PrismaClient, userId: string, zineId: string): Promise<void> {
+        assertUuid(zineId);
+        await db.favorite.deleteMany({ where: { userId, zineId } });
 }

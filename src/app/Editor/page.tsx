@@ -16,8 +16,10 @@ function EditorPage(): JSX.Element {
 	const cover = useMemo(() => coverFromParams(searchParams), [searchParams]);
 	const step = searchParams.get("etapa");
 	const initialStep: ZineStep = isZineStep(step) ? step : "poems";
+	// `?zine=<id>` abre um zine da conta; sem ele o editor segue no rascunho local.
+	const zineId = searchParams.get("zine") ?? undefined;
 
-	return <ZineWizard seedCover={cover} initialStep={initialStep} />;
+	return <ZineWizard seedCover={cover} initialStep={initialStep} zineId={zineId} />;
 }
 
 export default function EditorPageWrapper(): JSX.Element {

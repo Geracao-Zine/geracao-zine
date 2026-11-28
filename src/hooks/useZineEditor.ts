@@ -63,6 +63,7 @@ import { forcedPrintMode, generateZinePdf, mmToPt, templateFor } from "@/lib/pdf
 import { previewPanelFor } from "@/lib/preview";
 import { LOCAL_SAVE_MS, debounce } from "@/lib/debounce";
 import { useSalvarNaConta } from "@/hooks/useSalvarNaConta";
+import { draftDoZine, obterZine } from "@/lib/zines/client";
 import type { SalvarNaConta } from "@/hooks/useSalvarNaConta";
 import { useSession } from "@/hooks/useSession";
 
@@ -130,6 +131,8 @@ export type ZineEditor = {
 	reset: () => void;
 	/** Espelhamento do rascunho na conta, quando ha sessao. */
 	conta: SalvarNaConta;
+	/** Mensagem quando o zine pedido nao pode ser aberto. */
+	erroAbertura: string | null;
 };
 
 /**
@@ -140,13 +143,18 @@ export type ZineEditor = {
  */
 export function useZineEditor(
 	seedCover?: Cover,
-	initialStep: ZineStep = "cover"
+	initialStep: ZineStep = "cover",
+	zineId?: string
 ): ZineEditor {
 	const [draft, setDraft] = useState<ZineDraft>(() => {
 		const base = createDraft();
 		return seedCover ? { ...base, cover: seedCover } : base;
 	});
-	const [ready, setReady] = useState(false);
+	// `ready` e derivado: sem `zineId` o rascunho local ja esta disponivel na
+	// primeira pintura; com ele, so depois que o zine da conta chega.
+	const [idCarregado, setIdCarregado] = useState<string | null>(null);
+	const ready = zineId === undefined || idCarregado === zineId;
+	const [erroAbertura, setErroAbertura] = useState<string | null>(null);
 	// Imagens vivem fora do rascunho: nao sao serializadas e somem ao
 	// recarregar. O rascunho guarda so o que e texto.
 	const [images, setImages] = useState<Record<string, PageImage>>({});
@@ -162,6 +170,12 @@ export function useZineEditor(
 			LOCAL_SAVE_MS
 		);
 
+		// Abrir um zine da conta nao le o rascunho local: senao o que estava
+		// neste navegador venceria o zine que a pessoa clicou.
+		if (zineId) {
+			return;
+		}
+
 		const stored = loadDraft(storage.current);
 
 		if (stored) {
@@ -170,9 +184,8 @@ export function useZineEditor(
 			setDraft((prev) => ({ ...prev, step: initialStep }));
 		}
 
-		setReady(true);
 		// O rascunho salvo vence o seed: recarregar nunca volta ao formulario vazio.
-	}, [initialStep]);
+	}, [initialStep, zineId]);
 
 	// Gravar a cada tecla serializa o documento inteiro por caractere. O debounce
 	// corta isso, mas so e seguro porque o pendente e liberado ao sair ou
@@ -563,6 +576,48 @@ export function useZineEditor(
 	const { sessao } = useSession();
 	const conta = useSalvarNaConta(draft, sessao.status === "autenticado", ready);
 
+	// Abrir um zine da conta: busca, converte em rascunho e assume o id para os
+	// proximos salvamentos atualizarem este zine em vez de criar outro.
+	useEffect(() => {
+		if (!zineId) {
+			return;
+		}
+
+		let vivo = true;
+
+		void obterZine(zineId).then((resultado) => {
+			if (!vivo) {
+				return;
+			}
+
+			if (!resultado.ok) {
+				setErroAbertura(resultado.motivo);
+				setIdCarregado(zineId);
+				return;
+			}
+
+			const aberto = draftDoZine(resultado.zine);
+
+			if (!aberto) {
+				// JSON de uma versao que o dominio nao entende: abrir vazio faria a
+				// proxima gravacao apagar o conteudo do autor.
+				setErroAbertura("Este zine nao pode ser aberto no editor.");
+				setIdCarregado(zineId);
+				return;
+			}
+
+			setDraft(aberto);
+			conta.adotar(resultado.zine.id, aberto);
+			setIdCarregado(zineId);
+		});
+
+		return () => {
+			vivo = false;
+		};
+		// `conta.adotar` e estavel; incluir `conta` recriaria o efeito a cada gravacao.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [zineId]);
+
 	const reset = (): void => {
 		clearDraft(storage.current);
 		conta.desvincular();
@@ -571,6 +626,7 @@ export function useZineEditor(
 
 	return {
 		ready,
+		erroAbertura,
 		step: draft.step,
 		stepNumber: stepIndex(draft.step) + 1,
 		totalSteps: STEPS.length,

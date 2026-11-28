@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import logo from "@/assets/GeraçãoZine.png";
 
 export default function HomePage() {
@@ -42,12 +43,12 @@ export default function HomePage() {
 						Criar meu Zine
 					</a>
 
-					<a
+					<Link
 						href="/Library"
 						className="px-8 py-3 rounded-full border border-zinc-300 hover:bg-white transition"
 					>
 						Explorar Biblioteca
-					</a>
+					</Link>
 				</div>
 
 			</section>

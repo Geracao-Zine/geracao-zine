@@ -138,8 +138,8 @@ if (semBanco) {
 
                 assert.equal(response.status, 201);
                 assert.equal(corpo.zine.title, "Meu Zine");
-                assert.equal(corpo.zine.visibility, "private");
-                assert.equal(corpo.zine.slug, null);
+                assert.equal(corpo.zine.visibility, "public", "criar ja divulga por padrao");
+                assert.equal(corpo.zine.slug, "meu-zine", "divulgado nasce com slug");
 
                 const gravado = await db.zine.findUniqueOrThrow({ where: { id: corpo.zine.id } });
 
@@ -159,7 +159,7 @@ if (semBanco) {
 
         test("criar publico define slug legivel; privado fica sem slug", async () => {
                 const { corpo: publico } = await criarZinePeloDono({ title: "Poesias de Inverno", visibility: "public" });
-                const { corpo: privado } = await criarZinePeloDono({ title: "Rascunho" });
+                const { corpo: privado } = await criarZinePeloDono({ title: "Rascunho", visibility: "private" });
 
                 assert.equal(publico.zine.slug, "poesias-de-inverno");
                 assert.equal(privado.zine.slug, null);
@@ -196,21 +196,27 @@ if (semBanco) {
         });
 
         test("CRITERIO: zine privado nao aparece na listagem publica", async () => {
-                await criarZinePeloDono({ title: "Privado", visibility: "private" });
-                await criarZinePeloDono({ title: "Publico", visibility: "public" });
+                const privado = await criarZinePeloDono({ title: "Privado", visibility: "private" });
+                const publico = await criarZinePeloDono({ title: "Publico", visibility: "public" });
 
                 const response = await zines.GET(pedidoLista(null, "?scope=public"));
                 const corpo = await response.json();
 
                 assert.equal(response.status, 200);
-                assert.deepEqual(
-                        corpo.zines.map((z) => z.title),
-                        ["Publico"]
-                );
+
+                // O banco e compartilhado com outros arquivos de teste, e a listagem
+                // publica e global: filtrar pelos ids deste teste evita depender do
+                // que os outros deixaram para tras.
+                const ids = corpo.zines.map((z) => z.id);
+
+                assert.ok(ids.includes(publico.corpo.zine.id));
+                assert.equal(ids.includes(privado.corpo.zine.id), false);
         });
 
         test("CRITERIO: dono nao consegue ler zine de outro dono (404, nao 403)", async () => {
-                const { corpo } = await criarZinePeloDono({ title: "Segredo" });
+                // Privado de proposito: um zine publico seria legivel por qualquer um,
+                // e o teste deixaria de provar o isolamento entre donos.
+                const { corpo } = await criarZinePeloDono({ title: "Segredo", visibility: "private" });
 
                 const response = await detalhe.GET(pedidoDetalhe(corpo.zine.id, cookieOutro), {
                         params: Promise.resolve({ id: corpo.zine.id }),
@@ -267,7 +273,7 @@ if (semBanco) {
 
         test("sem sessao, zine publico e legivel e privado responde 404", async () => {
                 const { corpo: publico } = await criarZinePeloDono({ title: "Aberto", visibility: "public" });
-                const { corpo: privado } = await criarZinePeloDono({ title: "Fechado" });
+                const { corpo: privado } = await criarZinePeloDono({ title: "Fechado", visibility: "private" });
 
                 const aberto = await detalhe.GET(pedidoDetalhe(publico.zine.id, null), {
                         params: Promise.resolve({ id: publico.zine.id }),

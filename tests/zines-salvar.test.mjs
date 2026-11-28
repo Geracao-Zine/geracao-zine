@@ -166,7 +166,7 @@ if (semBanco) {
 		assert.equal(conteudo.cover.title, "Completo");
 		assert.equal(conteudo.doc.pages[0].body, "primeiro verso");
 		assert.equal(gravado.contentVersion, 1);
-		assert.equal(gravado.visibility, "private", "salvar na conta nao publica");
+		assert.equal(gravado.visibility, "public", "salvar na conta ja divulga por padrao");
 	});
 
 	test("zine sem titulo nao vai para a conta", async () => {

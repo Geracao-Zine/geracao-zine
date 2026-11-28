@@ -3,7 +3,12 @@ import { DRAFT_VERSION, parseDraft } from "../../domain/index.ts";
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
-/** Zine como a API devolve. So os campos que o editor usa. */
+export type ZineAuthor = {
+	name: string | null;
+	avatarUrl: string | null;
+};
+
+/** Zine como a API devolve: o que a biblioteca e o editor usam. */
 export type ZineDaConta = {
 	id: string;
 	title: string;
@@ -12,6 +17,10 @@ export type ZineDaConta = {
 	contentVersion: number;
 	slug: string | null;
 	updatedAt: string;
+	author: ZineAuthor;
+	/** Verdadeiro quando o zine e de quem esta vendo. */
+	mine: boolean;
+	favorited: boolean;
 };
 
 export type ResultadoSalvar =
@@ -54,6 +63,8 @@ function zineDe(corpo: unknown): ZineDaConta | null {
 		return null;
 	}
 
+	const autor = (candidato.author ?? {}) as Partial<ZineAuthor>;
+
 	return {
 		id: candidato.id,
 		title: candidato.title,
@@ -63,6 +74,12 @@ function zineDe(corpo: unknown): ZineDaConta | null {
 			typeof candidato.contentVersion === "number" ? candidato.contentVersion : DRAFT_VERSION,
 		slug: typeof candidato.slug === "string" ? candidato.slug : null,
 		updatedAt: typeof candidato.updatedAt === "string" ? candidato.updatedAt : "",
+		author: {
+			name: typeof autor.name === "string" ? autor.name : null,
+			avatarUrl: typeof autor.avatarUrl === "string" ? autor.avatarUrl : null,
+		},
+		mine: candidato.mine === true,
+		favorited: candidato.favorited === true,
 	};
 }
 
@@ -193,6 +210,122 @@ export async function listarZinesDaConta(fetcher: Fetcher = fetch): Promise<Zine
 		return lista.map((item) => zineDe({ zine: item })).filter((zine): zine is ZineDaConta => zine !== null);
 	} catch {
 		return [];
+	}
+}
+
+async function listaDe(fetcher: Fetcher, url: string): Promise<ZineDaConta[]> {
+	try {
+		const resposta = await fetcher(url, {
+			method: "GET",
+			credentials: "same-origin",
+			headers: { accept: "application/json" },
+		});
+
+		if (!resposta.ok) {
+			return [];
+		}
+
+		const corpo: unknown = await resposta.json();
+		const lista = typeof corpo === "object" && corpo !== null ? (corpo as { zines?: unknown }).zines : null;
+
+		if (!Array.isArray(lista)) {
+			return [];
+		}
+
+		return lista.map((item) => zineDe({ zine: item })).filter((zine): zine is ZineDaConta => zine !== null);
+	} catch {
+		return [];
+	}
+}
+
+/** Biblioteca: todos os zines publicos, de qualquer autor. */
+export function listarBiblioteca(fetcher: Fetcher = fetch): Promise<ZineDaConta[]> {
+	return listaDe(fetcher, "/api/zines?scope=public");
+}
+
+/** Zines que quem esta logado favoritou. */
+export function listarFavoritos(fetcher: Fetcher = fetch): Promise<ZineDaConta[]> {
+	return listaDe(fetcher, "/api/zines?scope=favorites");
+}
+
+export type ResultadoZine =
+	| { ok: true; zine: ZineDaConta }
+	| { ok: false; motivo: string };
+
+/** Busca um zine por id. Privado alheio responde igual a inexistente. */
+export async function obterZine(id: string, fetcher: Fetcher = fetch): Promise<ResultadoZine> {
+	try {
+		const resposta = await fetcher(`/api/zines/${id}`, {
+			method: "GET",
+			credentials: "same-origin",
+			headers: { accept: "application/json" },
+		});
+
+		if (!resposta.ok) {
+			return { ok: false, motivo: mensagemDeErro(await codigoDeErro(resposta)) };
+		}
+
+		const zine = zineDe(await resposta.json());
+
+		return zine ? { ok: true, zine } : { ok: false, motivo: MENSAGEM_FALHA_GENERICA };
+	} catch {
+		return { ok: false, motivo: MENSAGEM_FALHA_GENERICA };
+	}
+}
+
+export type ResultadoFavorito = { ok: true; favorited: boolean } | { ok: false; motivo: string };
+
+/**
+ * Liga ou desliga o favorito.
+ *
+ * Devolve o estado final em vez do zine inteiro: e o unico campo que o clique
+ * muda, e assim o DELETE nao precisa de um GET so para preencher o resto.
+ */
+export async function alternarFavorito(
+	id: string,
+	favoritar: boolean,
+	fetcher: Fetcher = fetch
+): Promise<ResultadoFavorito> {
+	try {
+		const resposta = await fetcher(`/api/zines/${id}/favorite`, {
+			method: favoritar ? "POST" : "DELETE",
+			credentials: "same-origin",
+			headers: { accept: "application/json" },
+		});
+
+		if (!resposta.ok) {
+			return { ok: false, motivo: mensagemDeErro(await codigoDeErro(resposta)) };
+		}
+
+		return { ok: true, favorited: favoritar };
+	} catch {
+		return { ok: false, motivo: MENSAGEM_FALHA_GENERICA };
+	}
+}
+
+/** Troca publico/privado. So o dono consegue: a API responde 404 para os outros. */
+export async function definirVisibilidade(
+	id: string,
+	visibility: "private" | "public",
+	fetcher: Fetcher = fetch
+): Promise<ResultadoZine> {
+	try {
+		const resposta = await fetcher(`/api/zines/${id}`, {
+			method: "PATCH",
+			credentials: "same-origin",
+			headers: { "content-type": "application/json", accept: "application/json" },
+			body: JSON.stringify({ visibility }),
+		});
+
+		if (!resposta.ok) {
+			return { ok: false, motivo: mensagemDeErro(await codigoDeErro(resposta)) };
+		}
+
+		const zine = zineDe(await resposta.json());
+
+		return zine ? { ok: true, zine } : { ok: false, motivo: MENSAGEM_FALHA_GENERICA };
+	} catch {
+		return { ok: false, motivo: MENSAGEM_FALHA_GENERICA };
 	}
 }
 

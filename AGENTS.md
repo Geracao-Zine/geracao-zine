@@ -48,3 +48,19 @@ os testes nao esperarem tempo real. No client o prazo vem de
 API: perder o login inteiro seria pior que perder o prazo.
 
 
+
+## Testes de integracao com Postgres
+
+Os arquivos de teste rodam em paralelo contra o mesmo banco. Duas regras
+evitam corrida entre eles:
+
+- **Nunca rode duas suites ao mesmo tempo no mesmo banco.** Uma execucao
+  concorrente de `npm test` faz o `limpar()` de um arquivo apagar as contas que
+  o outro acabou de criar, e a falha aparece como
+  `Foreign key constraint violated on the constraint: zines_ownerId_fkey`.
+- **Um teste no escopo raiz declarado antes dos hooks quebra a suite.** O
+  `after` do escopo dispara assim que o `before` termina, apagando os usuarios
+  recem-criados. Testes que nao usam o banco (ex.: 401 sem sessao) ficam no fim
+  do arquivo, depois dos hooks.
+- A listagem publica e global: assercoes sobre ela devem filtrar pelos ids
+  criados no proprio teste, nunca comparar a lista inteira.

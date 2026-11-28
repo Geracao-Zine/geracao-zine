@@ -17,13 +17,16 @@ type Props = {
 	initialStep?: ZineStep;
 	/** Campos vindos da URL antiga; so valem quando nao ha rascunho salvo. */
 	seedCover?: Cover;
+	/** Zine da conta a abrir; ausente significa rascunho local. */
+	zineId?: string;
 };
 
 export default function ZineWizard({
 	initialStep = "cover",
 	seedCover,
+	zineId,
 }: Props): JSX.Element {
-	const editor = useZineEditor(seedCover, initialStep);
+	const editor = useZineEditor(seedCover, initialStep, zineId);
 	const { sessao } = useSession();
 	const autenticado = sessao.status === "autenticado";
 

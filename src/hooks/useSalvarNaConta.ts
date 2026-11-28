@@ -33,6 +33,13 @@ export type SalvarNaConta = {
 	 * salvamento sobrescreveria o zine anterior com o rascunho vazio.
 	 */
 	desvincular: () => void;
+	/**
+	 * Assume um zine que ja existe na conta.
+	 *
+	 * Sem isso, abrir um zine pela biblioteca faria o primeiro salvamento criar
+	 * outro zine em vez de atualizar o que foi aberto.
+	 */
+	adotar: (zineId: string, draft: ZineDraft) => void;
 };
 
 /**
@@ -149,6 +156,17 @@ export function useSalvarNaConta(
 		setEstado("inativo");
 	}, []);
 
+	const adotar = useCallback((id: string, alvo: ZineDraft): void => {
+		agendado.current?.cancelar();
+		idRef.current = id;
+		// O conteudo recem-aberto ja e o que esta na conta: sem esta marca, o
+		// primeiro efeito de espelhamento gravaria o mesmo conteudo de novo.
+		ultimoSalvo.current = JSON.stringify({ ...alvo, step: "cover" });
+		setZineId(id);
+		setErro(null);
+		setEstado("salvo");
+	}, []);
+
 	// Sair da pagina com alteracao pendente: grava antes de fechar.
 	useEffect(() => {
 		const aoSair = (): void => {
@@ -170,5 +188,6 @@ export function useSalvarNaConta(
 		salvarAgora,
 		cancelar,
 		desvincular,
+		adotar,
 	};
 }
