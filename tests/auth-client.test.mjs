@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 const {
+	LOGIN_TIMEOUT_MS,
 	SESSION_INICIAL,
 	buscarConfig,
 	buscarSessao,
@@ -200,4 +201,96 @@ test("sair nao propaga erro de rede", async () => {
 	const { fetcher } = espiao(new TypeError("fetch failed"));
 
 	await assert.doesNotReject(() => sair(fetcher));
+});
+
+// Requisicao que so termina quando o signal aborta, como um fetch de verdade
+// que nao recebe resposta. Sem prazo no cliente, o teste ficaria pendurado.
+function semResposta() {
+	return (_url, init) =>
+		new Promise((_, rejeitar) => {
+			const sinal = init?.signal;
+
+			if (!sinal) {
+				rejeitar(new Error("o cliente nao passou signal: penduraria para sempre"));
+				return;
+			}
+
+			sinal.addEventListener("abort", () => {
+				rejeitar(Object.assign(new Error("aborted"), { name: "AbortError" }));
+			});
+		});
+}
+
+test("entrarComCode manda um sinal de cancelamento com prazo", async () => {
+	const { fetcher, chamadas } = espiao(resposta({ user: usuario }));
+
+	await entrarComCode("code-123", fetcher);
+
+	const { signal } = chamadas[0].init;
+	assert.ok(signal instanceof AbortSignal, "sem signal o fetch pode pendurar para sempre");
+	assert.equal(signal.aborted, false);
+});
+
+test("o prazo do login e finito e curto o bastante", () => {
+	assert.equal(typeof LOGIN_TIMEOUT_MS, "number");
+	assert.ok(Number.isFinite(LOGIN_TIMEOUT_MS) && LOGIN_TIMEOUT_MS > 0);
+});
+
+test("entrarComCode distingue timeout de queda de rede", async () => {
+	const timeout = Object.assign(new Error("timed out"), { name: "TimeoutError" });
+	const { fetcher } = espiao(timeout);
+
+	const resultado = await entrarComCode("code-123", fetcher);
+
+	assert.equal(resultado.ok, false);
+	assert.match(resultado.motivo, /demorou/i);
+});
+
+test("as chamadas de sessao tambem tem prazo", async () => {
+	for (const [nome, fn, esperado] of [
+		["buscarSessao", buscarSessao, { status: "anonimo" }],
+		["buscarConfig", buscarConfig, { googleClientId: null }],
+	]) {
+		const { fetcher, chamadas } = espiao(resposta({}));
+
+		await fn(fetcher);
+
+		assert.ok(chamadas[0].init.signal instanceof AbortSignal, `${nome} precisa de signal`);
+		assert.deepEqual(await fn(semResposta()), esperado);
+	}
+});
+
+test("sair manda sinal com prazo", async () => {
+	const { fetcher, chamadas } = espiao(resposta({}, 204));
+
+	await sair(fetcher);
+
+	assert.ok(chamadas[0].init.signal instanceof AbortSignal);
+});
+
+test("um fetch abortado por prazo vira mensagem, nao excecao", async () => {
+	const { fetcher } = espiao(Object.assign(new Error("aborted"), { name: "AbortError" }));
+
+	await assert.doesNotReject(async () => {
+		const r = await entrarComCode("code-123", fetcher);
+		assert.equal(r.ok, false);
+		assert.match(r.motivo, /demorou/i);
+	});
+});
+
+test("sem AbortSignal.timeout o login ainda funciona, so sem prazo", async () => {
+	const original = AbortSignal.timeout;
+	AbortSignal.timeout = undefined;
+
+	try {
+		const { fetcher, chamadas } = espiao(resposta({ user: usuario }));
+
+		const resultado = await entrarComCode("code-123", fetcher);
+
+		assert.deepEqual(resultado, { ok: true, user: usuario });
+		// Sem a API, o init nao leva signal: melhor sem prazo do que sem login.
+		assert.equal(chamadas[0].init.signal, undefined);
+	} finally {
+		AbortSignal.timeout = original;
+	}
 });

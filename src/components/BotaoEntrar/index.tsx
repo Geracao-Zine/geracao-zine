@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "@/hooks/useSession";
-import { prepararLogin, type ResultadoCode } from "@/lib/auth/gis";
+import { mensagemDeFalhaGis, prepararLogin, type ResultadoCode } from "@/lib/auth/gis";
 
 const aleatorio = (bytes: number): Uint8Array => crypto.getRandomValues(new Uint8Array(bytes));
 
@@ -15,6 +15,10 @@ const BotaoEntrar: React.FC<Props> = ({ onNavegar }) => {
 	const clientId = config.googleClientId ?? "";
 	const [erro, setErro] = useState<string | null>(null);
 	const [ocupado, setOcupado] = useState(false);
+	const [falhouCarga, setFalhouCarga] = useState(false);
+	// Muda a cada nova tentativa e esta nas dependencias do efeito: e o que faz o
+	// carregamento do script ser retomado depois de um timeout.
+	const [tentativa, setTentativa] = useState(0);
 	const pedido = useRef<{ pedirCode: () => void } | null>(null);
 
 	// `onNavegar` costuma chegar como arrow inline e muda de identidade a cada
@@ -71,9 +75,12 @@ const BotaoEntrar: React.FC<Props> = ({ onNavegar }) => {
 					pedido.current = novo;
 				}
 			})
-			.catch(() => {
+			.catch((erro: unknown) => {
 				if (vivo) {
-					setErro("Nao foi possivel carregar o login do Google.");
+					// "Ainda esta carregando" seria mentira aqui: o carregamento ja
+					// desistiu, e a mensagem precisa dizer o que houve.
+					setFalhouCarga(true);
+					setErro(mensagemDeFalhaGis(erro));
 				}
 			});
 
@@ -81,19 +88,27 @@ const BotaoEntrar: React.FC<Props> = ({ onNavegar }) => {
 			vivo = false;
 			pedido.current = null;
 		};
-	}, [clientId, sessao.status, entrar]);
+	}, [clientId, sessao.status, entrar, tentativa]);
 
 	const clicar = useCallback((): void => {
 		setErro(null);
 
 		if (!pedido.current) {
+			// Depois de uma falha de carga, o pedido nao vai aparecer sozinho: o
+			// clique precisa reiniciar o carregamento em vez de pedir paciencia.
+			if (falhouCarga) {
+				setFalhouCarga(false);
+				setTentativa((n) => n + 1);
+				return;
+			}
+
 			setErro("O login ainda esta carregando. Tente de novo em um instante.");
 			return;
 		}
 
 		setOcupado(true);
 		pedido.current.pedirCode();
-	}, []);
+	}, [falhouCarga]);
 
 	// Quem ja tem sessao continua podendo sair mesmo que o client id tenha sido
 	// removido do servidor; so o botao de entrar depende da configuracao.
@@ -139,7 +154,11 @@ const BotaoEntrar: React.FC<Props> = ({ onNavegar }) => {
 				disabled={ocupado}
 				className="px-3 py-1.5 rounded-full bg-[var(--orange)] text-white font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
 			>
-				{ocupado ? "Entrando…" : "Entrar com Google"}
+				{ocupado
+					? "Entrando…"
+					: falhouCarga
+						? "Tentar de novo"
+						: "Entrar com Google"}
 			</button>
 			{erro && (
 				<span role="alert" className="max-w-56 text-xs text-red-600 dark:text-red-400">

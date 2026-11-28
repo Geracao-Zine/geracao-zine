@@ -29,3 +29,22 @@ Consequencias praticas:
 - O CLI roda como o usuario `nextjs`, entao o diretorio copiado precisa manter
   permissao de leitura e execucao.
 
+## Login com Google
+
+O fluxo tem dois pontos de espera, e cada um tem prazo proprio:
+
+- **Script do GIS** (`src/lib/auth/gis.ts`, `GIS_TIMEOUT_MS`): se o
+  `accounts.google.com/gsi/client` for bloqueado por extensao, proxy ou rede, a
+  promessa nunca resolveria e o botao ficaria inutilizavel. No timeout o script e
+  removido do DOM e a promessa memorizada e liberada, para que um novo clique
+  tente de novo.
+- **POST /api/auth/google** (`src/lib/auth/client.ts`, `LOGIN_TIMEOUT_MS`): um
+  servidor que aceita a conexao e nao responde deixaria o botao em "Entrando…"
+  para sempre.
+
+O relogio do carregador do GIS e injetavel, seguindo `src/lib/debounce.ts`, para
+os testes nao esperarem tempo real. No client o prazo vem de
+`AbortSignal.timeout`, que degrada para "sem prazo" em navegador que nao tem a
+API: perder o login inteiro seria pior que perder o prazo.
+
+
