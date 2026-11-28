@@ -82,3 +82,21 @@ evitam corrida entre eles:
   caso, faz um POST em vez de devolver erro. Outros erros nao viram zine novo.
 - O seletor de visibilidade mostra estado ("Privado"/"Publico"), nao acao.
   "Divulgar" como valor selecionado de um zine ja publico confundia.
+- A barra de secoes da biblioteca (`src/components/LibraryNav`) e um bottom nav
+  no celular: `fixed inset-x-0 bottom-0` ate `md`, onde vira peca estatica acima
+  da lista. **A pagina precisa reservar espaco no rodape** (`pb-32 md:pb-20` em
+  `Library/page.tsx`); sem isso a barra fixa cobre o ultimo card. O titulo fica
+  embaixo do icone (`flex-col`), no padrao de aplicativo movel, e `pb-[env(safe-area-inset-bottom)]`
+  evita que a barra encoste na area de gestos do iPhone.
+- **`--purple-dark` nao serve como cor de texto no tema escuro.** Sobre
+  `#0D0D0D` ele da 2.0:1 de contraste — ilegivel. O token `--purple-light`
+  (`#C084FC`, 7.4:1) existe para isso: use `dark:text-[var(--purple-light)]` em
+  qualquer acento textual. `--purple` tambem nao passa (3.4:1). Ao conferir cor
+  no navegador, lembre que o Chromium devolve `lab(...)` para cores do Tailwind
+  v4 — converta para RGB pintando num canvas antes de calcular contraste, senao
+  o numero sai errado.
+- **`next start` nao serve o build com `output: "standalone"`.** Ele responde as
+  rotas, mas os arquivos de `/_next/static` voltam 500 (sem CSS, a pagina parece
+  quebrada e as cores computadas saem pretas). Para testar de verdade, copie
+  `.next/standalone`, `.next/static` e `public` para um diretorio e rode
+  `node server.js`, que e o que o Dockerfile faz.

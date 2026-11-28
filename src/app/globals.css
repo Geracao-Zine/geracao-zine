@@ -6,6 +6,9 @@
 	--orange: #F2811D;
 	--purple: #8451A6;
 	--purple-dark: #63268C;
+	/* Roxo claro para texto de acento sobre o fundo escuro: --purple-dark
+	   e --purple ficam ilegiveis ali (contraste 2.0 e 3.4 em texto pequeno). */
+	--purple-light: #C084FC;
 	--navbar-height: 4.3125rem;
 }
 
@@ -23,6 +26,7 @@
 		--orange: #F2811D;
 		--purple: #8451A6;
 		--purple-dark: #63268C;
+		--purple-light: #C084FC;
 	}
 }
 

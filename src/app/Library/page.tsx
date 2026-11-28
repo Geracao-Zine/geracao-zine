@@ -3,23 +3,16 @@
 import type { JSX } from "react";
 import { useCallback, useEffect, useState } from "react";
 import ZineCard from "@/components/ZineCard";
+import LibraryNav, { type Aba } from "@/components/LibraryNav";
 import { useSession } from "@/hooks/useSession";
 import {
-        alternarFavorito,
-        definirVisibilidade,
-        listarBiblioteca,
-        listarFavoritos,
-        listarZinesDaConta,
-        type ZineDaConta,
+	alternarFavorito,
+	definirVisibilidade,
+	listarBiblioteca,
+	listarFavoritos,
+	listarZinesDaConta,
+	type ZineDaConta,
 } from "@/lib/zines/client";
-
-type Aba = "biblioteca" | "meus" | "favoritos";
-
-const ABAS: { id: Aba; rotulo: string }[] = [
-        { id: "biblioteca", rotulo: "Biblioteca" },
-        { id: "meus", rotulo: "Meus zines" },
-        { id: "favoritos", rotulo: "Favoritos" },
-];
 
 const VAZIO: Record<Aba, string> = {
         biblioteca: "Ninguem divulgou um zine ainda. Seja a primeira pessoa.",
@@ -144,7 +137,9 @@ export default function LibraryPage(): JSX.Element {
 
         return (
                 <main className="min-h-[calc(100vh-var(--navbar-height))] bg-[var(--background)] text-[var(--foreground)]">
-                        <section className="mx-auto max-w-6xl px-6 py-20">
+                        {/* pb extra no celular: a barra de abas fica fixa no rodape e
+                            cobriria o ultimo card sem esse espaco. */}
+                        <section className="mx-auto max-w-6xl px-6 pt-20 pb-32 md:pb-20">
                                 <div className="mb-12 text-center">
                                         <h1 className="mb-4 text-4xl font-bold md:text-5xl">
                                                 Biblioteca de <span className="text-[var(--purple)]">Zines</span>
@@ -152,24 +147,9 @@ export default function LibraryPage(): JSX.Element {
                                         <p className="text-zinc-600">Descubra criações independentes da comunidade.</p>
                                 </div>
 
-                                <div className="mb-8 flex flex-wrap justify-center gap-2" role="tablist">
-                                        {ABAS.map((opcao) => (
-                                                <button
-                                                        key={opcao.id}
-                                                        type="button"
-                                                        role="tab"
-                                                        aria-selected={aba === opcao.id}
-                                                        onClick={() => setAba(opcao.id)}
-                                                        className={
-                                                                aba === opcao.id
-                                                                        ? "rounded-full bg-[var(--purple-dark)] px-4 py-2 text-sm font-medium text-white"
-                                                                        : "rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700"
-                                                        }
-                                                >
-                                                        {opcao.rotulo}
-                                                </button>
-                                        ))}
-                                </div>
+				<div className="mb-8">
+					<LibraryNav aba={aba} onSelect={setAba} />
+				</div>
 
                                 {erro ? (
                                         <p
