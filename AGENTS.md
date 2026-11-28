@@ -64,3 +64,9 @@ evitam corrida entre eles:
   do arquivo, depois dos hooks.
 - A listagem publica e global: assercoes sobre ela devem filtrar pelos ids
   criados no proprio teste, nunca comparar a lista inteira.
+- **Zine nasce privado.** `visibility` tem `@default(private)` no schema e
+  `newZineFrom` repete o padrao. Teste que precisa de um zine visivel a outra
+  pessoa deve dizer `visibility: "public"` — sem isso ele some da listagem
+  publica e a falha aparece longe da causa.
+- A listagem publica exige `?scope=public`. Sem o escopo, `GET /api/zines`
+  devolve os zines do dono da sessao, e nao a biblioteca.
